@@ -13,7 +13,9 @@ import json
 import math
 import re
 from dataclasses import dataclass, field
+from functools import partial, reduce
 from pathlib import Path
+from typing import Callable
 
 from mcp.server.fastmcp import FastMCP
 
@@ -102,6 +104,92 @@ class Hyperparameters:
 
 
 HYPERPARAMETERS = Hyperparameters()
+
+
+@dataclass(frozen=True)
+class Violation:
+    """Canonical violation record emitted by rule checks."""
+
+    rule: str
+    match: str
+    context: str
+    penalty: int
+
+    def to_payload(self) -> dict[str, object]:
+        """Serialize a typed violation for tool output."""
+        return {
+            "type": "Violation",
+            "rule": self.rule,
+            "match": self.match,
+            "context": self.context,
+            "penalty": self.penalty,
+        }
+
+
+@dataclass
+class RuleContext:
+    """Mutable scratch context for legacy mutating rule implementations."""
+
+    text: str
+    word_count: int
+    sentences: list[str]
+    advice: list[str]
+    counts: dict[str, int]
+    hyperparameters: Hyperparameters
+
+
+@dataclass(frozen=True)
+class AnalysisContext:
+    """Read-only context shared by functional rule wrappers."""
+
+    text: str
+    word_count: int
+    sentences: list[str]
+    hyperparameters: Hyperparameters
+
+
+@dataclass
+class RuleResult:
+    """Output emitted by a single rule application."""
+
+    violations: list[Violation]
+    advice: list[str]
+    count_deltas: dict[str, int]
+
+
+@dataclass(frozen=True)
+class AnalysisState:
+    """Immutable analysis accumulator used by the functional pipeline."""
+
+    violations: tuple[Violation, ...]
+    advice: tuple[str, ...]
+    counts: dict[str, int]
+
+    @classmethod
+    def initial(cls, counts: dict[str, int]) -> "AnalysisState":
+        """Construct an empty analysis state with initial category counts."""
+        return cls(violations=(), advice=(), counts=dict(counts))
+
+    def merge(
+        self,
+        violations: list[Violation],
+        advice: list[str],
+        count_deltas: dict[str, int],
+    ) -> "AnalysisState":
+        """Return a new state with appended outputs and incremented counts."""
+        merged_counts = dict(self.counts)
+        for key, delta in count_deltas.items():
+            if delta:
+                merged_counts[key] = merged_counts.get(key, 0) + delta
+        return AnalysisState(
+            violations=self.violations + tuple(violations),
+            advice=self.advice + tuple(advice),
+            counts=merged_counts,
+        )
+
+
+LegacyRulePrototype = Callable[[list[str], list[Violation], RuleContext], None]
+RulePrototype = Callable[[list[str], AnalysisContext], RuleResult]
 
 # ---------------------------------------------------------------------------
 # Compiled patterns
@@ -460,364 +548,693 @@ def _find_repeated_ngrams(
 # Core analysis
 # ---------------------------------------------------------------------------
 
-def _analyze(text: str, hyperparameters: Hyperparameters) -> dict:
-    word_count = _word_count(text)
-
-    # Short-circuit for very short text
-    if word_count < hyperparameters.short_text_word_count:
-        return {
-            "score": hyperparameters.score_max,
-            "band": "clean",
-            "word_count": word_count,
-            "violations": [],
-            "counts": {
-                "slop_words": 0, "slop_phrases": 0, "structural": 0,
-                "tone": 0, "weasel": 0, "ai_disclosure": 0, "placeholder": 0,
-                "rhythm": 0, "em_dash": 0,
-                "contrast_pairs": 0, "colon_density": 0, "pithy_fragment": 0,
-                "setup_resolution": 0,
-                "bullet_density": 0, "blockquote_density": 0,
-                "bold_bullet_list": 0, "horizontal_rules": 0,
-                "phrase_reuse": 0,
-            },
-            "total_penalty": 0,
-            "weighted_sum": 0.0,
-            "density": 0.0,
-            "advice": [],
-        }
-
-    violations: list[dict] = []
-    advice: list[str] = []
-    counts = {
-        "slop_words": 0, "slop_phrases": 0, "structural": 0,
-        "tone": 0, "weasel": 0, "ai_disclosure": 0, "placeholder": 0,
-        "rhythm": 0, "em_dash": 0,
-        "contrast_pairs": 0, "colon_density": 0, "pithy_fragment": 0,
+def _initial_counts() -> dict[str, int]:
+    """Create the canonical per-rule counter map used by the analyzer."""
+    return {
+        "slop_words": 0,
+        "slop_phrases": 0,
+        "structural": 0,
+        "tone": 0,
+        "weasel": 0,
+        "ai_disclosure": 0,
+        "placeholder": 0,
+        "rhythm": 0,
+        "em_dash": 0,
+        "contrast_pairs": 0,
+        "colon_density": 0,
+        "pithy_fragment": 0,
         "setup_resolution": 0,
-        "bullet_density": 0, "blockquote_density": 0,
-        "bold_bullet_list": 0, "horizontal_rules": 0,
+        "bullet_density": 0,
+        "blockquote_density": 0,
+        "bold_bullet_list": 0,
+        "horizontal_rules": 0,
         "phrase_reuse": 0,
     }
 
-    # --- 1. Slop words ---
+
+def _short_text_result(
+    word_count: int, counts: dict[str, int], hyperparameters: Hyperparameters
+) -> dict:
+    """Build the fixed response shape for short text that is skipped."""
+    return {
+        "score": hyperparameters.score_max,
+        "band": "clean",
+        "word_count": word_count,
+        "violations": [],
+        "counts": counts,
+        "total_penalty": 0,
+        "weighted_sum": 0.0,
+        "density": 0.0,
+        "advice": [],
+    }
+
+
+def _run_legacy_rule(
+    legacy_rule: LegacyRulePrototype,
+    lines: list[str],
+    context: AnalysisContext,
+) -> RuleResult:
+    """Run a rule against scratch state and return its emitted deltas."""
+    scratch_violations: list[Violation] = []
+    scratch_context = RuleContext(
+        text=context.text,
+        word_count=context.word_count,
+        sentences=context.sentences,
+        advice=[],
+        counts=_initial_counts(),
+        hyperparameters=context.hyperparameters,
+    )
+    legacy_rule(lines, scratch_violations, scratch_context)
+    return RuleResult(
+        violations=list(scratch_violations),
+        advice=list(scratch_context.advice),
+        count_deltas=scratch_context.counts,
+    )
+
+
+def _functionalize_rule(legacy_rule: LegacyRulePrototype) -> RulePrototype:
+    """Wrap a rule into a pure `(lines, context) -> RuleResult` callable."""
+
+    def _rule(lines: list[str], context: AnalysisContext) -> RuleResult:
+        return _run_legacy_rule(legacy_rule, lines, context)
+
+    return _rule
+
+
+def _run_analysis_pipeline(
+    lines: list[str],
+    context: AnalysisContext,
+    pipeline: list[RulePrototype],
+) -> AnalysisState:
+    """Execute functional rules with reduce and return the final analysis state."""
+    initial_state = AnalysisState.initial(_initial_counts())
+    curried_rules = [partial(rule, lines, context) for rule in pipeline]
+
+    def _merge_rule_result(
+        state: AnalysisState,
+        curried_rule: Callable[[], RuleResult],
+    ) -> AnalysisState:
+        result = curried_rule()
+        return state.merge(
+            violations=result.violations,
+            advice=result.advice,
+            count_deltas=result.count_deltas,
+        )
+
+    return reduce(
+        _merge_rule_result,
+        curried_rules,
+        initial_state,
+    )
+
+
+def _collect_slop_word_rule(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect slop words and record one violation per match."""
+    text = context.text
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     for m in _SLOP_WORD_RE.finditer(text):
         word = m.group(0)
-        violations.append({
-            "rule": "slop_word",
-            "match": word.lower(),
-            "context": _context_around(text, m.start(), m.end(), hyperparameters=hyperparameters),
-            "penalty": hyperparameters.slop_word_penalty,
-        })
+        violations.append(
+            Violation(
+                rule="slop_word",
+                match=word.lower(),
+                context=_context_around(
+                    text,
+                    m.start(),
+                    m.end(),
+                    hyperparameters=hyperparameters,
+                ),
+                penalty=hyperparameters.slop_word_penalty,
+            )
+        )
         advice.append(f"Replace '{word.lower()}' \u2014 what specifically do you mean?")
         counts["slop_words"] += 1
+    return None
 
-    # --- 2. Slop phrases ---
+
+def _collect_slop_phrase_rules(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect slop phrases, including the "not just X, but" pattern."""
+    text = context.text
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     for pat in _SLOP_PHRASES_RE_LIST:
         for m in pat.finditer(text):
             phrase = m.group(0)
-            violations.append({
-                "rule": "slop_phrase",
-                "match": phrase.lower(),
-                "context": _context_around(text, m.start(), m.end(), hyperparameters=hyperparameters),
-                "penalty": hyperparameters.slop_phrase_penalty,
-            })
-            advice.append(f"Cut '{phrase.lower()}' \u2014 just state the point directly.")
+            violations.append(
+                Violation(
+                    rule="slop_phrase",
+                    match=phrase.lower(),
+                    context=_context_around(
+                        text,
+                        m.start(),
+                        m.end(),
+                        hyperparameters=hyperparameters,
+                    ),
+                    penalty=hyperparameters.slop_phrase_penalty,
+                )
+            )
+            advice.append(
+                f"Cut '{phrase.lower()}' \u2014 just state the point directly."
+            )
             counts["slop_phrases"] += 1
 
-    # "not just X, but" regex
     for m in _NOT_JUST_BUT_RE.finditer(text):
         phrase = m.group(0)
-        violations.append({
-            "rule": "slop_phrase",
-            "match": phrase.strip().lower(),
-            "context": _context_around(text, m.start(), m.end(), hyperparameters=hyperparameters),
-            "penalty": hyperparameters.slop_phrase_penalty,
-        })
-        advice.append(f"Cut '{phrase.strip().lower()}' \u2014 just state the point directly.")
+        violations.append(
+            Violation(
+                rule="slop_phrase",
+                match=phrase.strip().lower(),
+                context=_context_around(
+                    text,
+                    m.start(),
+                    m.end(),
+                    hyperparameters=hyperparameters,
+                ),
+                penalty=hyperparameters.slop_phrase_penalty,
+            )
+        )
+        advice.append(
+            f"Cut '{phrase.strip().lower()}' \u2014 just state the point directly."
+        )
         counts["slop_phrases"] += 1
+    return None
 
-    # --- 3. Structural patterns ---
 
-    # Bold-header-explanation
+def _collect_structural_patterns(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect structural tics such as bold-header blocks, bullet runs, and triads."""
+    text = context.text
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     bold_matches = list(_BOLD_HEADER_RE.finditer(text))
     if len(bold_matches) >= hyperparameters.structural_bold_header_min:
-        violations.append({
-            "rule": "structural",
-            "match": "bold_header_explanation",
-            "context": f"Found {len(bold_matches)} instances of **Bold.** pattern",
-            "penalty": hyperparameters.structural_bold_header_penalty,
-        })
+        violations.append(
+            Violation(
+                rule="structural",
+                match="bold_header_explanation",
+                context=(
+                    f"Found {len(bold_matches)} instances of **Bold.** pattern"
+                ),
+                penalty=hyperparameters.structural_bold_header_penalty,
+            )
+        )
         advice.append(
-            f"Vary paragraph structure \u2014 {len(bold_matches)} bold-header-explanation "
-            f"blocks in a row reads as LLM listicle."
+            f"Vary paragraph structure \u2014 {len(bold_matches)} "
+            "bold-header-explanation blocks in a row reads as LLM listicle."
         )
         counts["structural"] += 1
 
-    # Excessive consecutive bullets
-    lines = text.split("\n")
     run_length = 0
     for line in lines:
         if _BULLET_LINE_RE.match(line):
             run_length += 1
         else:
             if run_length >= hyperparameters.structural_bullet_run_min:
-                violations.append({
-                    "rule": "structural",
-                    "match": "excessive_bullets",
-                    "context": f"Run of {run_length} consecutive bullet lines",
-                    "penalty": hyperparameters.structural_bullet_run_penalty,
-                })
+                violations.append(
+                    Violation(
+                        rule="structural",
+                        match="excessive_bullets",
+                        context=(
+                            f"Run of {run_length} consecutive bullet lines"
+                        ),
+                        penalty=hyperparameters.structural_bullet_run_penalty,
+                    )
+                )
                 advice.append(
                     f"Consider prose instead of this {run_length}-item bullet list."
                 )
                 counts["structural"] += 1
             run_length = 0
-    # Check trailing run
+
     if run_length >= hyperparameters.structural_bullet_run_min:
-        violations.append({
-            "rule": "structural",
-            "match": "excessive_bullets",
-            "context": f"Run of {run_length} consecutive bullet lines",
-            "penalty": hyperparameters.structural_bullet_run_penalty,
-        })
+        violations.append(
+            Violation(
+                rule="structural",
+                match="excessive_bullets",
+                context=f"Run of {run_length} consecutive bullet lines",
+                penalty=hyperparameters.structural_bullet_run_penalty,
+            )
+        )
         advice.append(
             f"Consider prose instead of this {run_length}-item bullet list."
         )
         counts["structural"] += 1
 
-    # Triadic structures
     triadic_matches = list(_TRIADIC_RE.finditer(text))
     triadic_count = len(triadic_matches)
     for m in triadic_matches[: hyperparameters.triadic_record_cap]:
-        violations.append({
-            "rule": "structural",
-            "match": "triadic",
-            "context": _context_around(text, m.start(), m.end(), hyperparameters=hyperparameters),
-            "penalty": hyperparameters.triadic_penalty,
-        })
+        violations.append(
+            Violation(
+                rule="structural",
+                match="triadic",
+                context=_context_around(
+                    text,
+                    m.start(),
+                    m.end(),
+                    hyperparameters=hyperparameters,
+                ),
+                penalty=hyperparameters.triadic_penalty,
+            )
+        )
         counts["structural"] += 1
+
     if triadic_count >= hyperparameters.triadic_advice_min:
         advice.append(
             f"{triadic_count} triadic structures ('X, Y, and Z') \u2014 "
-            f"vary your list cadence."
+            "vary your list cadence."
         )
+    return None
 
-    # --- 4. Tone markers ---
 
-    # Meta-communication
+def _collect_tone_marker_rules(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect tone-level AI tells from meta communication and sentence openers."""
+    text = context.text
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     for pat in _META_COMM_PATTERNS:
         for m in pat.finditer(text):
             phrase = m.group(0)
-            violations.append({
-                "rule": "tone",
-                "match": phrase.lower(),
-                "context": _context_around(text, m.start(), m.end(), hyperparameters=hyperparameters),
-                "penalty": hyperparameters.tone_penalty,
-            })
-            advice.append(f"Remove '{phrase.lower()}' \u2014 this is a direct AI tell.")
-            counts["tone"] += 1
-
-    # False narrativity
-    for pat in _FALSE_NARRATIVITY_PATTERNS:
-        for m in pat.finditer(text):
-            phrase = m.group(0)
-            violations.append({
-                "rule": "tone",
-                "match": phrase.lower(),
-                "context": _context_around(text, m.start(), m.end(), hyperparameters=hyperparameters),
-                "penalty": hyperparameters.tone_penalty,
-            })
-            advice.append(f"Cut '{phrase.lower()}' \u2014 announce less, show more.")
-            counts["tone"] += 1
-
-    # Sentence-opener tells
-    for pat in _SENTENCE_OPENER_PATTERNS:
-        for m in pat.finditer(text):
-            word = m.group(1).strip(" ,!")
-            violations.append({
-                "rule": "tone",
-                "match": word.lower(),
-                "context": _context_around(text, m.start(), m.end(), hyperparameters=hyperparameters),
-                "penalty": hyperparameters.sentence_opener_penalty,
-            })
+            violations.append(
+                Violation(
+                    rule="tone",
+                    match=phrase.lower(),
+                    context=_context_around(
+                        text,
+                        m.start(),
+                        m.end(),
+                        hyperparameters=hyperparameters,
+                    ),
+                    penalty=hyperparameters.tone_penalty,
+                )
+            )
             advice.append(
-                f"'{word.lower()}' as a sentence opener is an AI tell "
-                f"\u2014 just make the point."
+                f"Remove '{phrase.lower()}' \u2014 this is a direct AI tell."
             )
             counts["tone"] += 1
 
-    # --- 4b. Weasel phrases ---
+    for pat in _FALSE_NARRATIVITY_PATTERNS:
+        for m in pat.finditer(text):
+            phrase = m.group(0)
+            violations.append(
+                Violation(
+                    rule="tone",
+                    match=phrase.lower(),
+                    context=_context_around(
+                        text,
+                        m.start(),
+                        m.end(),
+                        hyperparameters=hyperparameters,
+                    ),
+                    penalty=hyperparameters.tone_penalty,
+                )
+            )
+            advice.append(
+                f"Cut '{phrase.lower()}' \u2014 announce less, show more."
+            )
+            counts["tone"] += 1
+
+    for pat in _SENTENCE_OPENER_PATTERNS:
+        for m in pat.finditer(text):
+            word = m.group(1).strip(" ,!")
+            violations.append(
+                Violation(
+                    rule="tone",
+                    match=word.lower(),
+                    context=_context_around(
+                        text,
+                        m.start(),
+                        m.end(),
+                        hyperparameters=hyperparameters,
+                    ),
+                    penalty=hyperparameters.sentence_opener_penalty,
+                )
+            )
+            advice.append(
+                f"'{word.lower()}' as a sentence opener is an AI tell "
+                "\u2014 just make the point."
+            )
+            counts["tone"] += 1
+    return None
+
+
+def _collect_weasel_phrase_rules(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect weasel phrases that avoid direct attribution."""
+    text = context.text
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     for pat in _WEASEL_PATTERNS:
         for m in pat.finditer(text):
             phrase = m.group(0)
-            violations.append({
-                "rule": "weasel",
-                "match": phrase.lower(),
-                "context": _context_around(text, m.start(), m.end(), hyperparameters=hyperparameters),
-                "penalty": hyperparameters.weasel_penalty,
-            })
+            violations.append(
+                Violation(
+                    rule="weasel",
+                    match=phrase.lower(),
+                    context=_context_around(
+                        text,
+                        m.start(),
+                        m.end(),
+                        hyperparameters=hyperparameters,
+                    ),
+                    penalty=hyperparameters.weasel_penalty,
+                )
+            )
             advice.append(
                 f"Cut '{phrase.lower()}' \u2014 either cite a source or own the claim."
             )
             counts["weasel"] += 1
+    return None
 
-    # --- 4c. AI self-disclosure ---
+
+def _collect_ai_disclosure_rules(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect direct model self-disclosure statements."""
+    text = context.text
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     for pat in _AI_DISCLOSURE_PATTERNS:
         for m in pat.finditer(text):
             phrase = m.group(0)
-            violations.append({
-                "rule": "ai_disclosure",
-                "match": phrase.lower(),
-                "context": _context_around(text, m.start(), m.end(), hyperparameters=hyperparameters),
-                "penalty": hyperparameters.ai_disclosure_penalty,
-            })
+            violations.append(
+                Violation(
+                    rule="ai_disclosure",
+                    match=phrase.lower(),
+                    context=_context_around(
+                        text,
+                        m.start(),
+                        m.end(),
+                        hyperparameters=hyperparameters,
+                    ),
+                    penalty=hyperparameters.ai_disclosure_penalty,
+                )
+            )
             advice.append(
                 f"Remove '{phrase.lower()}' \u2014 AI self-disclosure in authored "
-                f"prose is a critical tell."
+                "prose is a critical tell."
             )
             counts["ai_disclosure"] += 1
+    return None
 
-    # --- 4d. Placeholder text ---
+
+def _collect_placeholder_rules(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect bracketed placeholder text that indicates unfinished drafting."""
+    text = context.text
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     for m in _PLACEHOLDER_RE.finditer(text):
         match_text = m.group(0)
-        violations.append({
-            "rule": "placeholder",
-            "match": match_text.lower(),
-            "context": _context_around(text, m.start(), m.end(), hyperparameters=hyperparameters),
-            "penalty": hyperparameters.placeholder_penalty,
-        })
+        violations.append(
+            Violation(
+                rule="placeholder",
+                match=match_text.lower(),
+                context=_context_around(
+                    text,
+                    m.start(),
+                    m.end(),
+                    hyperparameters=hyperparameters,
+                ),
+                penalty=hyperparameters.placeholder_penalty,
+            )
+        )
         advice.append(
             f"Remove placeholder '{match_text.lower()}' \u2014 this is unfinished "
-            f"template text."
+            "template text."
         )
         counts["placeholder"] += 1
+    return None
 
-    # --- 5. Rhythm analysis ---
-    sentences = [s.strip() for s in _SENTENCE_SPLIT_RE.split(text) if s.strip()]
-    if len(sentences) >= hyperparameters.rhythm_min_sentences:
-        lengths = [len(s.split()) for s in sentences]
-        mean = sum(lengths) / len(lengths)
-        if mean > 0:
-            variance = sum((x - mean) ** 2 for x in lengths) / len(lengths)
-            std = math.sqrt(variance)
-            cv = std / mean
-            if cv < hyperparameters.rhythm_cv_threshold:
-                violations.append({
-                    "rule": "rhythm",
-                    "match": "monotonous_rhythm",
-                    "context": f"CV={cv:.2f} across {len(sentences)} sentences "
-                               f"(mean {mean:.1f} words)",
-                    "penalty": hyperparameters.rhythm_penalty,
-                })
-                advice.append(
-                    f"Sentence lengths are too uniform (CV={cv:.2f}) \u2014 "
-                    f"vary short and long."
-                )
-                counts["rhythm"] += 1
 
-    # --- 6. Em dash density ---
-    em_dash_matches = list(_EM_DASH_RE.finditer(text))
-    em_dash_count = len(em_dash_matches)
-    if word_count > 0:
-        ratio_per_150 = (
-            em_dash_count / word_count
-        ) * hyperparameters.em_dash_words_basis
-        if ratio_per_150 > hyperparameters.em_dash_density_threshold:
-            violations.append({
-                "rule": "em_dash",
-                "match": "em_dash_density",
-                "context": f"{em_dash_count} em dashes in {word_count} words "
-                           f"({ratio_per_150:.1f} per 150 words)",
-                "penalty": hyperparameters.em_dash_penalty,
-            })
-            advice.append(
-                f"Too many em dashes ({em_dash_count} in {word_count} words) \u2014 "
-                f"use other punctuation."
+def _collect_rhythm_rule(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect low-variance sentence cadence that reads as monotonous."""
+    _ = lines
+    sentences = context.sentences
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
+    if len(sentences) < hyperparameters.rhythm_min_sentences:
+        return None
+
+    lengths = [len(s.split()) for s in sentences]
+    mean = sum(lengths) / len(lengths)
+    if mean <= 0:
+        return None
+
+    variance = sum((x - mean) ** 2 for x in lengths) / len(lengths)
+    std = math.sqrt(variance)
+    cv = std / mean
+    if cv < hyperparameters.rhythm_cv_threshold:
+        violations.append(
+            Violation(
+                rule="rhythm",
+                match="monotonous_rhythm",
+                context=(
+                    f"CV={cv:.2f} across {len(sentences)} sentences "
+                    f"(mean {mean:.1f} words)"
+                ),
+                penalty=hyperparameters.rhythm_penalty,
             )
-            counts["em_dash"] += 1
+        )
+        advice.append(
+            f"Sentence lengths are too uniform (CV={cv:.2f}) \u2014 "
+            "vary short and long."
+        )
+        counts["rhythm"] += 1
+    return None
 
-    # --- 7. "X, not Y" contrast pairs ---
+
+def _collect_em_dash_density_rule(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect overuse of em dashes relative to document length."""
+    text = context.text
+    word_count = context.word_count
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
+    if word_count <= 0:
+        return None
+
+    em_dash_count = len(list(_EM_DASH_RE.finditer(text)))
+    ratio_per_150 = (
+        em_dash_count / word_count
+    ) * hyperparameters.em_dash_words_basis
+    if ratio_per_150 > hyperparameters.em_dash_density_threshold:
+        violations.append(
+            Violation(
+                rule="em_dash",
+                match="em_dash_density",
+                context=(
+                    f"{em_dash_count} em dashes in {word_count} words "
+                    f"({ratio_per_150:.1f} per 150 words)"
+                ),
+                penalty=hyperparameters.em_dash_penalty,
+            )
+        )
+        advice.append(
+            f"Too many em dashes ({em_dash_count} in {word_count} words) \u2014 "
+            "use other punctuation."
+        )
+        counts["em_dash"] += 1
+    return None
+
+
+def _collect_contrast_pair_rule(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect repeated use of the \"X, not Y\" contrast construction."""
+    text = context.text
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     contrast_matches = list(_CONTRAST_PAIR_RE.finditer(text))
     contrast_count = len(contrast_matches)
+
     for m in contrast_matches[: hyperparameters.contrast_record_cap]:
-        violations.append({
-            "rule": "contrast_pair",
-            "match": m.group(0),
-            "context": _context_around(text, m.start(), m.end(), hyperparameters=hyperparameters),
-            "penalty": hyperparameters.contrast_penalty,
-        })
+        matched = m.group(0)
+        violations.append(
+            Violation(
+                rule="contrast_pair",
+                match=matched,
+                context=_context_around(
+                    text,
+                    m.start(),
+                    m.end(),
+                    hyperparameters=hyperparameters,
+                ),
+                penalty=hyperparameters.contrast_penalty,
+            )
+        )
         advice.append(
-            f"'{m.group(0)}' \u2014 'X, not Y' contrast \u2014 consider "
-            f"rephrasing to avoid the Claude pattern."
+            f"'{matched}' \u2014 'X, not Y' contrast \u2014 consider "
+            "rephrasing to avoid the Claude pattern."
         )
         counts["contrast_pairs"] += 1
+
     if contrast_count >= hyperparameters.contrast_advice_min:
         advice.append(
             f"{contrast_count} 'X, not Y' contrasts \u2014 this is a Claude "
-            f"rhetorical tic. Vary your phrasing."
+            "rhetorical tic. Vary your phrasing."
         )
+    return None
 
-    # --- 7b. Setup-and-resolution ("This isn't X. It's Y.") ---
+
+def _collect_setup_resolution_rule(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect setup-resolution flips such as \"This isn't X. It's Y.\"."""
+    text = context.text
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     setup_res_recorded = 0
     for pat in (_SETUP_RESOLUTION_A_RE, _SETUP_RESOLUTION_B_RE):
         for m in pat.finditer(text):
             if setup_res_recorded < hyperparameters.setup_resolution_record_cap:
                 matched = m.group(0)
-                violations.append({
-                    "rule": "setup_resolution",
-                    "match": matched,
-                    "context": _context_around(text, m.start(), m.end(), hyperparameters=hyperparameters),
-                    "penalty": hyperparameters.setup_resolution_penalty,
-                })
+                violations.append(
+                    Violation(
+                        rule="setup_resolution",
+                        match=matched,
+                        context=_context_around(
+                            text,
+                            m.start(),
+                            m.end(),
+                            hyperparameters=hyperparameters,
+                        ),
+                        penalty=hyperparameters.setup_resolution_penalty,
+                    )
+                )
                 advice.append(
                     f"'{matched}' \u2014 setup-and-resolution is a Claude "
-                    f"rhetorical tic. Just state the point directly."
+                    "rhetorical tic. Just state the point directly."
                 )
                 setup_res_recorded += 1
             counts["setup_resolution"] += 1
+    return None
 
-    # --- 8. Colon density (elaboration colons) ---
+
+def _collect_colon_density_rule(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect overuse of elaboration colons outside code/header contexts."""
+    text = context.text
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     stripped_text = _strip_code_blocks(text)
-    # Process line by line to exclude headers
     colon_count = 0
+
     for line in stripped_text.split("\n"):
-        # Skip markdown header lines
         if _MD_HEADER_LINE_RE.match(line):
             continue
-        # Find all elaboration colons in this line
+
         for cm in _ELABORATION_COLON_RE.finditer(line):
             col_pos = cm.start()
-            # Exclude URL colons (http: or https: immediately before)
-            before = line[:col_pos + 1]
+            before = line[: col_pos + 1]
             if before.endswith("http:") or before.endswith("https:"):
                 continue
-            # Exclude JSON-like contexts
-            snippet = line[col_pos:col_pos + 10]
+            snippet = line[col_pos : col_pos + 10]
             if _JSON_COLON_RE.match(snippet):
                 continue
             colon_count += 1
 
     stripped_word_count = _word_count(stripped_text)
-    if stripped_word_count > 0:
-        colon_ratio_per_150 = (
-            colon_count / stripped_word_count
-        ) * hyperparameters.colon_words_basis
-        if colon_ratio_per_150 > hyperparameters.colon_density_threshold:
-            violations.append({
-                "rule": "colon_density",
-                "match": "colon_density",
-                "context": f"{colon_count} elaboration colons in {stripped_word_count} "
-                           f"words ({colon_ratio_per_150:.1f} per 150 words)",
-                "penalty": hyperparameters.colon_density_penalty,
-            })
-            advice.append(
-                f"Too many elaboration colons ({colon_count} in "
-                f"{stripped_word_count} words) \u2014 use periods or "
-                f"restructure sentences."
-            )
-            counts["colon_density"] += 1
+    if stripped_word_count <= 0:
+        return None
 
-    # --- 9. Pithy evaluative fragments ---
+    colon_ratio_per_150 = (
+        colon_count / stripped_word_count
+    ) * hyperparameters.colon_words_basis
+    if colon_ratio_per_150 > hyperparameters.colon_density_threshold:
+        violations.append(
+            Violation(
+                rule="colon_density",
+                match="colon_density",
+                context=(
+                    f"{colon_count} elaboration colons in {stripped_word_count} "
+                    f"words ({colon_ratio_per_150:.1f} per 150 words)"
+                ),
+                penalty=hyperparameters.colon_density_penalty,
+            )
+        )
+        advice.append(
+            f"Too many elaboration colons ({colon_count} in "
+            f"{stripped_word_count} words) \u2014 use periods or "
+            "restructure sentences."
+        )
+        counts["colon_density"] += 1
+    return None
+
+
+def _collect_pithy_fragment_rule(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect short evaluative pivots that resemble pithy model fragments."""
+    _ = lines
+    sentences = context.sentences
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     pithy_count = 0
     for sent in sentences:
         sent_stripped = sent.strip()
@@ -828,39 +1245,70 @@ def _analyze(text: str, hyperparameters: Hyperparameters) -> dict:
             continue
         if _PITHY_PIVOT_RE.search(sent_stripped):
             if pithy_count < hyperparameters.pithy_record_cap:
-                violations.append({
-                    "rule": "pithy_fragment",
-                    "match": sent_stripped,
-                    "context": sent_stripped,
-                    "penalty": hyperparameters.pithy_penalty,
-                })
+                violations.append(
+                    Violation(
+                        rule="pithy_fragment",
+                        match=sent_stripped,
+                        context=sent_stripped,
+                        penalty=hyperparameters.pithy_penalty,
+                    )
+                )
                 advice.append(
                     f"'{sent_stripped}' \u2014 pithy evaluative fragments are "
-                    f"a Claude tell. Expand or cut."
+                    "a Claude tell. Expand or cut."
                 )
             pithy_count += 1
             counts["pithy_fragment"] += 1
+    return None
 
-    # --- 12. Bullet density ---
-    non_empty_lines = [l for l in lines if l.strip()]
+
+def _collect_bullet_density_rule(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect when a document is dominated by bullet-formatted lines."""
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
+    non_empty_lines = [line for line in lines if line.strip()]
     total_non_empty = len(non_empty_lines)
-    if total_non_empty > 0:
-        bullet_count = sum(1 for l in non_empty_lines if _BULLET_DENSITY_RE.match(l))
-        bullet_ratio = bullet_count / total_non_empty
-        if bullet_ratio > hyperparameters.bullet_density_threshold:
-            violations.append({
-                "rule": "structural",
-                "match": "bullet_density",
-                "context": f"{bullet_count} of {total_non_empty} non-empty lines are bullets ({bullet_ratio:.0%})",
-                "penalty": hyperparameters.bullet_density_penalty,
-            })
-            advice.append(
-                f"Over {bullet_ratio:.0%} of lines are bullets \u2014 write prose instead of lists."
-            )
-            counts["bullet_density"] += 1
+    if total_non_empty <= 0:
+        return None
 
-    # --- 13. Blockquote-as-thesis ---
-    # Count blockquote lines outside fenced code blocks
+    bullet_count = sum(1 for line in non_empty_lines if _BULLET_DENSITY_RE.match(line))
+    bullet_ratio = bullet_count / total_non_empty
+    if bullet_ratio > hyperparameters.bullet_density_threshold:
+        violations.append(
+            Violation(
+                rule="structural",
+                match="bullet_density",
+                context=(
+                    f"{bullet_count} of {total_non_empty} non-empty lines are "
+                    f"bullets ({bullet_ratio:.0%})"
+                ),
+                penalty=hyperparameters.bullet_density_penalty,
+            )
+        )
+        advice.append(
+            f"Over {bullet_ratio:.0%} of lines are bullets \u2014 "
+            "write prose instead of lists."
+        )
+        counts["bullet_density"] += 1
+    return None
+
+
+def _collect_blockquote_density_rule(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect excessive thesis-style blockquote usage outside fenced code."""
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     in_code_block = False
     blockquote_count = 0
     for line in lines:
@@ -869,67 +1317,121 @@ def _analyze(text: str, hyperparameters: Hyperparameters) -> dict:
             continue
         if not in_code_block and line.startswith(">"):
             blockquote_count += 1
+
     if blockquote_count >= hyperparameters.blockquote_min_lines:
         excess = blockquote_count - hyperparameters.blockquote_free_lines
         capped = min(excess, hyperparameters.blockquote_cap)
         bq_penalty = hyperparameters.blockquote_penalty_step * capped
-        violations.append({
-            "rule": "structural",
-            "match": "blockquote_density",
-            "context": f"{blockquote_count} blockquote lines \u2014 Claude uses these as thesis statements",
-            "penalty": bq_penalty,
-        })
+        violations.append(
+            Violation(
+                rule="structural",
+                match="blockquote_density",
+                context=(
+                    f"{blockquote_count} blockquote lines \u2014 Claude uses these "
+                    "as thesis statements"
+                ),
+                penalty=bq_penalty,
+            )
+        )
         advice.append(
-            f"{blockquote_count} blockquotes \u2014 integrate key claims into prose instead of pulling them out as blockquotes."
+            f"{blockquote_count} blockquotes \u2014 integrate key claims into prose "
+            "instead of pulling them out as blockquotes."
         )
         counts["blockquote_density"] += 1
+    return None
 
-    # --- 14. Bold-term bullet runs ---
+
+def _collect_bold_term_bullet_run_rule(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect runs of bullets that all start with bolded lead terms."""
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     bold_bullet_run = 0
     for line in lines:
         if _BOLD_TERM_BULLET_RE.match(line):
             bold_bullet_run += 1
-        else:
-            if bold_bullet_run >= hyperparameters.bold_bullet_run_min:
-                violations.append({
-                    "rule": "structural",
-                    "match": "bold_bullet_list",
-                    "context": f"Run of {bold_bullet_run} bold-term bullets",
-                    "penalty": hyperparameters.bold_bullet_run_penalty,
-                })
-                advice.append(
-                    f"Run of {bold_bullet_run} bold-term bullets \u2014 this is an LLM listicle pattern. Use varied paragraph structure."
+            continue
+
+        if bold_bullet_run >= hyperparameters.bold_bullet_run_min:
+            violations.append(
+                Violation(
+                    rule="structural",
+                    match="bold_bullet_list",
+                    context=f"Run of {bold_bullet_run} bold-term bullets",
+                    penalty=hyperparameters.bold_bullet_run_penalty,
                 )
-                counts["bold_bullet_list"] += 1
-            bold_bullet_run = 0
-    # Check trailing run
+            )
+            advice.append(
+                f"Run of {bold_bullet_run} bold-term bullets \u2014 this is an LLM "
+                "listicle pattern. Use varied paragraph structure."
+            )
+            counts["bold_bullet_list"] += 1
+        bold_bullet_run = 0
+
     if bold_bullet_run >= hyperparameters.bold_bullet_run_min:
-        violations.append({
-            "rule": "structural",
-            "match": "bold_bullet_list",
-            "context": f"Run of {bold_bullet_run} bold-term bullets",
-            "penalty": hyperparameters.bold_bullet_run_penalty,
-        })
+        violations.append(
+            Violation(
+                rule="structural",
+                match="bold_bullet_list",
+                context=f"Run of {bold_bullet_run} bold-term bullets",
+                penalty=hyperparameters.bold_bullet_run_penalty,
+            )
+        )
         advice.append(
-            f"Run of {bold_bullet_run} bold-term bullets \u2014 this is an LLM listicle pattern. Use varied paragraph structure."
+            f"Run of {bold_bullet_run} bold-term bullets \u2014 this is an LLM "
+            "listicle pattern. Use varied paragraph structure."
         )
         counts["bold_bullet_list"] += 1
+    return None
 
-    # --- 15. Horizontal rule overuse ---
+
+def _collect_horizontal_rule_overuse_rule(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect excessive horizontal rule separators."""
+    text = context.text
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     hr_count = len(_HORIZONTAL_RULE_RE.findall(text))
     if hr_count >= hyperparameters.horizontal_rule_min:
-        violations.append({
-            "rule": "structural",
-            "match": "horizontal_rules",
-            "context": f"{hr_count} horizontal rules \u2014 excessive section dividers",
-            "penalty": hyperparameters.horizontal_rule_penalty,
-        })
+        violations.append(
+            Violation(
+                rule="structural",
+                match="horizontal_rules",
+                context=(
+                    f"{hr_count} horizontal rules \u2014 excessive section dividers"
+                ),
+                penalty=hyperparameters.horizontal_rule_penalty,
+            )
+        )
         advice.append(
-            f"{hr_count} horizontal rules \u2014 section headers alone are sufficient, dividers are a crutch."
+            f"{hr_count} horizontal rules \u2014 section headers alone are "
+            "sufficient, dividers are a crutch."
         )
         counts["horizontal_rules"] += 1
+    return None
 
-    # --- 16. Phrase reuse ---
+
+def _collect_phrase_reuse_rule(
+    lines: list[str],
+    violations: list[Violation],
+    context: RuleContext,
+) -> None:
+    """Detect repeated multi-word phrases and record the longest repeated grams."""
+    text = context.text
+    advice = context.advice
+    counts = context.counts
+    hyperparameters = context.hyperparameters
+
     repeated_ngrams = _find_repeated_ngrams(text, hyperparameters)
     phrase_reuse_recorded = 0
     for ng in repeated_ngrams:
@@ -938,30 +1440,58 @@ def _analyze(text: str, hyperparameters: Hyperparameters) -> dict:
         phrase = ng["phrase"]
         count = ng["count"]
         n = ng["n"]
-        violations.append({
-            "rule": "phrase_reuse",
-            "match": phrase,
-            "context": f"'{phrase}' ({n}-word phrase) appears {count} times",
-            "penalty": hyperparameters.phrase_reuse_penalty,
-        })
+        violations.append(
+            Violation(
+                rule="phrase_reuse",
+                match=phrase,
+                context=f"'{phrase}' ({n}-word phrase) appears {count} times",
+                penalty=hyperparameters.phrase_reuse_penalty,
+            )
+        )
         advice.append(
             f"'{phrase}' appears {count} times \u2014 vary your phrasing "
-            f"to avoid repetition."
+            "to avoid repetition."
         )
         counts["phrase_reuse"] += 1
         phrase_reuse_recorded += 1
+    return None
 
-    # --- Compute score ---
-    total_penalty = sum(v["penalty"] for v in violations)
 
-    # Exponential decay scoring with concentration multiplier
+_apply_slop_word_rule = _functionalize_rule(_collect_slop_word_rule)
+_apply_slop_phrase_rules = _functionalize_rule(_collect_slop_phrase_rules)
+_apply_structural_patterns = _functionalize_rule(_collect_structural_patterns)
+_apply_tone_marker_rules = _functionalize_rule(_collect_tone_marker_rules)
+_apply_weasel_phrase_rules = _functionalize_rule(_collect_weasel_phrase_rules)
+_apply_ai_disclosure_rules = _functionalize_rule(_collect_ai_disclosure_rules)
+_apply_placeholder_rules = _functionalize_rule(_collect_placeholder_rules)
+_apply_rhythm_rule = _functionalize_rule(_collect_rhythm_rule)
+_apply_em_dash_density_rule = _functionalize_rule(_collect_em_dash_density_rule)
+_apply_contrast_pair_rule = _functionalize_rule(_collect_contrast_pair_rule)
+_apply_setup_resolution_rule = _functionalize_rule(_collect_setup_resolution_rule)
+_apply_colon_density_rule = _functionalize_rule(_collect_colon_density_rule)
+_apply_pithy_fragment_rule = _functionalize_rule(_collect_pithy_fragment_rule)
+_apply_bullet_density_rule = _functionalize_rule(_collect_bullet_density_rule)
+_apply_blockquote_density_rule = _functionalize_rule(
+    _collect_blockquote_density_rule
+)
+_apply_bold_term_bullet_run_rule = _functionalize_rule(
+    _collect_bold_term_bullet_run_rule
+)
+_apply_horizontal_rule_overuse_rule = _functionalize_rule(
+    _collect_horizontal_rule_overuse_rule
+)
+_apply_phrase_reuse_rule = _functionalize_rule(_collect_phrase_reuse_rule)
+
+
+def _compute_weighted_sum(
+    violations: list[Violation], counts: dict[str, int], hyperparameters: Hyperparameters
+) -> float:
+    """Compute weighted penalties with concentration amplification."""
     weighted_sum = 0.0
-    for v in violations:
-        rule = v["rule"]
-        penalty = abs(v["penalty"])
-        # Map rule name to counts key: try exact, then with trailing "s"
+    for violation in violations:
+        rule = violation.rule
+        penalty = abs(violation.penalty)
         cat_count = counts.get(rule, 0) or counts.get(rule + "s", 0)
-        # Check if this rule's count key is a Claude-specific category
         count_key = (
             rule
             if rule in hyperparameters.claude_categories
@@ -982,7 +1512,75 @@ def _analyze(text: str, hyperparameters: Hyperparameters) -> dict:
         else:
             weight = penalty
         weighted_sum += weight
+    return weighted_sum
 
+
+def _band_for_score(score: int, hyperparameters: Hyperparameters) -> str:
+    """Map a numeric score into the configured severity band."""
+    if score >= hyperparameters.band_clean_min:
+        return "clean"
+    if score >= hyperparameters.band_light_min:
+        return "light"
+    if score >= hyperparameters.band_moderate_min:
+        return "moderate"
+    if score >= hyperparameters.band_heavy_min:
+        return "heavy"
+    return "saturated"
+
+
+def _deduplicate_advice(advice: list[str]) -> list[str]:
+    """Return advice entries preserving first-seen order and removing duplicates."""
+    seen_advice: set[str] = set()
+    unique_advice: list[str] = []
+    for item in advice:
+        if item not in seen_advice:
+            seen_advice.add(item)
+            unique_advice.append(item)
+    return unique_advice
+
+
+def _analyze(text: str, hyperparameters: Hyperparameters) -> dict:
+    """Run all slop checks and return score, diagnostics, and advice."""
+    word_count = _word_count(text)
+    counts = _initial_counts()
+
+    if word_count < hyperparameters.short_text_word_count:
+        return _short_text_result(word_count, counts, hyperparameters)
+
+    lines = text.split("\n")
+    sentences = [s.strip() for s in _SENTENCE_SPLIT_RE.split(text) if s.strip()]
+    context = AnalysisContext(
+        text=text,
+        word_count=word_count,
+        sentences=sentences,
+        hyperparameters=hyperparameters,
+    )
+    pipeline: list[RulePrototype] = [
+        _apply_slop_word_rule,
+        _apply_slop_phrase_rules,
+        _apply_structural_patterns,
+        _apply_tone_marker_rules,
+        _apply_weasel_phrase_rules,
+        _apply_ai_disclosure_rules,
+        _apply_placeholder_rules,
+        _apply_rhythm_rule,
+        _apply_em_dash_density_rule,
+        _apply_contrast_pair_rule,
+        _apply_setup_resolution_rule,
+        _apply_colon_density_rule,
+        _apply_pithy_fragment_rule,
+        _apply_bullet_density_rule,
+        _apply_blockquote_density_rule,
+        _apply_bold_term_bullet_run_rule,
+        _apply_horizontal_rule_overuse_rule,
+        _apply_phrase_reuse_rule,
+    ]
+    state = _run_analysis_pipeline(lines, context, pipeline)
+
+    total_penalty = sum(violation.penalty for violation in state.violations)
+    weighted_sum = _compute_weighted_sum(
+        list(state.violations), state.counts, hyperparameters
+    )
     density = (
         weighted_sum / (word_count / hyperparameters.density_words_basis)
         if word_count > 0
@@ -995,36 +1593,18 @@ def _analyze(text: str, hyperparameters: Hyperparameters) -> dict:
         hyperparameters.score_min,
         min(hyperparameters.score_max, round(raw_score)),
     )
-
-    if score >= hyperparameters.band_clean_min:
-        band = "clean"
-    elif score >= hyperparameters.band_light_min:
-        band = "light"
-    elif score >= hyperparameters.band_moderate_min:
-        band = "moderate"
-    elif score >= hyperparameters.band_heavy_min:
-        band = "heavy"
-    else:
-        band = "saturated"
-
-    # Deduplicate advice
-    seen_advice: set[str] = set()
-    unique_advice: list[str] = []
-    for a in advice:
-        if a not in seen_advice:
-            seen_advice.add(a)
-            unique_advice.append(a)
+    band = _band_for_score(score, hyperparameters)
 
     return {
         "score": score,
         "band": band,
         "word_count": word_count,
-        "violations": violations,
-        "counts": counts,
+        "violations": [violation.to_payload() for violation in state.violations],
+        "counts": state.counts,
         "total_penalty": total_penalty,
         "weighted_sum": round(weighted_sum, 2),
         "density": round(density, 2),
-        "advice": unique_advice,
+        "advice": _deduplicate_advice(list(state.advice)),
     }
 
 

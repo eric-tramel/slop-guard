@@ -61,13 +61,15 @@ Both tools return JSON with this structure:
 score          0-100 integer
 band           "clean" / "light" / "moderate" / "heavy" / "saturated"
 word_count     integer
-violations     array of {rule, match, context, penalty}
+violations     array of {type, rule, match, context, penalty}
 counts         per-category violation counts
 total_penalty  sum of all penalty values
 weighted_sum   after concentration multiplier
 density        weighted_sum per 1000 words
 advice         array of actionable strings, one per distinct issue
 ```
+
+`violations[].type` is always `"Violation"` for typed records.
 
 ## License
 
