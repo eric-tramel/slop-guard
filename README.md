@@ -78,6 +78,11 @@ Example score distribution from `benchmark/us_pd_newspapers_histogram.py` on
 
 ![slop-guard score histogram](benchmark/output/score_histogram.white.png)
 
+Example score-vs-length scatter plot from
+`benchmark/us_pd_newspapers_scatter.py` on the same shard:
+
+![slop-guard score vs length scatter](benchmark/output/score_vs_length_scatter.white.png)
+
 ## License
 
 MIT
