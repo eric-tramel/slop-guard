@@ -244,6 +244,12 @@ def save_histogram_png_variants(fig: plt.Figure, histogram_png: Path) -> tuple[P
     histogram_png.parent.mkdir(parents=True, exist_ok=True)
     white_png = histogram_white_variant_path(histogram_png)
     fig.savefig(histogram_png, dpi=output_dpi, transparent=True)
+    original_facecolor = fig.patch.get_facecolor()
+    original_edgecolor = fig.patch.get_edgecolor()
+    original_alpha = fig.patch.get_alpha()
+    fig.patch.set_facecolor("white")
+    fig.patch.set_edgecolor("white")
+    fig.patch.set_alpha(1.0)
     fig.savefig(
         white_png,
         dpi=output_dpi,
@@ -251,6 +257,9 @@ def save_histogram_png_variants(fig: plt.Figure, histogram_png: Path) -> tuple[P
         facecolor="white",
         edgecolor="white",
     )
+    fig.patch.set_facecolor(original_facecolor)
+    fig.patch.set_edgecolor(original_edgecolor)
+    fig.patch.set_alpha(original_alpha)
     return histogram_png, white_png
 
 

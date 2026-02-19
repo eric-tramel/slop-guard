@@ -220,6 +220,12 @@ def save_scatter_png_variants(fig: plt.Figure, scatter_png: Path) -> tuple[Path,
     scatter_png.parent.mkdir(parents=True, exist_ok=True)
     white_png = scatter_white_variant_path(scatter_png)
     fig.savefig(scatter_png, dpi=output_dpi, transparent=True)
+    original_facecolor = fig.patch.get_facecolor()
+    original_edgecolor = fig.patch.get_edgecolor()
+    original_alpha = fig.patch.get_alpha()
+    fig.patch.set_facecolor("white")
+    fig.patch.set_edgecolor("white")
+    fig.patch.set_alpha(1.0)
     fig.savefig(
         white_png,
         dpi=output_dpi,
@@ -227,6 +233,9 @@ def save_scatter_png_variants(fig: plt.Figure, scatter_png: Path) -> tuple[Path,
         facecolor="white",
         edgecolor="white",
     )
+    fig.patch.set_facecolor(original_facecolor)
+    fig.patch.set_edgecolor(original_edgecolor)
+    fig.patch.set_alpha(original_alpha)
     return scatter_png, white_png
 
 
