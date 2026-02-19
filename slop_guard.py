@@ -17,8 +17,6 @@ from functools import partial, reduce
 from pathlib import Path
 from typing import Callable
 
-from mcp.server.fastmcp import FastMCP
-
 MCP_SERVER_NAME = "slop-guard"
 
 # ---------------------------------------------------------------------------
@@ -1609,42 +1607,31 @@ def _analyze(text: str, hyperparameters: Hyperparameters) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# MCP server
+# MCP server (lazy import — only needs `mcp` when run as __main__)
 # ---------------------------------------------------------------------------
 
-mcp_server = FastMCP(MCP_SERVER_NAME)
-
-
-@mcp_server.tool()
-def check_slop(text: str) -> str:
-    """Analyze text for AI slop patterns.
-
-    Returns a JSON object with a score (0-100), band label, list of specific
-    violations with context, and actionable advice for each issue found.
-    """
-    result = _analyze(text, HYPERPARAMETERS)
-    return json.dumps(result, indent=2)
-
-
-@mcp_server.tool()
-def check_slop_file(file_path: str) -> str:
-    """Analyze a file for AI slop patterns.
-
-    Reads the file at the given path and runs the same analysis as check_slop.
-    Returns a JSON object with a score (0-100), band label, list of specific
-    violations with context, and actionable advice for each issue found.
-    """
-    p = Path(file_path)
-    if not p.is_file():
-        return json.dumps({"error": f"File not found: {file_path}"})
-    try:
-        text = p.read_text(encoding="utf-8")
-    except Exception as e:
-        return json.dumps({"error": f"Could not read file: {e}"})
-    result = _analyze(text, HYPERPARAMETERS)
-    result["file"] = file_path
-    return json.dumps(result, indent=2)
-
-
 if __name__ == "__main__":
+    from mcp.server.fastmcp import FastMCP
+
+    mcp_server = FastMCP(MCP_SERVER_NAME)
+
+    @mcp_server.tool()
+    def check_slop(text: str) -> str:
+        """Analyze text for AI slop patterns."""
+        return json.dumps(_analyze(text, HYPERPARAMETERS), indent=2)
+
+    @mcp_server.tool()
+    def check_slop_file(file_path: str) -> str:
+        """Analyze a file for AI slop patterns."""
+        p = Path(file_path)
+        if not p.is_file():
+            return json.dumps({"error": f"File not found: {file_path}"})
+        try:
+            text = p.read_text(encoding="utf-8")
+        except Exception as e:
+            return json.dumps({"error": f"Could not read file: {e}"})
+        result = _analyze(text, HYPERPARAMETERS)
+        result["file"] = file_path
+        return json.dumps(result, indent=2)
+
     mcp_server.run()
