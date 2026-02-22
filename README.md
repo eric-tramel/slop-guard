@@ -23,6 +23,12 @@ Add to your `.mcp.json`:
 
 ### Codex
 
+Add from the command line:
+
+```bash
+codex mcp add slop-guard -- uvx slop-guard
+```
+
 Add to your `~/.codex/config.toml`:
 
 ```toml
