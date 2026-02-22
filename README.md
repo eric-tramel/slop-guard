@@ -48,7 +48,9 @@ uv run slop-guard
 
 This starts a stdio-based MCP server from the current repository.
 
-## Wire into Claude Code
+## Add to Your Agent
+
+### Claude Code
 
 Add to your `.mcp.json`:
 
@@ -61,6 +63,16 @@ Add to your `.mcp.json`:
     }
   }
 }
+```
+
+### Codex
+
+Add to your `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.slop-guard]
+command = "uvx"
+args = ["slop-guard"]
 ```
 
 If you want a fixed release, pin it in `args`, for example: `["slop-guard==0.1.0"]`.
