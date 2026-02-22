@@ -39,16 +39,28 @@ slop-guard = "slop_guard:main"
 exclude = [
   "benchmark",
   "benchmark/**",
-  "/.hf-cache",
-  "/.mplconfig",
-  "/.uv-cache",
-  "/.venv",
+  ".hf-cache",
+  ".hf-cache/**",
+  ".mplconfig",
+  ".mplconfig/**",
+  ".uv-cache",
+  ".uv-cache/**",
+  ".venv",
+  ".venv/**",
 ]
 
 [tool.hatch.build.targets.sdist]
 exclude = [
   "benchmark",
   "benchmark/**",
+  ".hf-cache",
+  ".hf-cache/**",
+  ".mplconfig",
+  ".mplconfig/**",
+  ".uv-cache",
+  ".uv-cache/**",
+  ".venv",
+  ".venv/**",
 ]
 
 [tool.hatch.build.targets.wheel]
