@@ -4,7 +4,36 @@ A rule-based prose linter that scores text 0--100 for formulaic AI writing patte
 
 It runs ~80 compiled patterns against your text and returns a numeric score, a list of specific violations with surrounding context, and concrete advice for each hit.
 
-## Installation
+## Add to Your Agent
+
+### Claude Code
+
+Add to your `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "slop-guard": {
+      "command": "uvx",
+      "args": ["slop-guard"]
+    }
+  }
+}
+```
+
+### Codex
+
+Add to your `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.slop-guard]
+command = "uvx"
+args = ["slop-guard"]
+```
+
+If you want a fixed release, pin it in `args`, for example: `["slop-guard==0.1.0"]`.
+
+## Installation (Optional)
 
 Requires [uv](https://docs.astral.sh/uv/).
 
@@ -47,35 +76,6 @@ uv run slop-guard
 ```
 
 This starts a stdio-based MCP server from the current repository.
-
-## Add to Your Agent
-
-### Claude Code
-
-Add to your `.mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "slop-guard": {
-      "command": "uvx",
-      "args": ["slop-guard"]
-    }
-  }
-}
-```
-
-### Codex
-
-Add to your `~/.codex/config.toml`:
-
-```toml
-[mcp_servers.slop-guard]
-command = "uvx"
-args = ["slop-guard"]
-```
-
-If you want a fixed release, pin it in `args`, for example: `["slop-guard==0.1.0"]`.
 
 ## Tools
 
