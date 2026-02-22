@@ -48,33 +48,6 @@ uv run slop-guard
 
 This starts a stdio-based MCP server from the current repository.
 
-## Publish to PyPI
-
-Build distributions locally:
-
-```bash
-uv build
-```
-
-For automated publishing, this repo includes `.github/workflows/publish.yml`.
-When a tag starting with `v` is pushed (for example, `v0.1.0`), GitHub Actions builds and
-publishes to PyPI via Trusted Publishing.
-
-One-time setup:
-1. Create a GitHub environment named `pypi` in the repository settings.
-2. In the PyPI project settings, configure a Trusted Publisher pointing at this repo/workflow.
-
-Release flow:
-1. Bump project version in `pyproject.toml`.
-2. Commit and push to `main`.
-3. Create and push a matching version tag (`vX.Y.Z`).
-
-Manual upload remains available:
-
-```bash
-uv publish --token "$PYPI_TOKEN"
-```
-
 ## Wire into Claude Code
 
 Add to your `.mcp.json`:
