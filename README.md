@@ -45,7 +45,81 @@ args = ["slop-guard"]
 
 If you want a fixed release, pin it in `args`, for example: `["slop-guard==0.1.0"]`.
 
-## Local Installation (Optional)
+## CLI
+
+The `sg` command lints prose files from the terminal. No API keys, no network calls.
+
+### Quick start
+
+```bash
+# Run without installing
+uvx --from slop-guard sg README.md
+
+# Or install it
+uv tool install slop-guard
+sg README.md
+```
+
+### Usage
+
+```
+sg [OPTIONS] [FILE ...]
+```
+
+When no files are given (or `-` is passed), `sg` reads from stdin:
+
+```bash
+cat essay.txt | sg
+echo "This is a crucial paradigm shift." | sg -
+```
+
+Lint multiple files at once:
+
+```bash
+sg docs/*.md README.md
+sg -g "src/**/*.md" -g "docs/**/*.md"
+```
+
+### Options
+
+| Flag | Description |
+|------|-------------|
+| `-j`, `--json` | Output results as JSON |
+| `-v`, `--verbose` | Show individual violations and advice |
+| `-q`, `--quiet` | Only print sources that fail the threshold |
+| `-t SCORE`, `--threshold SCORE` | Minimum passing score (0-100). Exit 1 if any file scores below this |
+| `-c`, `--counts` | Show per-rule hit counts in the summary line |
+| `-g PATTERN`, `--glob PATTERN` | Additional glob patterns to expand (repeatable) |
+
+### Examples
+
+```bash
+# One-line summary per file
+sg draft.md
+# => draft.md: 72/100 [light] (1843 words) *
+
+# Verbose output with violations and advice
+sg -v draft.md
+
+# JSON for scripting
+sg -j report.md | jq '.score'
+
+# CI gate: fail if any file scores below 60
+sg -t 60 docs/*.md
+
+# Quiet mode: only show failures
+sg -q -t 60 **/*.md
+```
+
+### Exit codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success (all files pass threshold, or no threshold set) |
+| 1 | One or more files scored below the threshold |
+| 2 | Error (bad file path, read failure, etc.) |
+
+## Installation
 
 Requires [uv](https://docs.astral.sh/uv/).
 
@@ -55,19 +129,13 @@ Run without installing (recommended for MCP setups):
 uvx slop-guard
 ```
 
-Install a persistent command:
+Install persistently (gives you both `slop-guard` MCP server and `sg` CLI):
 
 ```bash
 uv tool install slop-guard
 ```
 
-Then run:
-
-```bash
-slop-guard
-```
-
-You can pin versions for reproducibility:
+Pin versions for reproducibility:
 
 ```bash
 uvx slop-guard==0.1.0
@@ -79,17 +147,16 @@ Upgrade an installed tool:
 uv tool upgrade slop-guard
 ```
 
-## Run from source
+### From source
 
 From a local checkout:
 
 ```bash
-uv run slop-guard
+uv run slop-guard   # MCP server
+uv run sg            # CLI linter
 ```
 
-This starts a stdio-based MCP server from the current repository.
-
-## Tools
+## MCP Tools
 
 `check_slop(text)` -- Analyze a string. Returns JSON.
 
