@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "slop-guard"
+version = "0.1.0"
+description = "Rule-based prose linter for formulaic AI writing patterns."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["mcp"]
+license = "MIT"
+authors = [
+  { name = "Eric Tramel" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Quality Assurance",
+  "Topic :: Text Processing :: Linguistic",
+]
+keywords = ["lint", "style", "mcp", "prose", "writing"]
+
+[project.urls]
+Homepage = "https://github.com/eric-tramel/slop-guard"
+Repository = "https://github.com/eric-tramel/slop-guard"
+Issues = "https://github.com/eric-tramel/slop-guard/issues"
+
+[project.scripts]
+slop-guard = "slop_guard:main"
+
+[tool.hatch.build]
+exclude = [
+  "/.hf-cache",
+  "/.mplconfig",
+  "/.uv-cache",
+  "/.venv",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/slop_guard"]

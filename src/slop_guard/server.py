@@ -1,7 +1,3 @@
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["mcp"]
-# ///
 """MCP server for prose linting — detects AI slop patterns in text.
 
 Single tool: check_slop(text) returns a JSON score with specific violations.
@@ -1646,5 +1642,6 @@ def check_slop_file(file_path: str) -> str:
     return json.dumps(result, indent=2)
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Run the slop-guard MCP server on stdio."""
     mcp_server.run()
