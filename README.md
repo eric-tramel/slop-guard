@@ -8,6 +8,12 @@ It runs ~80 compiled patterns against your text and returns a numeric score, a l
 
 ### Claude Code
 
+Add from the command line:
+
+```bash
+claude mcp add slop-guard -- uvx slop-guard
+```
+
 Add to your `.mcp.json`:
 
 ```json
