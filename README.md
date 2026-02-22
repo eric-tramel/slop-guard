@@ -4,22 +4,26 @@ A rule-based prose linter that scores text 0--100 for formulaic AI writing patte
 
 It runs ~80 compiled patterns against your text and returns a numeric score, a list of specific violations with surrounding context, and concrete advice for each hit.
 
-## Run locally
+## Installation
 
 Requires [uv](https://docs.astral.sh/uv/).
 
-```bash
-uv run slop-guard
-```
-
-This starts a stdio-based MCP server from the local checkout.
-
-## Install from PyPI (recommended for users)
-
-After publish, run without cloning:
+Run without installing (recommended for MCP setups):
 
 ```bash
 uvx slop-guard
+```
+
+Install a persistent command:
+
+```bash
+uv tool install slop-guard
+```
+
+Then run:
+
+```bash
+slop-guard
 ```
 
 You can pin versions for reproducibility:
@@ -27,6 +31,22 @@ You can pin versions for reproducibility:
 ```bash
 uvx slop-guard==0.1.0
 ```
+
+Upgrade an installed tool:
+
+```bash
+uv tool upgrade slop-guard
+```
+
+## Run from source
+
+From a local checkout:
+
+```bash
+uv run slop-guard
+```
+
+This starts a stdio-based MCP server from the current repository.
 
 ## Publish to PyPI
 
