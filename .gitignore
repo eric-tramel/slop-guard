@@ -2,6 +2,9 @@ __pycache__/
 *.pyc
 *.pyo
 .venv/
+.uv-cache/
+.hf-cache/
+.mplconfig/
 *.egg-info/
 dist/
 build/

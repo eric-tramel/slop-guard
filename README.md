@@ -4,15 +4,49 @@ A rule-based prose linter that scores text 0--100 for formulaic AI writing patte
 
 It runs ~80 compiled patterns against your text and returns a numeric score, a list of specific violations with surrounding context, and concrete advice for each hit.
 
-## Install and run
+## Installation
 
 Requires [uv](https://docs.astral.sh/uv/).
 
+Run without installing (recommended for MCP setups):
+
 ```bash
-uv run slop_guard.py
+uvx slop-guard
 ```
 
-This starts a stdio-based MCP server. Dependencies are declared inline via PEP 723, so no `pyproject.toml` or `requirements.txt` is needed.
+Install a persistent command:
+
+```bash
+uv tool install slop-guard
+```
+
+Then run:
+
+```bash
+slop-guard
+```
+
+You can pin versions for reproducibility:
+
+```bash
+uvx slop-guard==0.1.0
+```
+
+Upgrade an installed tool:
+
+```bash
+uv tool upgrade slop-guard
+```
+
+## Run from source
+
+From a local checkout:
+
+```bash
+uv run slop-guard
+```
+
+This starts a stdio-based MCP server from the current repository.
 
 ## Wire into Claude Code
 
@@ -22,14 +56,14 @@ Add to your `.mcp.json`:
 {
   "mcpServers": {
     "slop-guard": {
-      "command": "uv",
-      "args": ["run", "/path/to/slop_guard.py"]
+      "command": "uvx",
+      "args": ["slop-guard"]
     }
   }
 }
 ```
 
-Replace `/path/to/slop_guard.py` with the actual path on your machine.
+If you want a fixed release, pin it in `args`, for example: `["slop-guard==0.1.0"]`.
 
 ## Tools
 
