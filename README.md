@@ -63,21 +63,21 @@ sg README.md
 ### Usage
 
 ```
-sg [OPTIONS] [FILE ...]
+sg [OPTIONS] INPUT [INPUT ...]
 ```
 
-When no files are given (or `-` is passed), `sg` reads from stdin:
+`sg` requires at least one input. Each input can be a file path, `-` for stdin, or quoted inline prose text:
 
 ```bash
-cat essay.txt | sg
+sg "This is some test text"
 echo "This is a crucial paradigm shift." | sg -
 ```
 
-Lint multiple files at once:
+Lint multiple files at once (shell-level glob expansion):
 
 ```bash
 sg docs/*.md README.md
-sg -g "src/**/*.md" -g "docs/**/*.md"
+sg path/**/*.md
 ```
 
 ### Options
@@ -88,8 +88,8 @@ sg -g "src/**/*.md" -g "docs/**/*.md"
 | `-v`, `--verbose` | Show individual violations and advice |
 | `-q`, `--quiet` | Only print sources that fail the threshold |
 | `-t SCORE`, `--threshold SCORE` | Minimum passing score (0-100). Exit 1 if any file scores below this |
-| `-c`, `--counts` | Show per-rule hit counts in the summary line |
-| `-g PATTERN`, `--glob PATTERN` | Additional glob patterns to expand (repeatable) |
+| `-c`, `--concise` | Print only numeric score output |
+| `--counts` | Show per-rule hit counts in the summary line |
 
 ### Examples
 
@@ -97,6 +97,9 @@ sg -g "src/**/*.md" -g "docs/**/*.md"
 # One-line summary per file
 sg draft.md
 # => draft.md: 72/100 [light] (1843 words) *
+
+# Concise output (score only)
+sg -c draft.md
 
 # Verbose output with violations and advice
 sg -v draft.md
