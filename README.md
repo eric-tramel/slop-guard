@@ -211,6 +211,11 @@ Example score-vs-length scatter plot from
 
 ![slop-guard score vs length scatter](benchmark/output/score_vs_length_scatter.white.png)
 
+Example per-rule compute-time curves from `benchmark/compute-time.py` +
+`benchmark/chart.py` (annotated with the slowest rules at max length):
+
+![slop-guard per-rule compute time](benchmark/output/rule_compute_time_curves.png)
+
 ## License
 
 MIT
