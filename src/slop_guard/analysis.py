@@ -110,6 +110,8 @@ _SENTENCE_SPLIT_RE = re.compile(r"[.!?][\"'\u201D\u2019)\]]*(?:\s|$)")
 _BULLET_LINE_RE = re.compile(r"^\s*[-*]\s|^\s*\d+[.)]\s")
 _BOLD_TERM_BULLET_LINE_RE = re.compile(r"^\s*[-*]\s+\*\*|^\s*\d+[.)]\s+\*\*")
 _FENCED_CODE_BLOCK_RE = re.compile(r"```.*?```", re.DOTALL)
+_WORD_TOKEN_RE = re.compile(r"\w+")
+_EDGE_WORD_STRIP_RE = re.compile(r"^[^\w]+|[^\w]+$")
 
 
 @dataclass(frozen=True)
@@ -137,6 +139,42 @@ class AnalysisDocument:
     def sentence_word_counts(self) -> tuple[int, ...]:
         """Return cached word counts aligned with ``sentences``."""
         return tuple(len(sentence.split()) for sentence in self.sentences)
+
+    @cached_property
+    def lower_text(self) -> str:
+        """Return cached lowercase text used by case-insensitive rules."""
+        return self.text.lower()
+
+    @cached_property
+    def word_tokens_lower(self) -> tuple[str, ...]:
+        """Return cached lowercase alphanumeric/underscore tokens."""
+        return tuple(_WORD_TOKEN_RE.findall(self.lower_text))
+
+    @cached_property
+    def word_token_set_lower(self) -> frozenset[str]:
+        """Return cached lowercase token set for fast membership checks."""
+        return frozenset(self.word_tokens_lower)
+
+    @cached_property
+    def ngram_tokens_lower(self) -> tuple[str, ...]:
+        """Return cached lowercase tokens with edge punctuation stripped."""
+        stripped_tokens = (
+            _EDGE_WORD_STRIP_RE.sub("", token).lower() for token in self.text.split()
+        )
+        return tuple(token for token in stripped_tokens if token)
+
+    @cached_property
+    def ngram_token_ids_and_base(self) -> tuple[tuple[int, ...], int]:
+        """Return cached n-gram token ids and packing base."""
+        token_to_id: dict[str, int] = {}
+        ids: list[int] = []
+        for token in self.ngram_tokens_lower:
+            token_id = token_to_id.get(token)
+            if token_id is None:
+                token_id = len(token_to_id) + 1
+                token_to_id[token] = token_id
+            ids.append(token_id)
+        return tuple(ids), len(token_to_id) + 1
 
     @cached_property
     def non_empty_lines(self) -> tuple[str, ...]:

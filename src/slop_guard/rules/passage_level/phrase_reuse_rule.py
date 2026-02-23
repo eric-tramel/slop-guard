@@ -24,7 +24,10 @@ from dataclasses import dataclass
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, Hyperparameters
 
 from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
-from slop_guard.rules.helpers import find_repeated_ngrams
+from slop_guard.rules.helpers import (
+    find_repeated_ngrams_from_tokens,
+    has_repeated_ngram_prefix,
+)
 
 
 @dataclass
@@ -47,13 +50,27 @@ class PhraseReuseRule(Rule[PhraseReuseRuleConfig]):
 
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Run repeated n-gram detection and emit capped findings."""
+        tokens = document.ngram_tokens_lower
+        if len(tokens) < self.config.repeated_ngram_min_n:
+            return RuleResult()
+
+        if self.config.repeated_ngram_min_n > 1:
+            token_ids, base = document.ngram_token_ids_and_base
+            has_prefix_repeat = has_repeated_ngram_prefix(
+                token_ids=token_ids,
+                base=base,
+                n=self.config.repeated_ngram_min_n - 1,
+                min_count=self.config.repeated_ngram_min_count,
+            )
+            if not has_prefix_repeat:
+                return RuleResult()
+
         ngram_hyperparameters = Hyperparameters(
             repeated_ngram_min_n=self.config.repeated_ngram_min_n,
             repeated_ngram_max_n=self.config.repeated_ngram_max_n,
             repeated_ngram_min_count=self.config.repeated_ngram_min_count,
         )
-
-        repeated_ngrams = find_repeated_ngrams(document.text, ngram_hyperparameters)
+        repeated_ngrams = find_repeated_ngrams_from_tokens(tokens, ngram_hyperparameters)
         violations: list[Violation] = []
         advice: list[str] = []
         count = 0

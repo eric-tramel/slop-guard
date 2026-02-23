@@ -26,14 +26,27 @@ from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context
 
 from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
 
-_AI_DISCLOSURE_PATTERNS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"\bas an ai\b", re.IGNORECASE),
-    re.compile(r"\bas a language model\b", re.IGNORECASE),
-    re.compile(r"\bi don't have personal\b", re.IGNORECASE),
-    re.compile(r"\bi cannot browse\b", re.IGNORECASE),
-    re.compile(r"\bup to my last training\b", re.IGNORECASE),
-    re.compile(r"\bas of my (last |knowledge )?cutoff\b", re.IGNORECASE),
-    re.compile(r"\bi'm just an? ai\b", re.IGNORECASE),
+_AI_DISCLOSURE_LITERALS: tuple[str, ...] = (
+    "as an ai",
+    "as a language model",
+    "i don't have personal",
+    "i cannot browse",
+    "up to my last training",
+)
+_AI_DISCLOSURE_LITERAL_LENGTHS: tuple[int, ...] = tuple(
+    len(phrase) for phrase in _AI_DISCLOSURE_LITERALS
+)
+_AI_DISCLOSURE_LITERAL_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
+    re.compile(re.escape(phrase), re.IGNORECASE)
+    for phrase in _AI_DISCLOSURE_LITERALS
+)
+_AI_DISCLOSURE_CUTOFF_RE = re.compile(
+    r"\bas of my (last |knowledge )?cutoff\b", re.IGNORECASE
+)
+_AI_DISCLOSURE_JUST_AI_RE = re.compile(r"\bi'm just an? ai\b", re.IGNORECASE)
+_AI_DISCLOSURE_COMPLEX_PATTERNS: tuple[re.Pattern[str], ...] = (
+    _AI_DISCLOSURE_CUTOFF_RE,
+    _AI_DISCLOSURE_JUST_AI_RE,
 )
 
 
@@ -58,27 +71,123 @@ class AIDisclosureRule(Rule[AIDisclosureRuleConfig]):
         advice: list[str] = []
         count = 0
 
-        for pattern in _AI_DISCLOSURE_PATTERNS:
-            for match in pattern.finditer(document.text):
-                phrase = match.group(0).lower()
-                violations.append(
-                    Violation(
-                        rule=self.name,
-                        match=phrase,
-                        context=context_around(
-                            document.text,
-                            match.start(),
-                            match.end(),
-                            width=self.config.context_window_chars,
-                        ),
-                        penalty=self.config.penalty,
+        if document.text.isascii():
+            lower_text = document.lower_text
+            for index, phrase in enumerate(_AI_DISCLOSURE_LITERALS):
+                phrase_len = _AI_DISCLOSURE_LITERAL_LENGTHS[index]
+                start = 0
+                while True:
+                    hit_start = lower_text.find(phrase, start)
+                    if hit_start < 0:
+                        break
+                    hit_end = hit_start + phrase_len
+                    violations.append(
+                        Violation(
+                            rule=self.name,
+                            match=phrase,
+                            context=context_around(
+                                document.text,
+                                hit_start,
+                                hit_end,
+                                width=self.config.context_window_chars,
+                            ),
+                            penalty=self.config.penalty,
+                        )
                     )
-                )
-                advice.append(
-                    "Remove "
-                    f"'{phrase}' \u2014 AI self-disclosure in authored prose is a critical tell."
-                )
-                count += 1
+                    advice.append(
+                        "Remove "
+                        f"'{phrase}' \u2014 AI self-disclosure in authored prose is a critical tell."
+                    )
+                    count += 1
+                    start = hit_end
+
+            if "as of my" in lower_text and "cutoff" in lower_text:
+                for match in _AI_DISCLOSURE_CUTOFF_RE.finditer(document.text):
+                    phrase = match.group(0).lower()
+                    violations.append(
+                        Violation(
+                            rule=self.name,
+                            match=phrase,
+                            context=context_around(
+                                document.text,
+                                match.start(),
+                                match.end(),
+                                width=self.config.context_window_chars,
+                            ),
+                            penalty=self.config.penalty,
+                        )
+                    )
+                    advice.append(
+                        "Remove "
+                        f"'{phrase}' \u2014 AI self-disclosure in authored prose is a critical tell."
+                    )
+                    count += 1
+
+            if "i'm just a" in lower_text:
+                for match in _AI_DISCLOSURE_JUST_AI_RE.finditer(document.text):
+                    phrase = match.group(0).lower()
+                    violations.append(
+                        Violation(
+                            rule=self.name,
+                            match=phrase,
+                            context=context_around(
+                                document.text,
+                                match.start(),
+                                match.end(),
+                                width=self.config.context_window_chars,
+                            ),
+                            penalty=self.config.penalty,
+                        )
+                    )
+                    advice.append(
+                        "Remove "
+                        f"'{phrase}' \u2014 AI self-disclosure in authored prose is a critical tell."
+                    )
+                    count += 1
+        else:
+            for pattern in _AI_DISCLOSURE_LITERAL_PATTERNS:
+                for match in pattern.finditer(document.text):
+                    phrase = match.group(0).lower()
+                    violations.append(
+                        Violation(
+                            rule=self.name,
+                            match=phrase,
+                            context=context_around(
+                                document.text,
+                                match.start(),
+                                match.end(),
+                                width=self.config.context_window_chars,
+                            ),
+                            penalty=self.config.penalty,
+                        )
+                    )
+                    advice.append(
+                        "Remove "
+                        f"'{phrase}' \u2014 AI self-disclosure in authored prose is a critical tell."
+                    )
+                    count += 1
+
+            for pattern in _AI_DISCLOSURE_COMPLEX_PATTERNS:
+                for match in pattern.finditer(document.text):
+                    phrase = match.group(0).lower()
+                    violations.append(
+                        Violation(
+                            rule=self.name,
+                            match=phrase,
+                            context=context_around(
+                                document.text,
+                                match.start(),
+                                match.end(),
+                                width=self.config.context_window_chars,
+                            ),
+                            penalty=self.config.penalty,
+                        )
+                    )
+                    advice.append(
+                        "Remove "
+                        f"'{phrase}' \u2014 AI self-disclosure in authored prose is a critical tell."
+                    )
+                    count += 1
 
         return RuleResult(
             violations=violations,
