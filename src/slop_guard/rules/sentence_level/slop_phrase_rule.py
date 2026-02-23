@@ -78,7 +78,15 @@ _SLOP_PHRASES_LITERAL = (
     "the key takeaway",
     "the key insight",
 )
+_SLOP_PHRASE_GATED_PUNCTUATION: tuple[str, ...] = ("'", ",", "-")
+_SLOP_PHRASE_REQUIRED_PUNCT: tuple[tuple[str, ...], ...] = tuple(
+    tuple(punct for punct in _SLOP_PHRASE_GATED_PUNCTUATION if punct in phrase)
+    for phrase in _SLOP_PHRASES_LITERAL
+)
 
+_SLOP_PHRASE_LENGTHS: tuple[int, ...] = tuple(
+    len(phrase) for phrase in _SLOP_PHRASES_LITERAL
+)
 _SLOP_PHRASES_RE_LIST: tuple[re.Pattern[str], ...] = tuple(
     re.compile(re.escape(phrase), re.IGNORECASE)
     for phrase in _SLOP_PHRASES_LITERAL
@@ -110,9 +118,72 @@ class SlopPhraseRule(Rule[SlopPhraseRuleConfig]):
         advice: list[str] = []
         count = 0
 
-        for pattern in _SLOP_PHRASES_RE_LIST:
-            for match in pattern.finditer(document.text):
-                phrase = match.group(0).lower()
+        if document.text.isascii():
+            lower_text = document.text.lower()
+            has_punctuation = {
+                punct: (punct in document.text)
+                for punct in _SLOP_PHRASE_GATED_PUNCTUATION
+            }
+            for phrase_index, phrase in enumerate(_SLOP_PHRASES_LITERAL):
+                required_punct = _SLOP_PHRASE_REQUIRED_PUNCT[phrase_index]
+                if required_punct and any(
+                    not has_punctuation[punct] for punct in required_punct
+                ):
+                    continue
+                phrase_len = _SLOP_PHRASE_LENGTHS[phrase_index]
+                start = 0
+                while True:
+                    hit_start = lower_text.find(phrase, start)
+                    if hit_start < 0:
+                        break
+                    hit_end = hit_start + phrase_len
+                    violations.append(
+                        Violation(
+                            rule=self.name,
+                            match=phrase,
+                            context=context_around(
+                                document.text,
+                                hit_start,
+                                hit_end,
+                                width=self.config.context_window_chars,
+                            ),
+                            penalty=self.config.penalty,
+                        )
+                    )
+                    advice.append(
+                        f"Cut '{phrase}' \u2014 just state the point directly."
+                    )
+                    count += 1
+                    start = hit_end
+        else:
+            for pattern in _SLOP_PHRASES_RE_LIST:
+                for match in pattern.finditer(document.text):
+                    phrase = match.group(0).lower()
+                    violations.append(
+                        Violation(
+                            rule=self.name,
+                            match=phrase,
+                            context=context_around(
+                                document.text,
+                                match.start(),
+                                match.end(),
+                                width=self.config.context_window_chars,
+                            ),
+                            penalty=self.config.penalty,
+                        )
+                    )
+                    advice.append(
+                        f"Cut '{phrase}' \u2014 just state the point directly."
+                    )
+                    count += 1
+
+        if (
+            "not" in document.word_token_set_lower
+            and "but" in document.word_token_set_lower
+            and "," in document.text
+        ):
+            for match in _NOT_JUST_BUT_RE.finditer(document.text):
+                phrase = match.group(0).strip().lower()
                 violations.append(
                     Violation(
                         rule=self.name,
@@ -130,26 +201,6 @@ class SlopPhraseRule(Rule[SlopPhraseRuleConfig]):
                     f"Cut '{phrase}' \u2014 just state the point directly."
                 )
                 count += 1
-
-        for match in _NOT_JUST_BUT_RE.finditer(document.text):
-            phrase = match.group(0).strip().lower()
-            violations.append(
-                Violation(
-                    rule=self.name,
-                    match=phrase,
-                    context=context_around(
-                        document.text,
-                        match.start(),
-                        match.end(),
-                        width=self.config.context_window_chars,
-                    ),
-                    penalty=self.config.penalty,
-                )
-            )
-            advice.append(
-                f"Cut '{phrase}' \u2014 just state the point directly."
-            )
-            count += 1
 
         return RuleResult(
             violations=violations,

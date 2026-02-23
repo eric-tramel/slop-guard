@@ -116,6 +116,12 @@ _SLOP_HEDGE = (
 )
 
 _ALL_SLOP_WORDS = _SLOP_ADJECTIVES + _SLOP_VERBS + _SLOP_NOUNS + _SLOP_HEDGE
+_PLAIN_SLOP_WORDS: frozenset[str] = frozenset(
+    word for word in _ALL_SLOP_WORDS if "-" not in word
+)
+_HYPHENATED_SLOP_WORDS: tuple[str, ...] = tuple(
+    word for word in _ALL_SLOP_WORDS if "-" in word
+)
 _SLOP_WORD_RE = re.compile(
     r"\b(" + "|".join(re.escape(word) for word in _ALL_SLOP_WORDS) + r")\b",
     re.IGNORECASE,
@@ -142,6 +148,13 @@ class SlopWordRule(Rule[SlopWordRuleConfig]):
         violations: list[Violation] = []
         advice: list[str] = []
         count = 0
+
+        has_plain_slop_token = bool(document.word_token_set_lower & _PLAIN_SLOP_WORDS)
+        has_hyphen_slop_fragment = any(
+            word in document.lower_text for word in _HYPHENATED_SLOP_WORDS
+        )
+        if not has_plain_slop_token and not has_hyphen_slop_fragment:
+            return RuleResult()
 
         for match in _SLOP_WORD_RE.finditer(document.text):
             word = match.group(0).lower()

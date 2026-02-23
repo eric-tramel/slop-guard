@@ -65,6 +65,13 @@ class SetupResolutionRule(Rule[SetupResolutionRuleConfig]):
 
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply both setup-resolution regex forms."""
+        if (
+            "n't" not in document.lower_text
+            and "not" not in document.word_token_set_lower
+            and "cannot" not in document.word_token_set_lower
+        ):
+            return RuleResult()
+
         violations: list[Violation] = []
         advice: list[str] = []
         count = 0
