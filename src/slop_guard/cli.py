@@ -5,18 +5,20 @@ Usage examples::
     # Lint files by name
     sg README.md docs/*.md
 
-    # Lint from stdin
-    cat essay.txt | sg
-    echo "This is a crucial paradigm shift." | sg -
+    # Lint inline text
+    sg "This is some test text"
 
-    # Glob expansion (shell does it, but also works with recursive globs)
-    sg **/*.md
+    # Lint from stdin
+    cat essay.txt | sg -
 
     # Machine-readable JSON output
     sg -j report.md
 
     # Verbose: show individual violations
     sg -v draft.md
+
+    # Concise: score only
+    sg -c draft.md
 
     # Set exit code threshold (default: 0 = always exit 0 unless error)
     sg -t 60 draft.md   # exit 1 if any file scores below 60
@@ -28,11 +30,11 @@ Usage examples::
 from __future__ import annotations
 
 import argparse
-import glob
 import json
 import sys
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TextIO
+from typing import Literal, TextIO, TypeAlias
 
 from .server import HYPERPARAMETERS, Hyperparameters, _analyze
 
@@ -55,6 +57,17 @@ _BAND_SYMBOLS: dict[str, str] = {
     "heavy": "!!",
     "saturated": "!!!",
 }
+
+InputValue: TypeAlias = str | Path
+
+
+@dataclass(frozen=True)
+class InputTarget:
+    """Typed representation of a CLI input target."""
+
+    kind: Literal["file", "stdin", "text"]
+    value: InputValue
+    label: str
 
 
 def _format_score_line(
@@ -125,13 +138,13 @@ def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="sg",
         description="Prose linter for AI slop patterns.",
-        epilog="Reads from stdin when no files are given or when '-' is specified.",
+        epilog="Pass file paths, '-' for stdin, or quoted inline text.",
     )
     p.add_argument(
-        "files",
-        nargs="*",
-        metavar="FILE",
-        help="Files to lint (supports globs). Use '-' for stdin.",
+        "inputs",
+        nargs="+",
+        metavar="INPUT",
+        help="Inputs to lint: files, '-' for stdin, or quoted inline text.",
     )
     p.add_argument(
         "-j", "--json",
@@ -159,18 +172,16 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Minimum passing score (0-100). Exit 1 if any input scores below this.",
     )
     p.add_argument(
-        "-c", "--counts",
+        "-c", "--concise",
+        action="store_true",
+        default=False,
+        help="Print score only.",
+    )
+    p.add_argument(
+        "--counts",
         action="store_true",
         default=False,
         help="Show per-rule hit counts in the summary line.",
-    )
-    p.add_argument(
-        "-g", "--glob",
-        action="append",
-        default=[],
-        metavar="PATTERN",
-        dest="globs",
-        help="Additional glob patterns to expand (may be repeated).",
     )
     return p
 
@@ -180,33 +191,49 @@ def _build_parser() -> argparse.ArgumentParser:
 # ---------------------------------------------------------------------------
 
 
-def _resolve_inputs(args: argparse.Namespace) -> list[str | Path]:
-    """Resolve file arguments and globs into an ordered list of inputs.
+def _is_inline_text_argument(value: str) -> bool:
+    """Return whether a positional argument should be treated as inline text."""
+    return any(ch.isspace() for ch in value)
 
-    Returns a list of ``Path`` objects for files and the string ``"-"`` for
-    stdin.
-    """
-    inputs: list[str | Path] = []
 
-    # Collect explicit file args
-    for f in args.files:
-        if f == "-":
-            inputs.append("-")
-        else:
-            # Try glob expansion (handles cases where shell didn't expand)
-            expanded = sorted(glob.glob(f, recursive=True))
-            if expanded:
-                inputs.extend(Path(p) for p in expanded if Path(p).is_file())
-            else:
-                # Treat as literal path
-                inputs.append(Path(f))
-
-    # Collect -g/--glob patterns
-    for pattern in args.globs:
-        expanded = sorted(glob.glob(pattern, recursive=True))
-        inputs.extend(Path(p) for p in expanded if Path(p).is_file())
-
+def _resolve_inputs(args: argparse.Namespace) -> list[InputTarget]:
+    """Resolve positional args into typed input targets."""
+    inputs: list[InputTarget] = []
+    for index, raw in enumerate(args.inputs, start=1):
+        if raw == "-":
+            inputs.append(InputTarget(kind="stdin", value=raw, label="<stdin>"))
+            continue
+        candidate_path = Path(raw)
+        if candidate_path.is_file():
+            inputs.append(
+                InputTarget(kind="file", value=candidate_path, label=str(candidate_path))
+            )
+            continue
+        if _is_inline_text_argument(raw):
+            inputs.append(InputTarget(kind="text", value=raw, label=f"<text:{index}>"))
+            continue
+        inputs.append(InputTarget(kind="file", value=candidate_path, label=str(candidate_path)))
     return inputs
+
+
+def _emit_result(result: dict, args: argparse.Namespace) -> None:
+    """Print one analyzed result immediately."""
+    fails_threshold = args.threshold > 0 and result["score"] < args.threshold
+    if args.quiet and not fails_threshold:
+        return
+    if args.concise:
+        print(result["score"], flush=True)
+        return
+
+    print(
+        _format_score_line(result["source"], result, show_counts=args.counts),
+        flush=True,
+    )
+    if args.verbose:
+        if result["violations"]:
+            _print_violations(result)
+        if result["advice"]:
+            _print_advice(result)
 
 
 def cli_main(argv: list[str] | None = None) -> int:
@@ -223,31 +250,35 @@ def cli_main(argv: list[str] | None = None) -> int:
 
     inputs = _resolve_inputs(args)
 
-    # Default to stdin when nothing is provided
-    if not inputs:
-        inputs = ["-"]
-
     results: list[dict] = []
+    threshold_failed = False
     hp = HYPERPARAMETERS
 
-    for src in inputs:
-        if src == "-":
-            if sys.stdin.isatty() and not args.files:
-                parser.print_usage(sys.stderr)
-                print("sg: reading from stdin (Ctrl-D to finish)", file=sys.stderr)
+    for target in inputs:
+        if target.kind == "stdin":
             text = sys.stdin.read()
-            result = _analyze_text(text, "<stdin>", hp)
+            result = _analyze_text(text, target.label, hp)
+        elif target.kind == "text":
+            assert isinstance(target.value, str)
+            result = _analyze_text(target.value, target.label, hp)
         else:
-            assert isinstance(src, Path)
-            if not src.is_file():
-                print(f"sg: {src}: No such file", file=sys.stderr)
+            assert isinstance(target.value, Path)
+            path = target.value
+            if not path.is_file():
+                print(f"sg: {path}: No such file", file=sys.stderr)
                 continue
             try:
-                result = _analyze_file(src, hp)
+                result = _analyze_file(path, hp)
             except (OSError, UnicodeDecodeError) as exc:
-                print(f"sg: {src}: {exc}", file=sys.stderr)
+                print(f"sg: {path}: {exc}", file=sys.stderr)
                 continue
+
         results.append(result)
+        if args.threshold > 0 and result["score"] < args.threshold:
+            threshold_failed = True
+
+        if not args.json:
+            _emit_result(result, args)
 
     if not results:
         return EXIT_ERROR
@@ -257,25 +288,10 @@ def cli_main(argv: list[str] | None = None) -> int:
         out = results if len(results) > 1 else results[0]
         json.dump(out, sys.stdout, indent=2)
         sys.stdout.write("\n")
-    else:
-        for result in results:
-            label = result["source"]
-            fails_threshold = (
-                args.threshold > 0 and result["score"] < args.threshold
-            )
-            if args.quiet and not fails_threshold:
-                continue
-            print(_format_score_line(label, result, show_counts=args.counts))
-            if args.verbose:
-                if result["violations"]:
-                    _print_violations(result)
-                if result["advice"]:
-                    _print_advice(result)
 
     # --- Exit code ---
-    if args.threshold > 0:
-        if any(r["score"] < args.threshold for r in results):
-            return EXIT_THRESHOLD_FAILURE
+    if threshold_failed:
+        return EXIT_THRESHOLD_FAILURE
 
     return EXIT_OK
 
