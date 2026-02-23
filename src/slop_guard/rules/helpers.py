@@ -8,7 +8,6 @@ from slop_guard.analysis import Hyperparameters
 
 NGramHit: TypeAlias = dict[str, int | str]
 
-_FENCED_CODE_BLOCK_RE = re.compile(r"```.*?```", re.DOTALL)
 _PUNCT_STRIP_RE = re.compile(r"^[^\w]+|[^\w]+$")
 _STOPWORDS = frozenset(
     {
@@ -92,12 +91,6 @@ _STOPWORDS = frozenset(
         "why",
     }
 )
-
-
-def strip_code_blocks(text: str) -> str:
-    """Remove fenced code block contents from text."""
-    return _FENCED_CODE_BLOCK_RE.sub("", text)
-
 
 def find_repeated_ngrams(text: str, hp: Hyperparameters) -> list[NGramHit]:
     """Find repeated multi-word phrases and keep only maximal spans."""
