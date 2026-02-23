@@ -1,4 +1,22 @@
-"""Sentence-level rule detecting model self-disclosure statements."""
+"""Detect direct AI self-disclosure statements.
+
+Objective: Flag explicit model identity disclosures that may be acceptable in
+chat contexts but are usually inappropriate in authored prose deliverables.
+
+Example Rule Violations:
+    - "As an AI language model, I cannot browse the web."
+      Explicitly discloses model identity and capability limits.
+    - "I am just an AI, so I do not have personal experience."
+      First-person model disclaimer breaks authorial voice.
+
+Example Non-Violations:
+    - "The report uses only the provided dataset."
+      States scope directly without AI identity disclosure.
+    - "I do not have evidence for that claim."
+      Epistemic limitation without model-specific boilerplate.
+
+Severity: High; disclosure phrases are strong and explicit AI-origin signals.
+"""
 
 from __future__ import annotations
 

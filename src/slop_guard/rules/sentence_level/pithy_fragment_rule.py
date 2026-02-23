@@ -1,4 +1,22 @@
-"""Sentence-level rule detecting short evaluative pivot fragments."""
+"""Detect short evaluative pivot fragments.
+
+Objective: Flag very short sentences that pivot with conjunctions ("but", "yet",
+"and") in a punchy evaluative style that can resemble assistant phrasing.
+
+Example Rule Violations:
+    - "Simple, but powerful."
+      Short evaluative fragment with pivot conjunction.
+    - "Fast, yet reliable."
+      Compact slogan-like pivot pattern.
+
+Example Non-Violations:
+    - "The service is simple to run but expensive at peak load."
+      Full sentence with concrete tradeoff detail.
+    - "It is fast and reliable in this benchmark."
+      Plain claim without fragment-style punch line.
+
+Severity: Low to medium; mostly stylistic alone, stronger when clustered.
+"""
 
 from __future__ import annotations
 

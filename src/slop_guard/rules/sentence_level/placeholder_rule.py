@@ -1,4 +1,23 @@
-"""Sentence-level rule detecting unfinished placeholder markers."""
+"""Detect unfinished placeholder markers.
+
+Objective: Catch template remnants (for example bracketed TODO or insert text)
+that indicate the draft is incomplete or programmatically scaffolded.
+
+Example Rule Violations:
+    - "[insert source citation]"
+      Placeholder was left unresolved in final prose.
+    - "Contact: [your email here]"
+      Template token is present instead of real content.
+
+Example Non-Violations:
+    - "Contact: security@example.com"
+      Real value is present and complete.
+    - "The appendix lists all citations."
+      No unresolved placeholder syntax.
+
+Severity: High for publication quality; placeholders are explicit unfinished
+content and should generally be fixed before release.
+"""
 
 from __future__ import annotations
 

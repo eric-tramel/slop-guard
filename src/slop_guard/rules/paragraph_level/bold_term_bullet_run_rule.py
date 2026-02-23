@@ -1,4 +1,22 @@
-"""Paragraph-level rule detecting runs of bold-term bullets."""
+"""Detect runs of bullets that start with bold terms.
+
+Objective: Identify repeated list entries in the pattern "- **Term** ...",
+which often appears in assistant-generated listicle formatting.
+
+Example Rule Violations:
+    - "- **Reliability** ...\\n- **Scalability** ...\\n- **Security** ..."
+      Consecutive bold-term bullets create rigid templated structure.
+    - Numbered items where each starts with a bold label.
+      Repetitive lead-term pattern dominates the section.
+
+Example Non-Violations:
+    - A short list with plain bullet text and no bold lead labels.
+      List exists without the specific template shape.
+    - Paragraph text with occasional inline bold for emphasis.
+      Bold usage is not tied to repetitive bullet starts.
+
+Severity: Medium to high when long runs appear in the same section.
+"""
 
 from __future__ import annotations
 

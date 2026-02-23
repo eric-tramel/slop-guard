@@ -1,4 +1,22 @@
-"""Sentence-level rule detecting stock slop phrases and transitions."""
+"""Detect stock slop phrases and transition templates.
+
+Objective: Catch boilerplate sentence-level phrases that announce structure,
+pad prose, or sound like assistant scripting rather than direct authorship.
+
+Example Rule Violations:
+    - "It's worth noting that reliability matters."
+      Uses a canned setup phrase instead of stating the claim directly.
+    - "If you want, I can adapt this into a checklist."
+      Uses assistant-menu phrasing that breaks authored prose voice.
+
+Example Non-Violations:
+    - "Reliability matters because retries hide partial failures."
+      Direct assertion with rationale and no framing template.
+    - "The next section covers deployment constraints."
+      Legitimate transition written in plain style.
+
+Severity: Medium; each hit is a strong indicator of templated writing style.
+"""
 
 from __future__ import annotations
 

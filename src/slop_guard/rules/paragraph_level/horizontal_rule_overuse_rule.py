@@ -1,4 +1,22 @@
-"""Paragraph-level rule detecting excessive horizontal dividers."""
+"""Detect overuse of horizontal rule separators.
+
+Objective: Flag frequent markdown dividers ("---", "***", "___") that can make
+documents look mechanically segmented instead of naturally structured.
+
+Example Rule Violations:
+    - Repeated "---" lines between many short sections.
+      Divider count exceeds reasonable editorial use.
+    - Alternating headers and horizontal rules throughout a brief note.
+      Layout feels scaffolded rather than authored.
+
+Example Non-Violations:
+    - One divider between two major sections.
+      Limited structural use is acceptable.
+    - Sectioning done with headings and paragraph transitions only.
+      No excessive visual separators.
+
+Severity: Low to medium; mostly a formatting signal unless heavily repeated.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,22 @@
-"""Sentence-level rule detecting setup-resolution rhetorical flips."""
+"""Detect setup-resolution rhetorical flips.
+
+Objective: Catch "this is not X, it is Y" sentence choreography that can read
+as a repeated assistant rhetorical template when used heavily.
+
+Example Rule Violations:
+    - "This is not about tooling. It is about discipline."
+      Classic setup then immediate reframing resolution.
+    - "It is not random; it is deliberate."
+      Same flip pattern with compressed punctuation.
+
+Example Non-Violations:
+    - "The problem is tooling and team discipline."
+      States both ideas directly without staged reversal.
+    - "This approach emphasizes discipline over tooling."
+      Comparative statement without setup-resolution cadence.
+
+Severity: Medium; repeated occurrences strongly suggest formulaic generation.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,23 @@
-"""Sentence-level rule detecting tone markers and opener tells."""
+"""Detect AI-style tone markers and opener tells.
+
+Objective: Flag conversational control phrases and stylized sentence openers
+that often reveal model voice (meta guidance, scripted narrativity, and
+formulaic certainty openers).
+
+Example Rule Violations:
+    - "Would you like me to provide a shorter version?"
+      Meta-conversation phrasing is an AI tell in authored prose.
+    - "Certainly, this approach works in most environments."
+      Formulaic opener pattern used by assistant responses.
+
+Example Non-Violations:
+    - "This approach works in most environments."
+      Same claim without assistant-style framing.
+    - "The failure occurred after the second retry."
+      Neutral narration without scripted dramatic setup.
+
+Severity: Medium to high; often a strong signal of assistant-authored tone.
+"""
 
 from __future__ import annotations
 

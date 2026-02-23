@@ -1,4 +1,22 @@
-"""Paragraph-level rule detecting listicle-like structural patterns."""
+"""Detect listicle-like structural patterns in paragraphs.
+
+Objective: Capture structural tics such as repeated bold lead-ins, long bullet
+runs, and triadic cadence that can make prose read like templated output.
+
+Example Rule Violations:
+    - "**Problem:** ... **Solution:** ... **Result:** ..."
+      Repeated bold-header blocks produce rigid listicle framing.
+    - "Reliable, scalable, and maintainable."
+      Triadic pattern used repeatedly creates synthetic cadence.
+
+Example Non-Violations:
+    - "The section opens with one heading followed by normal paragraphs."
+      Uses structure, but not repetitive patterning.
+    - "The system is reliable and maintainable at this workload."
+      Natural phrasing without triadic slogan cadence.
+
+Severity: Medium to high when multiple structural signals co-occur.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,23 @@
-"""Word-level rule detecting overused AI-associated slop vocabulary."""
+"""Detect overused AI-associated slop words.
+
+Objective: Identify stock adjectives, verbs, nouns, and hedges that make prose
+sound inflated, generic, or model-generated instead of concrete and specific.
+
+Example Rule Violations:
+    - "This is a crucial, groundbreaking paradigm for modern teams."
+      Uses stacked hype words instead of concrete claims.
+    - "We can seamlessly leverage a robust framework to unlock outcomes."
+      Uses multiple stock verbs and adjectives common in template prose.
+
+Example Non-Violations:
+    - "This patch removes an O(n^2) loop in the tokenizer."
+      Specific technical claim with no hype vocabulary.
+    - "P95 latency dropped from 180 ms to 95 ms after batching writes."
+      Concrete measurement, not promotional phrasing.
+
+Severity: Low to medium per hit; repeated hits are stronger evidence of generic
+language and accumulate penalty quickly.
+"""
 
 from __future__ import annotations
 

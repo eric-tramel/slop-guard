@@ -1,4 +1,22 @@
-"""Sentence-level rule detecting unattributed weasel phrases."""
+"""Detect unattributed weasel phrases.
+
+Objective: Catch vague authority claims that avoid attribution and reduce
+credibility, such as unnamed critics, experts, or studies.
+
+Example Rule Violations:
+    - "Many believe this framework is the future."
+      Uses anonymous consensus instead of evidence.
+    - "Studies show the feature improves trust."
+      Claims research support without any citation context.
+
+Example Non-Violations:
+    - "A 2024 ACM paper reports a 12 percent error reduction."
+      Provides concrete source context.
+    - "We expect lower error rates based on last quarter's logs."
+      Owns the claim and basis directly.
+
+Severity: Medium; each hit indicates weak attribution and rhetorical padding.
+"""
 
 from __future__ import annotations
 

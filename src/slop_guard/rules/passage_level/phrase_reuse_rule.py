@@ -1,4 +1,22 @@
-"""Passage-level rule detecting repeated long n-gram phrases."""
+"""Detect repeated long n-gram phrase reuse.
+
+Objective: Find multi-word phrases that recur above threshold and keep longest
+repeated spans, since repeated long phrasing often indicates template reuse.
+
+Example Rule Violations:
+    - Repeating "at the end of the day" many times in one document.
+      Same phrase recurs instead of varied expression.
+    - Reusing a 4-8 word clause across multiple paragraphs.
+      Long repeated n-grams suggest copy-pattern generation.
+
+Example Non-Violations:
+    - Repeating short stopword-heavy fragments like "in the end".
+      Common function phrases are filtered or suppressed.
+    - Using related ideas with different wording across sections.
+      Semantic repetition without lexical cloning is acceptable.
+
+Severity: Medium to high; repeated long phrases are strong formulaicity signals.
+"""
 
 from __future__ import annotations
 

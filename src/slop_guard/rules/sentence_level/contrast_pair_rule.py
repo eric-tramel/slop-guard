@@ -1,4 +1,22 @@
-"""Sentence-level rule detecting repeated "X, not Y" contrasts."""
+"""Detect repeated "X, not Y" contrast constructions.
+
+Objective: Identify overuse of a specific rhetorical pattern where contrast is
+presented as "A, not B"; repeated use can make prose feel formulaic.
+
+Example Rule Violations:
+    - "This is focus, not frenzy."
+      Uses the targeted contrast shape.
+    - "It is clarity, not complexity."
+      Repeats the same sentence skeleton as a style tic.
+
+Example Non-Violations:
+    - "This approach prioritizes focus over speed."
+      Contrast exists, but not in the repetitive pattern form.
+    - "The design reduces complexity while improving clarity."
+      Balanced comparison without slogan-like structure.
+
+Severity: Low per instance, medium when repeated frequently in one passage.
+"""
 
 from __future__ import annotations
 

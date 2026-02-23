@@ -1,4 +1,22 @@
-"""Paragraph-level rule detecting excessive thesis-style blockquotes."""
+"""Detect excessive thesis-style blockquote usage.
+
+Objective: Flag frequent blockquote lines used as stand-alone thesis statements
+outside code fences, a pattern common in templated assistant markdown.
+
+Example Rule Violations:
+    - Multiple consecutive lines starting with ">" for key arguments.
+      Heavy quote styling replaces integrated prose argumentation.
+    - Repeated pull-quote sections throughout a short document.
+      Presentation style becomes formulaic.
+
+Example Non-Violations:
+    - One short quotation used to cite a source.
+      Quote usage is limited and justified.
+    - Code blocks and normal paragraphs without blockquote overuse.
+      Structural emphasis remains balanced.
+
+Severity: Medium; usually indicates a style issue rather than factual error.
+"""
 
 from __future__ import annotations
 

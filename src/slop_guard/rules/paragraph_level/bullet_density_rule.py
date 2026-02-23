@@ -1,4 +1,22 @@
-"""Paragraph-level rule detecting bullet-heavy formatting."""
+"""Detect bullet-heavy document formatting.
+
+Objective: Measure whether non-empty lines are dominated by bullets, which can
+signal list-first AI drafting instead of cohesive prose development.
+
+Example Rule Violations:
+    - A section where most lines begin with "-", "*", or numbered bullets.
+      High bullet ratio indicates list dominance.
+    - A long checklist with minimal paragraph text.
+      Formatting overwhelms narrative flow.
+
+Example Non-Violations:
+    - One short bullet list embedded in otherwise normal prose.
+      Bullets are used sparingly for clarity.
+    - Paragraph-only explanatory text.
+      No list dominance.
+
+Severity: Medium to high depending on how much of the passage is list-form.
+"""
 
 from __future__ import annotations
 

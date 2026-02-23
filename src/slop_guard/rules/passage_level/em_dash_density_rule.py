@@ -1,4 +1,22 @@
-"""Passage-level rule detecting overuse of em dashes."""
+"""Detect overuse of em dashes across a passage.
+
+Objective: Compute em-dash density relative to passage length and flag when
+punctuation style becomes a repetitive rhetorical crutch.
+
+Example Rule Violations:
+    - "The plan works -- quickly -- and scales -- in production."
+      Multiple dash interruptions in a short span.
+    - Frequent " -- " or unicode em dash usage above configured density.
+      Dash rate exceeds expected prose baseline.
+
+Example Non-Violations:
+    - Occasional em dash used once for emphasis in a long section.
+      Stylistic punctuation remains moderate.
+    - Punctuation primarily uses commas and periods with clear sentence flow.
+      No overreliance on dash cadence.
+
+Severity: Low to medium; stylistic alone, but meaningful when persistent.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,22 @@
-"""Passage-level rule detecting elaboration-colon overuse."""
+"""Detect elaboration-colon overuse in prose passages.
+
+Objective: Measure colon-heavy elaboration style while ignoring obvious code,
+URLs, and metadata patterns that should not count as prose violations.
+
+Example Rule Violations:
+    - "Key point: we should retry: then back off: then log."
+      Multiple prose colons create a formulaic explanatory cadence.
+    - Repeated mid-sentence "X: y..." patterns throughout one passage.
+      Elaboration punctuation becomes excessive.
+
+Example Non-Violations:
+    - "https://example.com:443" and JSON snippets in code fences.
+      Technical colons are excluded from scoring logic.
+    - Occasional colon in a heading-like sentence.
+      Limited use remains within normal prose style.
+
+Severity: Low to medium; punctuation style signal that compounds with others.
+"""
 
 from __future__ import annotations
 

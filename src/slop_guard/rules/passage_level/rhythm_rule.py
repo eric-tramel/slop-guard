@@ -1,4 +1,22 @@
-"""Passage-level rule detecting monotonous sentence-length rhythm."""
+"""Detect monotonous sentence-length rhythm.
+
+Objective: Measure sentence-length variance across a passage and flag texts
+whose cadence is too uniform, a common artifact of generated prose.
+
+Example Rule Violations:
+    - A long paragraph where nearly every sentence has similar token length.
+      Low variation creates flat, synthetic rhythm.
+    - Five to ten sentences all around the same size and pacing.
+      Statistical variance falls below the configured threshold.
+
+Example Non-Violations:
+    - Mixed sentence lengths with short emphatic lines and longer explanation.
+      Natural rhythm diversity is present.
+    - A concise note with too few sentences for robust rhythm inference.
+      Rule does not apply when sample size is small.
+
+Severity: Medium; a useful style signal that is stronger with other findings.
+"""
 
 from __future__ import annotations
 
