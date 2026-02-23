@@ -1,6 +1,5 @@
 """Rule execution pipeline for analysis forward passes."""
 
-from __future__ import annotations
 
 from typing import TypeAlias
 

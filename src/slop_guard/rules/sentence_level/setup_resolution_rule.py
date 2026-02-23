@@ -18,7 +18,6 @@ Example Non-Violations:
 Severity: Medium; repeated occurrences strongly suggest formulaic generation.
 """
 
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

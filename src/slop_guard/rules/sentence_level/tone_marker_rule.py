@@ -19,7 +19,6 @@ Example Non-Violations:
 Severity: Medium to high; often a strong signal of assistant-authored tone.
 """
 
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

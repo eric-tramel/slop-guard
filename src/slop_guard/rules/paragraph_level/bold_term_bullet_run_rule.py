@@ -18,7 +18,6 @@ Example Non-Violations:
 Severity: Medium to high when long runs appear in the same section.
 """
 
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

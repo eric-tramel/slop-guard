@@ -1,6 +1,5 @@
 """Rule registry and default pipeline construction."""
 
-from __future__ import annotations
 
 from typing import TypeAlias
 

@@ -18,7 +18,6 @@ Example Non-Violations:
 Severity: Medium; each hit is a strong indicator of templated writing style.
 """
 
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

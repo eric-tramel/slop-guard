@@ -1,6 +1,5 @@
 """Shared base types for rule definitions."""
 
-from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
@@ -31,8 +30,8 @@ class RuleConfig:
 
     @classmethod
     def from_dict(
-        cls: type[ConfigFromDictT], raw: Mapping[str, object]
-    ) -> ConfigFromDictT:
+        cls: type["ConfigFromDictT"], raw: Mapping[str, object]
+    ) -> "ConfigFromDictT":
         """Instantiate a config dataclass from a plain dictionary."""
         return cls(**dict(raw))
 
@@ -59,8 +58,8 @@ class Rule(ABC, Generic[ConfigT]):
 
     @classmethod
     def from_dict(
-        cls: type[RuleFromDictT], raw: Mapping[str, object]
-    ) -> RuleFromDictT:
+        cls: type["RuleFromDictT"], raw: Mapping[str, object]
+    ) -> "RuleFromDictT":
         """Instantiate a rule from a plain config dictionary."""
         config_type = cls._resolve_config_type()
         config = config_type.from_dict(raw)

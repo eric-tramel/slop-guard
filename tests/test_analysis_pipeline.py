@@ -1,6 +1,5 @@
 """Integration tests for rule-pipeline based analysis output."""
 
-from __future__ import annotations
 
 from slop_guard.analysis import HYPERPARAMETERS
 from slop_guard.server import _analyze

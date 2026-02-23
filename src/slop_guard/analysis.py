@@ -1,6 +1,5 @@
 """Core analysis models and scoring helpers for slop-guard."""
 
-from __future__ import annotations
 
 import math
 import re

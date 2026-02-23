@@ -18,7 +18,6 @@ Example Non-Violations:
 Severity: Medium to high when multiple structural signals co-occur.
 """
 
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

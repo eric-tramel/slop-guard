@@ -18,7 +18,6 @@ Example Non-Violations:
 Severity: Medium; a useful style signal that is stronger with other findings.
 """
 
-from __future__ import annotations
 
 import math
 from dataclasses import dataclass

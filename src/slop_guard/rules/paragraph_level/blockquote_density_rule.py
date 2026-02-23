@@ -18,7 +18,6 @@ Example Non-Violations:
 Severity: Medium; usually indicates a style issue rather than factual error.
 """
 
-from __future__ import annotations
 
 from dataclasses import dataclass
 

@@ -18,7 +18,6 @@ Example Non-Violations:
 Severity: Low to medium; stylistic alone, but meaningful when persistent.
 """
 
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

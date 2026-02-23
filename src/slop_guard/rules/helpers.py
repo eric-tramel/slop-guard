@@ -1,6 +1,5 @@
 """Shared helper functions used by multiple rule modules."""
 
-from __future__ import annotations
 
 import re
 from typing import TypeAlias

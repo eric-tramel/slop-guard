@@ -19,7 +19,6 @@ Severity: Low to medium per hit; repeated hits are stronger evidence of generic
 language and accumulate penalty quickly.
 """
 
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

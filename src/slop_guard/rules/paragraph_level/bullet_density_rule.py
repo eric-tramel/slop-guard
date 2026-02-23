@@ -18,7 +18,6 @@ Example Non-Violations:
 Severity: Medium to high depending on how much of the passage is list-form.
 """
 
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

@@ -18,7 +18,6 @@ Example Non-Violations:
 Severity: Medium; each hit indicates weak attribution and rhetorical padding.
 """
 
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

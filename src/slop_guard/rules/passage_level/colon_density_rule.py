@@ -18,7 +18,6 @@ Example Non-Violations:
 Severity: Low to medium; punctuation style signal that compounds with others.
 """
 
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

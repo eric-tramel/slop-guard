@@ -1,6 +1,5 @@
 """Tests for the modular rule framework."""
 
-from __future__ import annotations
 
 import pytest
 

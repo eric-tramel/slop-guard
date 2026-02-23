@@ -18,7 +18,6 @@ Example Non-Violations:
 Severity: Low per instance, medium when repeated frequently in one passage.
 """
 
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

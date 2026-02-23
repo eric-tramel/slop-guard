@@ -18,7 +18,6 @@ Example Non-Violations:
 Severity: High; disclosure phrases are strong and explicit AI-origin signals.
 """
 
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

@@ -18,7 +18,6 @@ Example Non-Violations:
 Severity: Medium to high; repeated long phrases are strong formulaicity signals.
 """
 
-from __future__ import annotations
 
 from dataclasses import dataclass
 

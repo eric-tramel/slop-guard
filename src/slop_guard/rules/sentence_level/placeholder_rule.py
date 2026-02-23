@@ -19,7 +19,6 @@ Severity: High for publication quality; placeholders are explicit unfinished
 content and should generally be fixed before release.
 """
 
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass
