@@ -27,7 +27,6 @@ from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context
 from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
 
 _BOLD_HEADER_RE = re.compile(r"\*\*[^*]+[.:]\*\*\s+\S")
-_BULLET_LINE_RE = re.compile(r"^(\s*[-*]\s|\s*\d+\.\s)")
 _TRIADIC_RE = re.compile(r"\w+, \w+, and \w+", re.IGNORECASE)
 
 
@@ -75,8 +74,8 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
             count += 1
 
         run_length = 0
-        for line in document.lines:
-            if _BULLET_LINE_RE.match(line):
+        for is_bullet in document.line_is_bullet:
+            if is_bullet:
                 run_length += 1
                 continue
 

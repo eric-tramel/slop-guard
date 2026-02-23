@@ -22,10 +22,9 @@ Severity: Low to medium; punctuation style signal that compounds with others.
 import re
 from dataclasses import dataclass
 
-from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, word_count
+from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
 from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
-from slop_guard.rules.helpers import strip_code_blocks
 
 _ELABORATION_COLON_RE = re.compile(r": [a-z]")
 _MD_HEADER_LINE_RE = re.compile(r"^\s*#", re.MULTILINE)
@@ -50,7 +49,7 @@ class ColonDensityRule(Rule[ColonDensityRuleConfig]):
 
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Compute elaboration-colon density for prose lines."""
-        stripped_text = strip_code_blocks(document.text)
+        stripped_text = document.text_without_code_blocks
         colon_count = 0
 
         for line in stripped_text.split("\n"):
@@ -67,7 +66,7 @@ class ColonDensityRule(Rule[ColonDensityRuleConfig]):
                     continue
                 colon_count += 1
 
-        stripped_word_count = word_count(stripped_text)
+        stripped_word_count = document.word_count_without_code_blocks
         if stripped_word_count <= 0:
             return RuleResult()
 

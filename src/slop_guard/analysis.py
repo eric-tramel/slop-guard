@@ -4,6 +4,7 @@
 import math
 import re
 from dataclasses import dataclass, field
+from functools import cached_property
 from typing import TypeAlias
 
 Counts: TypeAlias = dict[str, int]
@@ -106,6 +107,9 @@ class Violation:
 
 
 _SENTENCE_SPLIT_RE = re.compile(r"[.!?][\"'\u201D\u2019)\]]*(?:\s|$)")
+_BULLET_LINE_RE = re.compile(r"^\s*[-*]\s|^\s*\d+[.)]\s")
+_BOLD_TERM_BULLET_LINE_RE = re.compile(r"^\s*[-*]\s+\*\*|^\s*\d+[.)]\s+\*\*")
+_FENCED_CODE_BLOCK_RE = re.compile(r"```.*?```", re.DOTALL)
 
 
 @dataclass(frozen=True)
@@ -128,6 +132,52 @@ class AnalysisDocument:
             ),
             word_count=word_count(text),
         )
+
+    @cached_property
+    def sentence_word_counts(self) -> tuple[int, ...]:
+        """Return cached word counts aligned with ``sentences``."""
+        return tuple(len(sentence.split()) for sentence in self.sentences)
+
+    @cached_property
+    def non_empty_lines(self) -> tuple[str, ...]:
+        """Return cached lines containing non-whitespace characters."""
+        return tuple(line for line in self.lines if line.strip())
+
+    @cached_property
+    def line_is_bullet(self) -> tuple[bool, ...]:
+        """Return cached bullet-line flags aligned with ``lines``."""
+        return tuple(_BULLET_LINE_RE.match(line) is not None for line in self.lines)
+
+    @cached_property
+    def line_is_bold_term_bullet(self) -> tuple[bool, ...]:
+        """Return cached bold-term bullet flags aligned with ``lines``."""
+        return tuple(
+            _BOLD_TERM_BULLET_LINE_RE.match(line) is not None for line in self.lines
+        )
+
+    @cached_property
+    def line_is_blockquote(self) -> tuple[bool, ...]:
+        """Return cached blockquote-line flags aligned with ``lines``."""
+        return tuple(line.startswith(">") for line in self.lines)
+
+    @cached_property
+    def non_empty_bullet_count(self) -> int:
+        """Return cached count of non-empty lines matching bullet syntax."""
+        return sum(
+            1
+            for line in self.non_empty_lines
+            if _BULLET_LINE_RE.match(line) is not None
+        )
+
+    @cached_property
+    def text_without_code_blocks(self) -> str:
+        """Return cached text with fenced code blocks removed."""
+        return _FENCED_CODE_BLOCK_RE.sub("", self.text)
+
+    @cached_property
+    def word_count_without_code_blocks(self) -> int:
+        """Return cached word count of ``text_without_code_blocks``."""
+        return word_count(self.text_without_code_blocks)
 
 
 @dataclass

@@ -18,15 +18,11 @@ Example Non-Violations:
 Severity: Medium to high when long runs appear in the same section.
 """
 
-
-import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
 from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
-
-_BOLD_TERM_BULLET_RE = re.compile(r"^\s*[-*]\s+\*\*|^\s*\d+[.)]\s+\*\*")
 
 
 @dataclass
@@ -51,8 +47,8 @@ class BoldTermBulletRunRule(Rule[BoldTermBulletRunRuleConfig]):
         count = 0
 
         run = 0
-        for line in document.lines:
-            if _BOLD_TERM_BULLET_RE.match(line):
+        for is_bold_term_bullet in document.line_is_bold_term_bullet:
+            if is_bold_term_bullet:
                 run += 1
                 continue
 

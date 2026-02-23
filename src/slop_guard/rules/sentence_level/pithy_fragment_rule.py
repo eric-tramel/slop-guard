@@ -51,11 +51,10 @@ class PithyFragmentRule(Rule[PithyFragmentRuleConfig]):
         advice: list[str] = []
         count = 0
 
-        for sentence in document.sentences:
-            sentence_text = sentence.strip()
-            if not sentence_text:
-                continue
-            if len(sentence_text.split()) > self.config.max_sentence_words:
+        for sentence_text, sentence_words in zip(
+            document.sentences, document.sentence_word_counts
+        ):
+            if sentence_words > self.config.max_sentence_words:
                 continue
             if _PITHY_PIVOT_RE.search(sentence_text) is None:
                 continue

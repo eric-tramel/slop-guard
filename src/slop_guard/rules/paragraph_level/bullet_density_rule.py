@@ -18,15 +18,11 @@ Example Non-Violations:
 Severity: Medium to high depending on how much of the passage is list-form.
 """
 
-
-import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
 from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
-
-_BULLET_DENSITY_RE = re.compile(r"^\s*[-*]\s|^\s*\d+[.)]\s")
 
 
 @dataclass
@@ -46,14 +42,11 @@ class BulletDensityRule(Rule[BulletDensityRuleConfig]):
 
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Compute non-empty line bullet ratio and flag if too high."""
-        non_empty_lines = [line for line in document.lines if line.strip()]
-        total_non_empty = len(non_empty_lines)
+        total_non_empty = len(document.non_empty_lines)
         if total_non_empty <= 0:
             return RuleResult()
 
-        bullet_count = sum(
-            1 for line in non_empty_lines if _BULLET_DENSITY_RE.match(line)
-        )
+        bullet_count = document.non_empty_bullet_count
         bullet_ratio = bullet_count / total_non_empty
         if bullet_ratio <= self.config.ratio_threshold:
             return RuleResult()

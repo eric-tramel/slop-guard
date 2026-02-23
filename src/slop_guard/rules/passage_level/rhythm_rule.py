@@ -45,15 +45,16 @@ class RhythmRule(Rule[RhythmRuleConfig]):
 
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Compute sentence-length CV and emit a rhythm violation if low."""
-        if len(document.sentences) < self.config.min_sentences:
+        sentence_count = len(document.sentence_word_counts)
+        if sentence_count < self.config.min_sentences:
             return RuleResult()
 
-        lengths = [len(sentence.split()) for sentence in document.sentences]
-        mean = sum(lengths) / len(lengths)
+        lengths = document.sentence_word_counts
+        mean = sum(lengths) / sentence_count
         if mean <= 0:
             return RuleResult()
 
-        variance = sum((value - mean) ** 2 for value in lengths) / len(lengths)
+        variance = sum((value - mean) ** 2 for value in lengths) / sentence_count
         std = math.sqrt(variance)
         cv = std / mean
         if cv >= self.config.cv_threshold:
@@ -65,7 +66,7 @@ class RhythmRule(Rule[RhythmRuleConfig]):
                     rule=self.name,
                     match="monotonous_rhythm",
                     context=(
-                        f"CV={cv:.2f} across {len(document.sentences)} sentences "
+                        f"CV={cv:.2f} across {sentence_count} sentences "
                         f"(mean {mean:.1f} words)"
                     ),
                     penalty=self.config.penalty,

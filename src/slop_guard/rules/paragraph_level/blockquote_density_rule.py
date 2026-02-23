@@ -48,11 +48,11 @@ class BlockquoteDensityRule(Rule[BlockquoteDensityRuleConfig]):
         in_code_block = False
         blockquote_count = 0
 
-        for line in document.lines:
+        for line, is_blockquote in zip(document.lines, document.line_is_blockquote):
             if line.strip().startswith("```"):
                 in_code_block = not in_code_block
                 continue
-            if not in_code_block and line.startswith(">"):
+            if not in_code_block and is_blockquote:
                 blockquote_count += 1
 
         if blockquote_count < self.config.min_lines:
