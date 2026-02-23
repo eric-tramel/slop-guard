@@ -41,3 +41,23 @@ def test_rule_fit_validates_inputs_and_returns_self() -> None:
 
     fitted = rule.fit(["sample"], [1])
     assert fitted is rule
+
+
+def test_rule_to_dict_from_dict_round_trip() -> None:
+    """Rules should round-trip config through base serialization helpers."""
+    rule = SlopWordRule(
+        SlopWordRuleConfig(
+            penalty=HYPERPARAMETERS.slop_word_penalty,
+            context_window_chars=HYPERPARAMETERS.context_window_chars,
+        )
+    )
+
+    raw = rule.to_dict()
+    assert raw == {
+        "penalty": HYPERPARAMETERS.slop_word_penalty,
+        "context_window_chars": HYPERPARAMETERS.context_window_chars,
+    }
+
+    rebuilt = SlopWordRule.from_dict(raw)
+    assert isinstance(rebuilt, SlopWordRule)
+    assert rebuilt.config == rule.config
