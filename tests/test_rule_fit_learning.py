@@ -5,7 +5,6 @@ from typing import TypeAlias
 
 import pytest
 
-from slop_guard.analysis import HYPERPARAMETERS
 from slop_guard.rules import Rule, build_default_rules
 from slop_guard.rules.paragraph_level import (
     BlockquoteDensityRule,
@@ -187,7 +186,7 @@ FIT_CASES: tuple[FitCase, ...] = (
 
 def test_all_default_rules_override_base_fit_impl() -> None:
     """Each concrete default rule should override the base no-op fit path."""
-    for rule in build_default_rules(HYPERPARAMETERS):
+    for rule in build_default_rules():
         assert type(rule)._fit is not Rule._fit
 
 
@@ -196,7 +195,7 @@ def test_fit_updates_rule_hyperparameters(
     rule_cls: RuleType, field_name: str, corpus: list[str]
 ) -> None:
     """Each rule fit call should update at least one empirical hyperparameter."""
-    defaults = {type(rule): rule for rule in build_default_rules(HYPERPARAMETERS)}
+    defaults = {type(rule): rule for rule in build_default_rules()}
     rule = deepcopy(defaults[rule_cls])
     before = getattr(rule.config, field_name)
 
