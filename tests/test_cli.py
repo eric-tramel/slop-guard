@@ -42,9 +42,9 @@ def test_accepts_inline_text_input(capsys: pytest.CaptureFixture[str]) -> None:
     assert "/100 [" in captured.out
 
 
-def test_concise_mode_prints_score_only(capsys: pytest.CaptureFixture[str]) -> None:
-    """Concise mode should output only a numeric score."""
-    exit_code = cli.cli_main(["-c", "This is some test text"])
+def test_score_only_mode_prints_score_only(capsys: pytest.CaptureFixture[str]) -> None:
+    """Score-only mode should output only a numeric score."""
+    exit_code = cli.cli_main(["-s", "This is some test text"])
     captured = capsys.readouterr()
 
     assert exit_code == cli.EXIT_OK
@@ -63,7 +63,11 @@ def test_streams_file_results_as_each_file_finishes(
 
     events: list[str] = []
 
-    def fake_analyze_file(path: Path, _hyperparameters: object) -> dict[str, object]:
+    def fake_analyze_file(
+        path: Path,
+        _hyperparameters: object,
+        _pipeline: object,
+    ) -> dict[str, object]:
         events.append(f"analyze:{path.name}")
         return _fake_result(str(path))
 
@@ -82,6 +86,39 @@ def test_streams_file_results_as_each_file_finishes(
         f"analyze:{second.name}",
         f"emit:{second}",
     ]
+
+
+def test_config_option_loads_pipeline_from_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Passing ``-c/--config`` should load the requested JSONL pipeline."""
+    sample_file = tmp_path / "sample.md"
+    sample_file.write_text("alpha", encoding="utf-8")
+    config_file = tmp_path / "custom.jsonl"
+    config_file.write_text("{}", encoding="utf-8")
+
+    loaded_paths: list[str | None] = []
+
+    class _FakePipeline:
+        @classmethod
+        def from_jsonl(cls, path: str | None = None) -> "_FakePipeline":
+            loaded_paths.append(path)
+            return cls()
+
+    def fake_analyze_file(
+        path: Path,
+        _hyperparameters: object,
+        _pipeline: object,
+    ) -> dict[str, object]:
+        return _fake_result(str(path))
+
+    monkeypatch.setattr(cli, "Pipeline", _FakePipeline)
+    monkeypatch.setattr(cli, "_analyze_file", fake_analyze_file)
+
+    exit_code = cli.cli_main(["-c", str(config_file), str(sample_file)])
+
+    assert exit_code == cli.EXIT_OK
+    assert loaded_paths == [str(config_file)]
 
 
 def test_rejects_legacy_glob_flag(capsys: pytest.CaptureFixture[str]) -> None:

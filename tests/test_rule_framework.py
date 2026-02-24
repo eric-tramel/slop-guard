@@ -4,13 +4,13 @@
 import pytest
 
 from slop_guard.analysis import AnalysisDocument, HYPERPARAMETERS
-from slop_guard.rules import Rule, RuleConfig, RuleLevel, build_default_rules
+from slop_guard.rules import Pipeline, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.word_level import SlopWordRule, SlopWordRuleConfig
 
 
-def test_build_default_rules_covers_all_levels() -> None:
-    """Default rule registry should include each configured rule level."""
-    rules = build_default_rules(HYPERPARAMETERS)
+def test_default_pipeline_covers_all_levels() -> None:
+    """Default pipeline should include each configured rule level."""
+    rules = Pipeline.from_jsonl().rules
     levels = {rule.level for rule in rules}
     assert levels == {
         RuleLevel.WORD,
@@ -65,7 +65,7 @@ def test_rule_to_dict_from_dict_round_trip() -> None:
     assert rebuilt.config == rule.config
 
 
-_DEFAULT_RULES = build_default_rules(HYPERPARAMETERS)
+_DEFAULT_RULES = Pipeline.from_jsonl().rules
 _RULE_EXAMPLE_IDS = [
     f"{index:02d}-{rule.__class__.__name__}" for index, rule in enumerate(_DEFAULT_RULES)
 ]

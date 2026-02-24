@@ -12,6 +12,8 @@ Add from the command line:
 
 ```bash
 claude mcp add slop-guard -- uvx slop-guard
+# Optional custom rule config:
+claude mcp add slop-guard -- uvx slop-guard -c /path/to/config.jsonl
 ```
 
 Add to your `.mcp.json`:
@@ -27,12 +29,27 @@ Add to your `.mcp.json`:
 }
 ```
 
+With a custom rule config:
+
+```json
+{
+  "mcpServers": {
+    "slop-guard": {
+      "command": "uvx",
+      "args": ["slop-guard", "-c", "/path/to/config.jsonl"]
+    }
+  }
+}
+```
+
 ### Codex
 
 Add from the command line:
 
 ```bash
 codex mcp add slop-guard -- uvx slop-guard
+# Optional custom rule config:
+codex mcp add slop-guard -- uvx slop-guard -c /path/to/config.jsonl
 ```
 
 Add to your `~/.codex/config.toml`:
@@ -41,6 +58,14 @@ Add to your `~/.codex/config.toml`:
 [mcp_servers.slop-guard]
 command = "uvx"
 args = ["slop-guard"]
+```
+
+With a custom rule config:
+
+```toml
+[mcp_servers.slop-guard]
+command = "uvx"
+args = ["slop-guard", "-c", "/path/to/config.jsonl"]
 ```
 
 If you want a fixed release, pin it in `args`, for example: `["slop-guard==0.2.0"]`.
@@ -88,7 +113,8 @@ sg path/**/*.md
 | `-v`, `--verbose` | Show individual violations and advice |
 | `-q`, `--quiet` | Only print sources that fail the threshold |
 | `-t SCORE`, `--threshold SCORE` | Minimum passing score (0-100). Exit 1 if any file scores below this |
-| `-c`, `--concise` | Print only numeric score output |
+| `-c JSONL`, `--config JSONL` | Path to JSONL rule configuration. Defaults to packaged settings |
+| `-s`, `--score-only` | Print only numeric score output |
 | `--counts` | Show per-rule hit counts in the summary line |
 
 ### Examples
@@ -98,8 +124,11 @@ sg path/**/*.md
 sg draft.md
 # => draft.md: 72/100 [light] (1843 words) *
 
-# Concise output (score only)
-sg -c draft.md
+# Score-only output
+sg -s draft.md
+
+# Use a custom rule config
+sg -c /path/to/config.jsonl draft.md
 
 # Verbose output with violations and advice
 sg -v draft.md
@@ -130,6 +159,8 @@ Run without installing (recommended for MCP setups):
 
 ```bash
 uvx slop-guard
+# MCP server with custom rule config
+uvx slop-guard -c /path/to/config.jsonl
 ```
 
 Install persistently (gives you both `slop-guard` MCP server and `sg` CLI):
@@ -155,7 +186,8 @@ uv tool upgrade slop-guard
 From a local checkout:
 
 ```bash
-uv run slop-guard   # MCP server
+uv run slop-guard               # MCP server
+uv run slop-guard -c config.jsonl
 uv run sg            # CLI linter
 ```
 

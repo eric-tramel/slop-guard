@@ -1,0 +1,18 @@
+{"config": {"context_window_chars": 60, "penalty": -2}, "rule_type": "slop_guard.rules.word_level.slop_word_rule.SlopWordRule"}
+{"config": {"context_window_chars": 60, "penalty": -3}, "rule_type": "slop_guard.rules.sentence_level.slop_phrase_rule.SlopPhraseRule"}
+{"config": {"bold_header_min": 3, "bold_header_penalty": -5, "bullet_run_min": 6, "bullet_run_penalty": -3, "context_window_chars": 60, "triadic_advice_min": 3, "triadic_penalty": -1, "triadic_record_cap": 5}, "rule_type": "slop_guard.rules.paragraph_level.structural_pattern_rule.StructuralPatternRule"}
+{"config": {"context_window_chars": 60, "sentence_opener_penalty": -2, "tone_penalty": -3}, "rule_type": "slop_guard.rules.sentence_level.tone_marker_rule.ToneMarkerRule"}
+{"config": {"context_window_chars": 60, "penalty": -2}, "rule_type": "slop_guard.rules.sentence_level.weasel_phrase_rule.WeaselPhraseRule"}
+{"config": {"context_window_chars": 60, "penalty": -10}, "rule_type": "slop_guard.rules.sentence_level.ai_disclosure_rule.AIDisclosureRule"}
+{"config": {"context_window_chars": 60, "penalty": -5}, "rule_type": "slop_guard.rules.sentence_level.placeholder_rule.PlaceholderRule"}
+{"config": {"cv_threshold": 0.3, "min_sentences": 5, "penalty": -5}, "rule_type": "slop_guard.rules.passage_level.rhythm_rule.RhythmRule"}
+{"config": {"density_threshold": 1.0, "penalty": -3, "words_basis": 150.0}, "rule_type": "slop_guard.rules.passage_level.em_dash_density_rule.EmDashDensityRule"}
+{"config": {"advice_min": 2, "context_window_chars": 60, "penalty": -1, "record_cap": 5}, "rule_type": "slop_guard.rules.sentence_level.contrast_pair_rule.ContrastPairRule"}
+{"config": {"context_window_chars": 60, "penalty": -3, "record_cap": 5}, "rule_type": "slop_guard.rules.sentence_level.setup_resolution_rule.SetupResolutionRule"}
+{"config": {"density_threshold": 1.5, "penalty": -3, "words_basis": 150.0}, "rule_type": "slop_guard.rules.passage_level.colon_density_rule.ColonDensityRule"}
+{"config": {"max_sentence_words": 6, "penalty": -2, "record_cap": 3}, "rule_type": "slop_guard.rules.sentence_level.pithy_fragment_rule.PithyFragmentRule"}
+{"config": {"penalty": -8, "ratio_threshold": 0.4}, "rule_type": "slop_guard.rules.paragraph_level.bullet_density_rule.BulletDensityRule"}
+{"config": {"cap": 4, "free_lines": 2, "min_lines": 3, "penalty_step": -3}, "rule_type": "slop_guard.rules.paragraph_level.blockquote_density_rule.BlockquoteDensityRule"}
+{"config": {"min_run_length": 3, "penalty": -5}, "rule_type": "slop_guard.rules.paragraph_level.bold_term_bullet_run_rule.BoldTermBulletRunRule"}
+{"config": {"min_count": 4, "penalty": -3}, "rule_type": "slop_guard.rules.paragraph_level.horizontal_rule_overuse_rule.HorizontalRuleOveruseRule"}
+{"config": {"penalty": -1, "record_cap": 5, "repeated_ngram_max_n": 8, "repeated_ngram_min_count": 3, "repeated_ngram_min_n": 4}, "rule_type": "slop_guard.rules.passage_level.phrase_reuse_rule.PhraseReuseRule"}
