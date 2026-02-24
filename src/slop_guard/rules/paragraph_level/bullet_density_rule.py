@@ -40,6 +40,20 @@ class BulletDensityRule(Rule[BulletDensityRuleConfig]):
     count_key = "bullet_density"
     level = RuleLevel.PARAGRAPH
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger bullet-density matches."""
+        return [
+            "- first item\n- second item\nContext line.",
+            "1) alpha\n2) beta\n3) gamma\nSummary.",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid bullet-density matches."""
+        return [
+            "Intro line.\n- one bullet\nDetails continue here.\nClosing line.",
+            "Paragraph-only explanatory text with no list dominance.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Compute non-empty line bullet ratio and flag if too high."""
         total_non_empty = len(document.non_empty_lines)

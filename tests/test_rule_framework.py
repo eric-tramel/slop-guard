@@ -3,8 +3,8 @@
 
 import pytest
 
-from slop_guard.analysis import HYPERPARAMETERS
-from slop_guard.rules import RuleLevel, build_default_rules
+from slop_guard.analysis import AnalysisDocument, HYPERPARAMETERS
+from slop_guard.rules import Rule, RuleConfig, RuleLevel, build_default_rules
 from slop_guard.rules.word_level import SlopWordRule, SlopWordRuleConfig
 
 
@@ -60,3 +60,35 @@ def test_rule_to_dict_from_dict_round_trip() -> None:
     rebuilt = SlopWordRule.from_dict(raw)
     assert isinstance(rebuilt, SlopWordRule)
     assert rebuilt.config == rule.config
+
+
+_DEFAULT_RULES = build_default_rules(HYPERPARAMETERS)
+_RULE_EXAMPLE_IDS = [
+    f"{index:02d}-{rule.__class__.__name__}" for index, rule in enumerate(_DEFAULT_RULES)
+]
+
+
+@pytest.mark.parametrize("rule", _DEFAULT_RULES, ids=_RULE_EXAMPLE_IDS)
+def test_rule_examples_match_rule_forward_behavior(rule: Rule[RuleConfig]) -> None:
+    """Each rule should pass its own example violations and non-violations."""
+    violation_examples = rule.example_violations()
+    non_violation_examples = rule.example_non_violations()
+
+    assert violation_examples, (
+        f"{rule.__class__.__name__} must define at least one violation example"
+    )
+    assert non_violation_examples, (
+        f"{rule.__class__.__name__} must define at least one non-violation example"
+    )
+
+    for text in violation_examples:
+        result = rule.forward(AnalysisDocument.from_text(text))
+        assert any(violation.rule == rule.name for violation in result.violations), (
+            f"{rule.__class__.__name__} expected violation for: {text!r}"
+        )
+
+    for text in non_violation_examples:
+        result = rule.forward(AnalysisDocument.from_text(text))
+        assert not result.violations, (
+            f"{rule.__class__.__name__} expected no violations for: {text!r}"
+        )

@@ -88,6 +88,14 @@ class Rule(ABC, Generic[ConfigT]):
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply the rule and return violations, advice, and counter deltas."""
 
+    @abstractmethod
+    def example_violations(self) -> list[str]:
+        """Return text samples that should trigger this rule."""
+
+    @abstractmethod
+    def example_non_violations(self) -> list[str]:
+        """Return text samples that should not trigger this rule."""
+
     def fit(self, samples: list[str], labels: list[Label]) -> "Rule[ConfigT]":
         """Fit rule configuration from labeled samples, scikit-style.
 

@@ -48,6 +48,20 @@ class PlaceholderRule(Rule[PlaceholderRuleConfig]):
     count_key = "placeholder"
     level = RuleLevel.SENTENCE
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger placeholder matches."""
+        return [
+            "[insert source citation] before publishing.",
+            "Contact: [your email here]",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid placeholder matches."""
+        return [
+            "Contact: security@example.com",
+            "The appendix lists all citations.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply placeholder regex checks to the text."""
         violations: list[Violation] = []

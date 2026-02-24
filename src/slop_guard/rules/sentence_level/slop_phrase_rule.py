@@ -112,6 +112,20 @@ class SlopPhraseRule(Rule[SlopPhraseRuleConfig]):
     count_key = "slop_phrases"
     level = RuleLevel.SENTENCE
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger slop-phrase matches."""
+        return [
+            "It's worth noting that reliability matters here.",
+            "This change is not just faster, but also easier to maintain.",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid slop-phrase matches."""
+        return [
+            "Reliability matters because retries hide partial failures.",
+            "The next section covers deployment constraints.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply phrase and transition pattern checks."""
         violations: list[Violation] = []

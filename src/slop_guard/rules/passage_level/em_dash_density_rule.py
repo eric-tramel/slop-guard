@@ -45,6 +45,20 @@ class EmDashDensityRule(Rule[EmDashDensityRuleConfig]):
     count_key = "em_dash"
     level = RuleLevel.PASSAGE
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger em-dash density matches."""
+        return [
+            "Alpha -- beta gamma delta epsilon zeta eta theta iota kappa.",
+            "This plan — while simple — now works.",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid em-dash density matches."""
+        return [
+            "Punctuation primarily uses commas and periods with clear flow.",
+            "Occasional emphasis appears once in longer sections without dash overuse.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Compute em-dash-per-basis ratio and emit one density violation."""
         if document.word_count <= 0:

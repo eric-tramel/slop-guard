@@ -43,6 +43,38 @@ class RhythmRule(Rule[RhythmRuleConfig]):
     count_key = "rhythm"
     level = RuleLevel.PASSAGE
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger rhythm matches."""
+        return [
+            (
+                "Alpha beta gamma delta. "
+                "Alpha beta gamma delta. "
+                "Alpha beta gamma delta. "
+                "Alpha beta gamma delta. "
+                "Alpha beta gamma delta."
+            ),
+            (
+                "One two three four. "
+                "Five six seven eight. "
+                "Nine ten eleven twelve. "
+                "Thirteen fourteen fifteen sixteen. "
+                "Seventeen eighteen nineteen twenty."
+            ),
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid rhythm matches."""
+        return [
+            "Short note. Still short. Not enough sentences. Stop.",
+            (
+                "Tiny line. "
+                "This sentence has many extra words for strong variation now. "
+                "Brief again. "
+                "Another long sentence appears with additional explanatory detail. "
+                "Done."
+            ),
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Compute sentence-length CV and emit a rhythm violation if low."""
         sentence_count = len(document.sentence_word_counts)

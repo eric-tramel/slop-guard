@@ -58,6 +58,20 @@ class WeaselPhraseRule(Rule[WeaselPhraseRuleConfig]):
     count_key = "weasel"
     level = RuleLevel.SENTENCE
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger weasel phrase matches."""
+        return [
+            "Many believe this framework is the future.",
+            "Studies show the feature improves trust.",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid weasel phrase matches."""
+        return [
+            "A 2024 ACM paper reports a 12 percent error reduction.",
+            "We expect lower error rates based on last quarter's logs.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply weasel phrase regex checks."""
         violations: list[Violation] = []

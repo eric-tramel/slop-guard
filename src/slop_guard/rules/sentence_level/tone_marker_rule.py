@@ -77,6 +77,20 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
     count_key = "tone"
     level = RuleLevel.SENTENCE
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger tone-marker matches."""
+        return [
+            "Would you like me to provide a shorter version?",
+            "Certainly, this approach works in most environments.",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid tone-marker matches."""
+        return [
+            "This approach works in most environments.",
+            "The failure occurred after the second retry.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply tone marker checks to full text."""
         violations: list[Violation] = []

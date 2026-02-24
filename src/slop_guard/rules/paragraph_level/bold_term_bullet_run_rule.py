@@ -40,6 +40,20 @@ class BoldTermBulletRunRule(Rule[BoldTermBulletRunRuleConfig]):
     count_key = "bold_bullet_list"
     level = RuleLevel.PARAGRAPH
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger bold-term bullet run matches."""
+        return [
+            "- **Reliability** improved\n- **Scalability** improved\n- **Security** improved",
+            "1) **Alpha** done\n2) **Beta** done\n3) **Gamma** done",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid bold-term bullet run matches."""
+        return [
+            "- **Reliability** improved\n- **Scalability** improved\nSummary line.",
+            "- plain bullet\n- plain bullet\n- plain bullet",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Track contiguous bold-term bullet runs and emit violations."""
         violations: list[Violation] = []
