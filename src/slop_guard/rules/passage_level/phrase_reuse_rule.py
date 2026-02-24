@@ -23,10 +23,14 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, Hyperparameters
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import (
+    clamp_int,
+    fit_penalty,
     find_repeated_ngrams_from_tokens,
     has_repeated_ngram_prefix,
+    percentile_ceil,
+    percentile_floor,
 )
 
 
@@ -119,4 +123,63 @@ class PhraseReuseRule(Rule[PhraseReuseRuleConfig]):
             violations=violations,
             advice=advice,
             count_deltas={self.count_key: count} if count else {},
+        )
+
+    def _fit(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> PhraseReuseRuleConfig:
+        """Fit n-gram reuse thresholds from observed repeated phrases."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+
+        scan_hp = Hyperparameters(
+            repeated_ngram_min_n=2,
+            repeated_ngram_max_n=8,
+            repeated_ngram_min_count=2,
+        )
+        observed_n_values: list[int] = []
+        observed_counts: list[int] = []
+        per_document_hits: list[int] = []
+        for sample in fit_samples:
+            document = AnalysisDocument.from_text(sample)
+            repeated = find_repeated_ngrams_from_tokens(
+                document.ngram_tokens_lower, scan_hp
+            )
+            per_document_hits.append(len(repeated))
+            for hit in repeated:
+                observed_n_values.append(int(hit["n"]))
+                observed_counts.append(int(hit["count"]))
+
+        matched_documents = sum(1 for count in per_document_hits if count > 0)
+
+        repeated_ngram_min_n = self.config.repeated_ngram_min_n
+        repeated_ngram_max_n = self.config.repeated_ngram_max_n
+        if observed_n_values:
+            repeated_ngram_min_n = clamp_int(
+                percentile_floor(observed_n_values, 0.20), 2, 12
+            )
+            repeated_ngram_max_n = clamp_int(
+                percentile_ceil(observed_n_values, 0.90), repeated_ngram_min_n, 16
+            )
+
+        repeated_ngram_min_count = self.config.repeated_ngram_min_count
+        if observed_counts:
+            repeated_ngram_min_count = clamp_int(
+                percentile_ceil(observed_counts, 0.75), 2, 32
+            )
+
+        record_cap = self.config.record_cap
+        if matched_documents:
+            positive_hit_counts = [count for count in per_document_hits if count > 0]
+            record_cap = clamp_int(percentile_ceil(positive_hit_counts, 0.90), 1, 128)
+
+        return PhraseReuseRuleConfig(
+            penalty=fit_penalty(
+                self.config.penalty, matched_documents, len(fit_samples)
+            ),
+            record_cap=record_cap,
+            repeated_ngram_min_n=repeated_ngram_min_n,
+            repeated_ngram_max_n=repeated_ngram_max_n,
+            repeated_ngram_min_count=repeated_ngram_min_count,
         )

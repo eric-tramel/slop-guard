@@ -24,7 +24,8 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
+from slop_guard.rules.helpers import clamp_float, fit_penalty, percentile
 
 _EM_DASH_RE = re.compile(r"\u2014| -- ")
 
@@ -86,4 +87,36 @@ class EmDashDensityRule(Rule[EmDashDensityRuleConfig]):
                 "\u2014 use other punctuation."
             ],
             count_deltas={self.count_key: 1},
+        )
+
+    def _fit(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> EmDashDensityRuleConfig:
+        """Fit em-dash density threshold from empirical ratios."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+
+        ratio_values: list[float] = []
+        for sample in fit_samples:
+            document = AnalysisDocument.from_text(sample)
+            if document.word_count <= 0:
+                continue
+            em_dash_count = len(_EM_DASH_RE.findall(sample))
+            ratio_values.append(
+                (em_dash_count / document.word_count) * self.config.words_basis
+            )
+
+        if not ratio_values:
+            return self.config
+
+        density_threshold = clamp_float(percentile(ratio_values, 0.90), 0.0, 100.0)
+        matched_documents = sum(1 for ratio in ratio_values if ratio > density_threshold)
+
+        return EmDashDensityRuleConfig(
+            words_basis=self.config.words_basis,
+            density_threshold=density_threshold,
+            penalty=fit_penalty(
+                self.config.penalty, matched_documents, len(ratio_values)
+            ),
         )

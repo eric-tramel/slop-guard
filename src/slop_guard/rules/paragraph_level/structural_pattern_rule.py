@@ -24,7 +24,8 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
+from slop_guard.rules.helpers import clamp_int, fit_penalty, percentile_ceil
 
 _BOLD_HEADER_RE = re.compile(r"\*\*[^*]+[.:]\*\*\s+\S")
 _TRIADIC_RE = re.compile(r"\w+, \w+, and \w+", re.IGNORECASE)
@@ -149,4 +150,77 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
             violations=violations,
             advice=advice,
             count_deltas={self.count_key: count} if count else {},
+        )
+
+    def _fit(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> StructuralPatternRuleConfig:
+        """Fit structural thresholds from corpus formatting patterns."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+
+        bold_header_counts: list[int] = []
+        triadic_counts: list[int] = []
+        bullet_run_lengths: list[int] = []
+        bold_documents = 0
+        triadic_documents = 0
+        bullet_run_documents = 0
+
+        for sample in fit_samples:
+            document = AnalysisDocument.from_text(sample)
+
+            bold_count = len(_BOLD_HEADER_RE.findall(sample))
+            bold_header_counts.append(bold_count)
+            if bold_count > 0:
+                bold_documents += 1
+
+            triadic_count = len(_TRIADIC_RE.findall(sample))
+            triadic_counts.append(triadic_count)
+            if triadic_count > 0:
+                triadic_documents += 1
+
+            run = 0
+            has_run = False
+            for is_bullet in (*document.line_is_bullet, False):
+                if is_bullet:
+                    run += 1
+                    continue
+                if run > 0:
+                    bullet_run_lengths.append(run)
+                    has_run = True
+                    run = 0
+            if has_run:
+                bullet_run_documents += 1
+
+        bold_header_min = clamp_int(percentile_ceil(bold_header_counts, 0.90), 1, 128)
+
+        bullet_run_min = self.config.bullet_run_min
+        if bullet_run_lengths:
+            bullet_run_min = clamp_int(percentile_ceil(bullet_run_lengths, 0.90), 2, 128)
+
+        triadic_record_cap = self.config.triadic_record_cap
+        triadic_advice_min = self.config.triadic_advice_min
+        if triadic_documents:
+            positive_triadic_counts = [count for count in triadic_counts if count > 0]
+            triadic_record_cap = clamp_int(
+                percentile_ceil(positive_triadic_counts, 0.90), 1, 128
+            )
+            triadic_advice_min = clamp_int(percentile_ceil(triadic_counts, 0.75), 1, 128)
+
+        return StructuralPatternRuleConfig(
+            bold_header_min=bold_header_min,
+            bold_header_penalty=fit_penalty(
+                self.config.bold_header_penalty, bold_documents, len(fit_samples)
+            ),
+            bullet_run_min=bullet_run_min,
+            bullet_run_penalty=fit_penalty(
+                self.config.bullet_run_penalty, bullet_run_documents, len(fit_samples)
+            ),
+            triadic_record_cap=triadic_record_cap,
+            triadic_penalty=fit_penalty(
+                self.config.triadic_penalty, triadic_documents, len(fit_samples)
+            ),
+            triadic_advice_min=triadic_advice_min,
+            context_window_chars=self.config.context_window_chars,
         )

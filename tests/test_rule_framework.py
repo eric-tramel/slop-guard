@@ -38,6 +38,9 @@ def test_rule_fit_validates_inputs_and_returns_self() -> None:
     with pytest.raises(TypeError):
         rule.fit(["sample"], ["positive"])  # type: ignore[list-item]
 
+    fitted_no_labels = rule.fit(["sample"])
+    assert fitted_no_labels is rule
+
     fitted = rule.fit(["sample"], [1])
     assert fitted is rule
 

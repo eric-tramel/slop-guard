@@ -96,13 +96,16 @@ class Rule(ABC, Generic[ConfigT]):
     def example_non_violations(self) -> list[str]:
         """Return text samples that should not trigger this rule."""
 
-    def fit(self, samples: list[str], labels: list[Label]) -> "Rule[ConfigT]":
+    def fit(
+        self, samples: list[str], labels: list[Label] | None = None
+    ) -> "Rule[ConfigT]":
         """Fit rule configuration from labeled samples, scikit-style.
 
         Args:
             samples: Raw text samples used for fitting.
             labels: Integer targets where positive and negative classes map to
-                integer labels (for example, 1 and 0).
+                integer labels (for example, 1 and 0). Optional for
+                unsupervised fitting.
 
         Returns:
             The same rule instance after updating ``self.config``.
@@ -111,7 +114,7 @@ class Rule(ABC, Generic[ConfigT]):
         self.config = self._fit(samples, labels)
         return self
 
-    def _fit(self, samples: list[str], labels: list[Label]) -> ConfigT:
+    def _fit(self, samples: list[str], labels: list[Label] | None) -> ConfigT:
         """Learn and return a fitted config.
 
         The default implementation is a no-op so existing hard-coded
@@ -121,11 +124,30 @@ class Rule(ABC, Generic[ConfigT]):
         _ = labels
         return self.config
 
-    def _validate_fit_inputs(self, samples: list[str], labels: list[Label]) -> None:
+    def _validate_fit_inputs(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> None:
         """Validate shape and types for fit inputs."""
-        if len(samples) != len(labels):
-            raise ValueError("samples and labels must have the same length")
         if not all(isinstance(sample, str) for sample in samples):
             raise TypeError("samples must be a list of strings")
+        if labels is None:
+            return
+        if len(samples) != len(labels):
+            raise ValueError("samples and labels must have the same length")
         if not all(isinstance(label, int) for label in labels):
             raise TypeError("labels must be a list of integers")
+
+    def _select_fit_samples(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> list[str]:
+        """Select the corpus used for fitting.
+
+        If labels are provided and contain positive examples (``label > 0``),
+        fitting uses only that positive subset. Otherwise it uses all samples.
+        """
+        if labels is None:
+            return samples
+        positives = [sample for sample, label in zip(samples, labels) if label > 0]
+        if positives:
+            return positives
+        return samples

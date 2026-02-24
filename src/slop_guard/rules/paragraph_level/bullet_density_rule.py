@@ -22,7 +22,8 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
+from slop_guard.rules.helpers import clamp_float, fit_penalty, percentile
 
 
 @dataclass
@@ -81,4 +82,33 @@ class BulletDensityRule(Rule[BulletDensityRuleConfig]):
                 f"Over {bullet_ratio:.0%} of lines are bullets \u2014 write prose instead of lists."
             ],
             count_deltas={self.count_key: 1},
+        )
+
+    def _fit(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> BulletDensityRuleConfig:
+        """Fit bullet-density threshold from corpus line ratios."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+
+        ratio_values: list[float] = []
+        for sample in fit_samples:
+            document = AnalysisDocument.from_text(sample)
+            total_non_empty = len(document.non_empty_lines)
+            if total_non_empty <= 0:
+                continue
+            ratio_values.append(document.non_empty_bullet_count / total_non_empty)
+
+        if not ratio_values:
+            return self.config
+
+        ratio_threshold = clamp_float(percentile(ratio_values, 0.90), 0.0, 1.0)
+        matched_documents = sum(1 for ratio in ratio_values if ratio > ratio_threshold)
+
+        return BulletDensityRuleConfig(
+            ratio_threshold=ratio_threshold,
+            penalty=fit_penalty(
+                self.config.penalty, matched_documents, len(ratio_values)
+            ),
         )

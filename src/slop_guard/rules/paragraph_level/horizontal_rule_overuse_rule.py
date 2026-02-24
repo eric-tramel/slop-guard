@@ -24,7 +24,8 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
+from slop_guard.rules.helpers import clamp_int, fit_penalty, percentile_ceil
 
 _HORIZONTAL_RULE_RE = re.compile(r"^\s*(?:---+|\*\*\*+|___+)\s*$", re.MULTILINE)
 
@@ -78,4 +79,21 @@ class HorizontalRuleOveruseRule(Rule[HorizontalRuleOveruseRuleConfig]):
                 "dividers are a crutch."
             ],
             count_deltas={self.count_key: 1},
+        )
+
+    def _fit(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> HorizontalRuleOveruseRuleConfig:
+        """Fit horizontal-rule threshold from corpus separator counts."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+
+        counts = [len(_HORIZONTAL_RULE_RE.findall(sample)) for sample in fit_samples]
+        min_count = clamp_int(percentile_ceil(counts, 0.90), 1, 64)
+        matched_documents = sum(1 for count in counts if count >= min_count)
+
+        return HorizontalRuleOveruseRuleConfig(
+            min_count=min_count,
+            penalty=fit_penalty(self.config.penalty, matched_documents, len(counts)),
         )
