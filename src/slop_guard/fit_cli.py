@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import sys
 from dataclasses import dataclass
@@ -12,6 +13,7 @@ from .rules import Pipeline
 
 EXIT_OK = 0
 EXIT_ERROR = 2
+_TEXT_DATASET_SUFFIXES = frozenset({".txt", ".md"})
 
 
 @dataclass(frozen=True)
@@ -33,19 +35,27 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="sg-fit",
         description="Fit slop-guard rule settings from JSONL corpora.",
         epilog=(
-            "Dataset rows must contain a string 'text' field and may include "
-            "an integer 'label' field."
+            "Inputs can be .jsonl, .txt, or .md. JSONL rows must contain a string "
+            "'text' field and may include an integer 'label' field."
         ),
     )
     parser.add_argument(
-        "target_corpus",
-        metavar="TARGET_CORPUS",
-        help="Path to JSONL corpus of target prose examples.",
+        "inputs",
+        nargs="+",
+        metavar="INPUT",
+        help=(
+            "Training dataset input(s). Legacy mode expects TARGET_CORPUS OUTPUT. "
+            "Multi-input mode requires --output."
+        ),
     )
     parser.add_argument(
-        "output",
-        metavar="OUTPUT",
-        help="Path where the fitted rule JSONL should be written.",
+        "--output",
+        default=None,
+        metavar="JSONL",
+        help=(
+            "Output path for fitted rules JSONL. Required when passing multiple "
+            "training inputs."
+        ),
     )
     parser.add_argument(
         "--init",
@@ -55,11 +65,13 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--negative-dataset",
+        nargs="+",
+        action="append",
         default=None,
-        metavar="JSONL",
+        metavar="INPUT",
         help=(
-            "Optional JSONL corpus of negative examples. All rows are normalized "
-            "to label 0."
+            "Optional negative dataset input(s) (.jsonl/.txt/.md). Can be repeated. "
+            "All negative rows are normalized to label 0."
         ),
     )
     return parser
@@ -76,7 +88,7 @@ def _coerce_binary_label(raw: object, path: Path, line_number: int) -> int:
     return raw
 
 
-def _load_dataset(
+def _load_jsonl_dataset(
     path: Path,
     *,
     default_label: int | None,
@@ -132,24 +144,137 @@ def _load_dataset(
     return examples
 
 
+def _flatten_inputs(groups: list[list[str]] | None) -> list[str]:
+    """Flatten an ``argparse`` append+nargs structure into a single list."""
+    if groups is None:
+        return []
+    return [item for group in groups for item in group]
+
+
+def _resolve_train_inputs_and_output(args: argparse.Namespace) -> tuple[list[str], Path]:
+    """Resolve train inputs/output while preserving legacy invocation.
+
+    Supported forms:
+      - ``sg-fit TARGET_CORPUS OUTPUT`` (legacy shorthand)
+      - ``sg-fit --output OUTPUT TRAIN_INPUT [TRAIN_INPUT ...]``
+    """
+    if args.output is not None:
+        return list(args.inputs), Path(args.output)
+    if len(args.inputs) == 2:
+        return [args.inputs[0]], Path(args.inputs[1])
+    raise ValueError(
+        "when --output is not set, expected exactly two positional arguments: "
+        "TARGET_CORPUS OUTPUT"
+    )
+
+
+def _expand_input_paths(raw_inputs: list[str], *, role: str) -> list[Path]:
+    """Expand shell-like globs and return an ordered de-duplicated path list."""
+    if not raw_inputs:
+        raise ValueError(f"{role}: no inputs provided")
+
+    paths: list[Path] = []
+    seen: set[str] = set()
+    for raw in raw_inputs:
+        raw_matches: list[str]
+        if glob.has_magic(raw):
+            raw_matches = sorted(glob.glob(raw, recursive=True))
+            if not raw_matches:
+                raise FileNotFoundError(f"{role}: no matches for pattern: {raw}")
+        else:
+            raw_matches = [raw]
+
+        for match in raw_matches:
+            path = Path(match)
+            key = str(path.resolve())
+            if key in seen:
+                continue
+            seen.add(key)
+            paths.append(path)
+
+    if not paths:
+        raise ValueError(f"{role}: no input files after expansion")
+    return paths
+
+
+def _load_text_file(path: Path, *, label: int) -> list[FitExample]:
+    """Load one text/markdown file as a single fit sample."""
+    if not path.is_file():
+        raise FileNotFoundError(f"File not found: {path}")
+    return [FitExample(text=path.read_text(encoding="utf-8"), label=label)]
+
+
+def _load_path_examples(
+    path: Path,
+    *,
+    default_label: int | None,
+    force_label: int | None = None,
+) -> list[FitExample]:
+    """Load examples from one dataset path based on file extension."""
+    suffix = path.suffix.lower()
+    if suffix == ".jsonl":
+        return _load_jsonl_dataset(
+            path,
+            default_label=default_label,
+            force_label=force_label,
+        )
+    if suffix in _TEXT_DATASET_SUFFIXES:
+        label: int
+        if force_label is not None:
+            label = force_label
+        elif default_label is not None:
+            label = default_label
+        else:
+            raise ValueError(f"{path}: no default label available for text file")
+        return _load_text_file(path, label=label)
+    raise ValueError(
+        f"{path}: unsupported dataset format '{suffix}'. "
+        "Expected .jsonl, .txt, or .md"
+    )
+
+
+def _load_examples_from_paths(
+    paths: list[Path],
+    *,
+    default_label: int | None,
+    force_label: int | None = None,
+) -> list[FitExample]:
+    """Load and concatenate fit examples from multiple paths."""
+    examples: list[FitExample] = []
+    for path in paths:
+        examples.extend(
+            _load_path_examples(
+                path,
+                default_label=default_label,
+                force_label=force_label,
+            )
+        )
+    if not examples:
+        raise ValueError("dataset contains no records")
+    return examples
+
+
 def fit_main(argv: list[str] | None = None) -> int:
     """Run ``sg-fit`` and return a process exit code."""
     parser = _build_parser()
     args = parser.parse_args(argv)
 
-    target_corpus_path = Path(args.target_corpus)
-    output_path = Path(args.output)
-    negative_dataset_path = (
-        None if args.negative_dataset is None else Path(args.negative_dataset)
-    )
-
     try:
+        train_inputs, output_path = _resolve_train_inputs_and_output(args)
+        train_paths = _expand_input_paths(train_inputs, role="target dataset")
+        negative_inputs = _flatten_inputs(args.negative_dataset)
+        negative_paths = (
+            _expand_input_paths(negative_inputs, role="negative dataset")
+            if negative_inputs
+            else []
+        )
+
         pipeline = Pipeline.from_jsonl(args.init)
-        examples = _load_dataset(target_corpus_path, default_label=1)
-        if negative_dataset_path is not None:
+        examples = _load_examples_from_paths(train_paths, default_label=1)
+        if negative_paths:
             examples.extend(
-                _load_dataset(
-                    negative_dataset_path,
+                _load_examples_from_paths(
+                    negative_paths,
                     default_label=0,
                     force_label=0,
                 )
@@ -171,6 +296,7 @@ def fit_main(argv: list[str] | None = None) -> int:
         "fitted "
         f"{len(labels)} samples "
         f"(positive={positive_count}, negative={negative_count}) "
+        f"from {len(train_paths)} train files and {len(negative_paths)} negative files "
         f"using init={init_source} -> {output_path}"
     )
     return EXIT_OK

@@ -156,19 +156,25 @@ sg -q -t 60 **/*.md
 Use `sg-fit` to fit a rule JSONL config from corpus data:
 
 ```bash
+# Legacy shorthand
 sg-fit TARGET_CORPUS OUTPUT
+
+# Multi-input mode (for shell-expanded globs or many files)
+sg-fit --output OUTPUT TRAIN_INPUT [TRAIN_INPUT ...]
 ```
 
 Example:
 
 ```bash
 sg-fit data.jsonl rules.fitted.jsonl
+sg-fit --output rules.fitted.jsonl **/*.txt **/*.md
 ```
 
 Optional arguments:
 
 - `--init JSONL` -- Start from a specific rule config JSONL instead of packaged defaults.
-- `--negative-dataset JSONL` -- Add negative examples; all rows in this file are normalized to label `0`.
+- `--negative-dataset INPUT [INPUT ...]` -- Add negative dataset inputs. This flag can be repeated; all negative rows are normalized to label `0`.
+- `--output JSONL` -- Required when you pass more than one training input.
 
 Target corpus rows can be either:
 
@@ -183,6 +189,8 @@ or:
 ```
 
 If `label` is omitted in the target corpus, `sg-fit` treats it as `1` (positive/target style).
+
+In addition to `.jsonl`, `sg-fit` accepts `.txt` and `.md` files and normalizes each file into a single training sample behind the scenes.
 
 ## Installation
 
