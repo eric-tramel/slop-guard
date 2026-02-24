@@ -25,7 +25,8 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
+from slop_guard.rules.helpers import fit_penalty
 
 _META_COMM_LITERALS: tuple[str, ...] = (
     "would you like",
@@ -221,4 +222,36 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
             violations=violations,
             advice=advice,
             count_deltas={self.count_key: count} if count else {},
+        )
+
+    def _fit(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> ToneMarkerRuleConfig:
+        """Fit tone penalties from empirical marker prevalence."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+
+        tone_matched_documents = 0
+        opener_matched_documents = 0
+        for sample in fit_samples:
+            lower_text = sample.lower()
+            has_tone_marker = any(phrase in lower_text for phrase in _META_COMM_LITERALS) or any(
+                phrase in lower_text for phrase in _FALSE_NARRATIVITY_LITERALS
+            )
+            if has_tone_marker:
+                tone_matched_documents += 1
+            if any(pattern.search(sample) is not None for pattern in _SENTENCE_OPENER_PATTERNS):
+                opener_matched_documents += 1
+
+        return ToneMarkerRuleConfig(
+            tone_penalty=fit_penalty(
+                self.config.tone_penalty, tone_matched_documents, len(fit_samples)
+            ),
+            sentence_opener_penalty=fit_penalty(
+                self.config.sentence_opener_penalty,
+                opener_matched_documents,
+                len(fit_samples),
+            ),
+            context_window_chars=self.config.context_window_chars,
         )

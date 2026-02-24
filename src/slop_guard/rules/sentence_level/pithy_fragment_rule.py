@@ -24,7 +24,8 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
+from slop_guard.rules.helpers import clamp_int, fit_penalty, percentile_ceil
 
 _PITHY_PIVOT_RE = re.compile(r",\s+(?:but|yet|and|not|or)\b", re.IGNORECASE)
 
@@ -92,4 +93,47 @@ class PithyFragmentRule(Rule[PithyFragmentRuleConfig]):
             violations=violations,
             advice=advice,
             count_deltas={self.count_key: count} if count else {},
+        )
+
+    def _fit(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> PithyFragmentRuleConfig:
+        """Fit pithy fragment thresholds from corpus sentence patterns."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+
+        pivot_sentence_lengths: list[int] = []
+        per_document_counts: list[int] = []
+        for sample in fit_samples:
+            document = AnalysisDocument.from_text(sample)
+            sample_count = 0
+            for sentence_text, sentence_words in zip(
+                document.sentences, document.sentence_word_counts
+            ):
+                if _PITHY_PIVOT_RE.search(sentence_text) is None:
+                    continue
+                pivot_sentence_lengths.append(sentence_words)
+                sample_count += 1
+            per_document_counts.append(sample_count)
+
+        matched_documents = sum(1 for count in per_document_counts if count > 0)
+
+        max_sentence_words = self.config.max_sentence_words
+        if pivot_sentence_lengths:
+            max_sentence_words = clamp_int(
+                percentile_ceil(pivot_sentence_lengths, 0.90), 2, 64
+            )
+
+        record_cap = self.config.record_cap
+        if matched_documents:
+            positive_counts = [count for count in per_document_counts if count > 0]
+            record_cap = clamp_int(percentile_ceil(positive_counts, 0.90), 1, 64)
+
+        return PithyFragmentRuleConfig(
+            penalty=fit_penalty(
+                self.config.penalty, matched_documents, len(fit_samples)
+            ),
+            max_sentence_words=max_sentence_words,
+            record_cap=record_cap,
         )

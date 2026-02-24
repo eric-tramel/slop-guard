@@ -24,7 +24,8 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
+from slop_guard.rules.helpers import fit_penalty
 
 _AI_DISCLOSURE_LITERALS: tuple[str, ...] = (
     "as an ai",
@@ -207,4 +208,31 @@ class AIDisclosureRule(Rule[AIDisclosureRuleConfig]):
             violations=violations,
             advice=advice,
             count_deltas={self.count_key: count} if count else {},
+        )
+
+    def _fit(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> AIDisclosureRuleConfig:
+        """Fit penalty from empirical AI-disclosure prevalence."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+
+        matched_documents = 0
+        for sample in fit_samples:
+            lower_text = sample.lower()
+            if any(phrase in lower_text for phrase in _AI_DISCLOSURE_LITERALS):
+                matched_documents += 1
+                continue
+            if _AI_DISCLOSURE_CUTOFF_RE.search(sample) is not None:
+                matched_documents += 1
+                continue
+            if _AI_DISCLOSURE_JUST_AI_RE.search(sample) is not None:
+                matched_documents += 1
+
+        return AIDisclosureRuleConfig(
+            penalty=fit_penalty(
+                self.config.penalty, matched_documents, len(fit_samples)
+            ),
+            context_window_chars=self.config.context_window_chars,
         )

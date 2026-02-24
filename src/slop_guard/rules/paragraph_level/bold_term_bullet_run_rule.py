@@ -22,7 +22,8 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
+from slop_guard.rules.helpers import clamp_int, fit_penalty, percentile_ceil
 
 
 @dataclass
@@ -101,4 +102,40 @@ class BoldTermBulletRunRule(Rule[BoldTermBulletRunRuleConfig]):
             violations=violations,
             advice=advice,
             count_deltas={self.count_key: count} if count else {},
+        )
+
+    def _fit(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> BoldTermBulletRunRuleConfig:
+        """Fit run length threshold from observed bold bullet runs."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+
+        run_lengths: list[int] = []
+        matched_documents = 0
+        for sample in fit_samples:
+            document = AnalysisDocument.from_text(sample)
+            run = 0
+            has_run = False
+            for is_bold_term_bullet in (*document.line_is_bold_term_bullet, False):
+                if is_bold_term_bullet:
+                    run += 1
+                    continue
+                if run > 0:
+                    run_lengths.append(run)
+                    has_run = True
+                    run = 0
+            if has_run:
+                matched_documents += 1
+
+        min_run_length = self.config.min_run_length
+        if run_lengths:
+            min_run_length = clamp_int(percentile_ceil(run_lengths, 0.90), 2, 64)
+
+        return BoldTermBulletRunRuleConfig(
+            min_run_length=min_run_length,
+            penalty=fit_penalty(
+                self.config.penalty, matched_documents, len(fit_samples)
+            ),
         )

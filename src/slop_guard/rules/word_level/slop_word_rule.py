@@ -25,7 +25,8 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
+from slop_guard.rules.helpers import fit_penalty
 
 _SLOP_ADJECTIVES = (
     "crucial",
@@ -194,4 +195,21 @@ class SlopWordRule(Rule[SlopWordRuleConfig]):
             violations=violations,
             advice=advice,
             count_deltas={self.count_key: count} if count else {},
+        )
+
+    def _fit(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> SlopWordRuleConfig:
+        """Fit penalty strength from observed slop-word prevalence."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+        matched_documents = sum(
+            1 for sample in fit_samples if _SLOP_WORD_RE.search(sample) is not None
+        )
+        return SlopWordRuleConfig(
+            penalty=fit_penalty(
+                self.config.penalty, matched_documents, len(fit_samples)
+            ),
+            context_window_chars=self.config.context_window_chars,
         )

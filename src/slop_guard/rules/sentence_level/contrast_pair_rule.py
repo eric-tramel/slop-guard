@@ -24,7 +24,8 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
+from slop_guard.rules.helpers import clamp_int, fit_penalty, percentile_ceil
 
 _CONTRAST_PAIR_RE = re.compile(r"\b(\w+), not (\w+)\b")
 
@@ -95,4 +96,31 @@ class ContrastPairRule(Rule[ContrastPairRuleConfig]):
             violations=violations,
             advice=advice,
             count_deltas={self.count_key: len(violations)} if violations else {},
+        )
+
+    def _fit(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> ContrastPairRuleConfig:
+        """Fit match-driven caps and penalties from corpus counts."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+
+        match_counts = [len(_CONTRAST_PAIR_RE.findall(sample)) for sample in fit_samples]
+        matched_documents = sum(1 for count in match_counts if count > 0)
+
+        record_cap = self.config.record_cap
+        advice_min = self.config.advice_min
+        if matched_documents:
+            positive_counts = [count for count in match_counts if count > 0]
+            record_cap = clamp_int(percentile_ceil(positive_counts, 0.90), 1, 64)
+            advice_min = clamp_int(percentile_ceil(match_counts, 0.75), 1, 64)
+
+        return ContrastPairRuleConfig(
+            penalty=fit_penalty(
+                self.config.penalty, matched_documents, len(fit_samples)
+            ),
+            record_cap=record_cap,
+            advice_min=advice_min,
+            context_window_chars=self.config.context_window_chars,
         )

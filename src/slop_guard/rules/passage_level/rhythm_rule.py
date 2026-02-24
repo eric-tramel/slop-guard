@@ -24,7 +24,14 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
+from slop_guard.rules.helpers import (
+    clamp_float,
+    clamp_int,
+    fit_penalty,
+    percentile,
+    percentile_floor,
+)
 
 
 @dataclass
@@ -108,4 +115,46 @@ class RhythmRule(Rule[RhythmRuleConfig]):
                 f"Sentence lengths are too uniform (CV={cv:.2f}) \u2014 vary short and long."
             ],
             count_deltas={self.count_key: 1},
+        )
+
+    def _fit(self, samples: list[str], labels: list[Label] | None) -> RhythmRuleConfig:
+        """Fit rhythm thresholds from sentence-length distributions."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+
+        sentence_counts: list[int] = []
+        cv_values: list[float] = []
+        for sample in fit_samples:
+            document = AnalysisDocument.from_text(sample)
+            sentence_count = len(document.sentence_word_counts)
+            if sentence_count <= 0:
+                continue
+            sentence_counts.append(sentence_count)
+            if sentence_count < 2:
+                continue
+            mean = sum(document.sentence_word_counts) / sentence_count
+            if mean <= 0:
+                continue
+            variance = (
+                sum((value - mean) ** 2 for value in document.sentence_word_counts)
+                / sentence_count
+            )
+            cv_values.append(math.sqrt(variance) / mean)
+
+        if not sentence_counts:
+            return self.config
+
+        min_sentences = clamp_int(percentile_floor(sentence_counts, 0.25), 2, 200)
+        cv_threshold = self.config.cv_threshold
+        penalty = self.config.penalty
+        if cv_values:
+            cv_threshold = clamp_float(percentile(cv_values, 0.10), 0.05, 2.0)
+            matched_documents = sum(1 for value in cv_values if value < cv_threshold)
+            penalty = fit_penalty(self.config.penalty, matched_documents, len(cv_values))
+
+        return RhythmRuleConfig(
+            min_sentences=min_sentences,
+            cv_threshold=cv_threshold,
+            penalty=penalty,
         )

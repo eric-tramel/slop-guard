@@ -23,7 +23,13 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
+from slop_guard.rules.helpers import (
+    clamp_int,
+    fit_penalty,
+    percentile_ceil,
+    percentile_floor,
+)
 
 
 @dataclass
@@ -93,4 +99,42 @@ class BlockquoteDensityRule(Rule[BlockquoteDensityRuleConfig]):
                 "instead of pulling them out as blockquotes."
             ],
             count_deltas={self.count_key: 1},
+        )
+
+    def _fit(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> BlockquoteDensityRuleConfig:
+        """Fit blockquote density thresholds from corpus line counts."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+
+        blockquote_counts: list[int] = []
+        for sample in fit_samples:
+            document = AnalysisDocument.from_text(sample)
+            in_code_block = False
+            blockquote_count = 0
+            for line, is_blockquote in zip(document.lines, document.line_is_blockquote):
+                if line.strip().startswith("```"):
+                    in_code_block = not in_code_block
+                    continue
+                if not in_code_block and is_blockquote:
+                    blockquote_count += 1
+            blockquote_counts.append(blockquote_count)
+
+        min_lines = clamp_int(percentile_ceil(blockquote_counts, 0.90), 1, 128)
+        free_lines = clamp_int(
+            percentile_floor(blockquote_counts, 0.50), 0, max(0, min_lines - 1)
+        )
+        excess_values = [max(0, count - free_lines) for count in blockquote_counts]
+        cap = clamp_int(percentile_ceil(excess_values, 0.90), 1, 128)
+        matched_documents = sum(1 for count in blockquote_counts if count >= min_lines)
+
+        return BlockquoteDensityRuleConfig(
+            min_lines=min_lines,
+            free_lines=free_lines,
+            cap=cap,
+            penalty_step=fit_penalty(
+                self.config.penalty_step, matched_documents, len(blockquote_counts)
+            ),
         )

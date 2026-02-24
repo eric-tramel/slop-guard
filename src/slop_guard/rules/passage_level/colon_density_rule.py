@@ -24,7 +24,8 @@ from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
-from slop_guard.rules.base import Rule, RuleConfig, RuleLevel
+from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
+from slop_guard.rules.helpers import clamp_float, fit_penalty, percentile
 
 _ELABORATION_COLON_RE = re.compile(r": [a-z]")
 _MD_HEADER_LINE_RE = re.compile(r"^\s*#", re.MULTILINE)
@@ -105,4 +106,52 @@ class ColonDensityRule(Rule[ColonDensityRuleConfig]):
                 "\u2014 use periods or restructure sentences."
             ],
             count_deltas={self.count_key: 1},
+        )
+
+    def _fit(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> ColonDensityRuleConfig:
+        """Fit colon density threshold from corpus elaboration ratios."""
+        fit_samples = self._select_fit_samples(samples, labels)
+        if not fit_samples:
+            return self.config
+
+        ratio_values: list[float] = []
+        for sample in fit_samples:
+            document = AnalysisDocument.from_text(sample)
+            stripped_text = document.text_without_code_blocks
+            stripped_word_count = document.word_count_without_code_blocks
+            if stripped_word_count <= 0:
+                continue
+
+            colon_count = 0
+            for line in stripped_text.split("\n"):
+                if _MD_HEADER_LINE_RE.match(line):
+                    continue
+                for match in _ELABORATION_COLON_RE.finditer(line):
+                    colon_pos = match.start()
+                    before = line[: colon_pos + 1]
+                    if before.endswith("http:") or before.endswith("https:"):
+                        continue
+                    snippet = line[colon_pos : colon_pos + 10]
+                    if _JSON_COLON_RE.match(snippet):
+                        continue
+                    colon_count += 1
+
+            ratio_values.append(
+                (colon_count / stripped_word_count) * self.config.words_basis
+            )
+
+        if not ratio_values:
+            return self.config
+
+        density_threshold = clamp_float(percentile(ratio_values, 0.90), 0.0, 100.0)
+        matched_documents = sum(1 for ratio in ratio_values if ratio > density_threshold)
+
+        return ColonDensityRuleConfig(
+            words_basis=self.config.words_basis,
+            density_threshold=density_threshold,
+            penalty=fit_penalty(
+                self.config.penalty, matched_documents, len(ratio_values)
+            ),
         )

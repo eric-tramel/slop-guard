@@ -1,6 +1,7 @@
 """Shared helper functions used by multiple rule modules."""
 
 
+import math
 import re
 from typing import TypeAlias
 
@@ -8,6 +9,7 @@ from slop_guard.analysis import Hyperparameters
 
 NGramHit: TypeAlias = dict[str, int | str]
 TokenSeq: TypeAlias = tuple[str, ...] | list[str]
+NumericSeq: TypeAlias = list[int] | list[float]
 
 _PUNCT_STRIP_RE = re.compile(r"^[^\w]+|[^\w]+$")
 _STOPWORDS = frozenset(
@@ -92,6 +94,70 @@ _STOPWORDS = frozenset(
         "why",
     }
 )
+
+
+def clamp_int(value: int, lower: int, upper: int) -> int:
+    """Clamp an integer into ``[lower, upper]``."""
+    if lower > upper:
+        raise ValueError("lower must be <= upper")
+    if value < lower:
+        return lower
+    if value > upper:
+        return upper
+    return value
+
+
+def clamp_float(value: float, lower: float, upper: float) -> float:
+    """Clamp a float into ``[lower, upper]``."""
+    if lower > upper:
+        raise ValueError("lower must be <= upper")
+    if value < lower:
+        return lower
+    if value > upper:
+        return upper
+    return value
+
+
+def percentile(values: NumericSeq, quantile: float) -> float:
+    """Return linear-interpolated percentile for ``quantile`` in ``[0, 1]``."""
+    if not values:
+        raise ValueError("values must be non-empty")
+    if quantile < 0.0 or quantile > 1.0:
+        raise ValueError("quantile must be in [0, 1]")
+    ordered = sorted(float(value) for value in values)
+    if len(ordered) == 1:
+        return ordered[0]
+    position = quantile * (len(ordered) - 1)
+    lower_index = int(position)
+    upper_index = min(lower_index + 1, len(ordered) - 1)
+    lower_value = ordered[lower_index]
+    upper_value = ordered[upper_index]
+    fraction = position - lower_index
+    return lower_value + ((upper_value - lower_value) * fraction)
+
+
+def percentile_ceil(values: NumericSeq, quantile: float) -> int:
+    """Return ``ceil(percentile(values, quantile))``."""
+    return int(math.ceil(percentile(values, quantile)))
+
+
+def percentile_floor(values: NumericSeq, quantile: float) -> int:
+    """Return ``floor(percentile(values, quantile))``."""
+    return int(math.floor(percentile(values, quantile)))
+
+
+def fit_penalty(base_penalty: int, matched_documents: int, total_documents: int) -> int:
+    """Scale penalty magnitude by document support in the fit corpus.
+
+    Rare patterns become stricter and common patterns become more permissive.
+    """
+    if total_documents <= 0:
+        raise ValueError("total_documents must be positive")
+    support = matched_documents / total_documents
+    scale = clamp_float(1.5 - support, 0.5, 1.75)
+    magnitude = max(1, int(round(abs(base_penalty) * scale)))
+    return -magnitude if base_penalty < 0 else magnitude
+
 
 def normalize_ngram_tokens(text: str) -> list[str]:
     """Normalize text into lowercase tokens with edge punctuation stripped."""
