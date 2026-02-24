@@ -43,6 +43,20 @@ class BlockquoteDensityRule(Rule[BlockquoteDensityRuleConfig]):
     count_key = "blockquote_density"
     level = RuleLevel.PARAGRAPH
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger blockquote-density matches."""
+        return [
+            "> Claim one\n> Claim two\n> Claim three\nRegular line.",
+            "Lead.\n> Thesis one\n> Thesis two\n> Thesis three",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid blockquote-density matches."""
+        return [
+            "> One quote line\n> Second quote line\nThen regular prose.",
+            "Normal prose paragraph with no blockquote overuse.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Compute blockquote density and apply capped penalty scaling."""
         in_code_block = False

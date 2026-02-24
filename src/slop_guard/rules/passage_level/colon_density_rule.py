@@ -47,6 +47,20 @@ class ColonDensityRule(Rule[ColonDensityRuleConfig]):
     count_key = "colon_density"
     level = RuleLevel.PASSAGE
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger colon-density matches."""
+        return [
+            "Plan: retry quickly. Next: log errors. Finally: alert on failure.",
+            "Key idea: reduce retries. Why: fewer cascades.",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid colon-density matches."""
+        return [
+            "The design avoids excessive elaboration punctuation in prose.",
+            "See https://example.com:443 for endpoint metadata.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Compute elaboration-colon density for prose lines."""
         stripped_text = document.text_without_code_blocks

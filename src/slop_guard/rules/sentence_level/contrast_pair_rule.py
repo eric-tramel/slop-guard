@@ -46,6 +46,20 @@ class ContrastPairRule(Rule[ContrastPairRuleConfig]):
     count_key = "contrast_pairs"
     level = RuleLevel.SENTENCE
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger contrast-pair matches."""
+        return [
+            "This is focus, not frenzy.",
+            "It is clarity, not complexity.",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid contrast-pair matches."""
+        return [
+            "This approach prioritizes focus over speed.",
+            "The design reduces complexity while improving clarity.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply contrast detection and aggregate advice."""
         matches = list(_CONTRAST_PAIR_RE.finditer(document.text))

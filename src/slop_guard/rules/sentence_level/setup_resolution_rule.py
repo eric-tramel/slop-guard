@@ -63,6 +63,20 @@ class SetupResolutionRule(Rule[SetupResolutionRuleConfig]):
     count_key = "setup_resolution"
     level = RuleLevel.SENTENCE
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger setup-resolution matches."""
+        return [
+            "This is not about tooling. It is about discipline.",
+            "It's not random; it's deliberate.",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid setup-resolution matches."""
+        return [
+            "The problem is tooling and team discipline.",
+            "This approach emphasizes discipline over tooling.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply both setup-resolution regex forms."""
         if (

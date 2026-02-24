@@ -65,6 +65,20 @@ class AIDisclosureRule(Rule[AIDisclosureRuleConfig]):
     count_key = "ai_disclosure"
     level = RuleLevel.SENTENCE
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger AI-disclosure matches."""
+        return [
+            "As an AI language model, I cannot browse the web.",
+            "I'm just an AI, so I do not have personal experience.",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid AI-disclosure matches."""
+        return [
+            "The report uses only the provided dataset.",
+            "I do not have evidence for that claim.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply disclosure regex checks to the text."""
         violations: list[Violation] = []

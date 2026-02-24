@@ -143,6 +143,20 @@ class SlopWordRule(Rule[SlopWordRuleConfig]):
     count_key = "slop_words"
     level = RuleLevel.WORD
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger slop-word matches."""
+        return [
+            "This is a crucial and groundbreaking update.",
+            "We can leverage a robust paradigm for growth.",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid slop-word matches."""
+        return [
+            "This patch removes an O(n^2) loop in parsing.",
+            "P95 latency dropped from 180 ms to 95 ms after batching writes.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply the slop-word detector to the full text."""
         violations: list[Violation] = []

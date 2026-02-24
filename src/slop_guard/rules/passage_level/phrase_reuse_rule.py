@@ -48,6 +48,26 @@ class PhraseReuseRule(Rule[PhraseReuseRuleConfig]):
     count_key = "phrase_reuse"
     level = RuleLevel.PASSAGE
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger phrase-reuse matches."""
+        return [
+            (
+                "red blue green yellow red blue green yellow "
+                "red blue green yellow"
+            ),
+            (
+                "we deploy with canary rollout we deploy with canary rollout "
+                "we deploy with canary rollout"
+            ),
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid phrase-reuse matches."""
+        return [
+            "Each paragraph expresses a related idea with different wording.",
+            "The rollout, validation, and recovery sections use distinct phrasing.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Run repeated n-gram detection and emit capped findings."""
         tokens = document.ngram_tokens_lower

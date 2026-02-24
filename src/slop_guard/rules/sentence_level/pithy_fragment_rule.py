@@ -45,6 +45,20 @@ class PithyFragmentRule(Rule[PithyFragmentRuleConfig]):
     count_key = "pithy_fragment"
     level = RuleLevel.SENTENCE
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger pithy-fragment matches."""
+        return [
+            "Simple, but powerful.",
+            "Fast, yet reliable.",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid pithy-fragment matches."""
+        return [
+            "The service is simple to run but expensive at peak load.",
+            "It is fast and reliable in this benchmark.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Scan sentence list for pithy pivot signatures."""
         violations: list[Violation] = []

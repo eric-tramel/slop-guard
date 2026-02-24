@@ -51,6 +51,20 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
     count_key = "structural"
     level = RuleLevel.PARAGRAPH
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger structural-pattern matches."""
+        return [
+            "Fast, reliable, and maintainable.",
+            "**Problem:** latency\n**Cause:** retries\n**Fix:** batching",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid structural-pattern matches."""
+        return [
+            "The section opens with one heading followed by normal paragraphs.",
+            "The system is reliable and maintainable at this workload.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply structural pattern checks across lines and full text."""
         violations: list[Violation] = []

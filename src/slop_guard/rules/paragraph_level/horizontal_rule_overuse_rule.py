@@ -44,6 +44,20 @@ class HorizontalRuleOveruseRule(Rule[HorizontalRuleOveruseRuleConfig]):
     count_key = "horizontal_rules"
     level = RuleLevel.PARAGRAPH
 
+    def example_violations(self) -> list[str]:
+        """Return samples that should trigger horizontal-rule matches."""
+        return [
+            "---\n---\n---\n---\nSection text.",
+            "***\n***\n***\n***\nSummary.",
+        ]
+
+    def example_non_violations(self) -> list[str]:
+        """Return samples that should avoid horizontal-rule matches."""
+        return [
+            "---\n---\n---\nSection text.",
+            "Section one.\nSection two.\nNo divider overuse.",
+        ]
+
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply horizontal-rule count thresholding."""
         count = len(_HORIZONTAL_RULE_RE.findall(document.text))
