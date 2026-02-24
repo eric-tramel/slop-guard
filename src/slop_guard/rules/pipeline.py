@@ -2,12 +2,19 @@
 
 
 import json
+import math
 from collections.abc import Iterable, Mapping
+from dataclasses import fields, is_dataclass
 from importlib.resources import files
 from pathlib import Path
 from typing import TypeAlias
 
-from slop_guard.analysis import AnalysisDocument, AnalysisState
+from slop_guard.analysis import (
+    AnalysisDocument,
+    AnalysisState,
+    HYPERPARAMETERS,
+    compute_weighted_sum,
+)
 
 from .base import Label, Rule, RuleConfig
 from .registry import resolve_rule_type, rule_type_name
@@ -71,7 +78,59 @@ class Pipeline:
         fit_labels = labels if labels is not None else [1] * len(samples)
         for rule in self.rules:
             rule.fit(samples, fit_labels)
+        self._calibrate_contrastive_penalties(samples, fit_labels)
         return self
+
+    def _calibrate_contrastive_penalties(
+        self,
+        samples: list[str],
+        labels: list[Label],
+    ) -> None:
+        """Calibrate penalties so fitted rules separate positives from negatives.
+
+        The scorer always uses ``abs(penalty)``, so signs cannot reward positives.
+        This pass therefore attenuates or disables rules whose fitted behavior is
+        anti-correlated with labels (higher average contribution on positives).
+        """
+        has_positive = any(label > 0 for label in labels)
+        has_negative = any(label <= 0 for label in labels)
+        if not has_positive or not has_negative:
+            return
+
+        documents = [AnalysisDocument.from_text(sample) for sample in samples]
+        positive_indices = [index for index, label in enumerate(labels) if label > 0]
+        negative_indices = [index for index, label in enumerate(labels) if label <= 0]
+
+        for rule in self.rules:
+            penalty_fields = _penalty_field_names(rule.config)
+            if not penalty_fields:
+                continue
+
+            contributions: list[float] = []
+            for document in documents:
+                result = rule.forward(document)
+                contribution = compute_weighted_sum(
+                    list(result.violations),
+                    result.count_deltas,
+                    HYPERPARAMETERS,
+                )
+                contributions.append(contribution)
+
+            positive_mean = _mean_at_indices(contributions, positive_indices)
+            negative_mean = _mean_at_indices(contributions, negative_indices)
+            positive_fire_rate = _rate_nonzero_at_indices(contributions, positive_indices)
+            negative_fire_rate = _rate_nonzero_at_indices(contributions, negative_indices)
+
+            scale = 1.0
+            if negative_mean <= positive_mean:
+                scale = 0.0
+            elif negative_fire_rate <= positive_fire_rate:
+                scale = 0.5
+            elif positive_fire_rate > 0.80:
+                scale = 0.5
+
+            if scale < 1.0:
+                _scale_penalty_fields(rule.config, penalty_fields, scale)
 
 
 def build_default_rules() -> RuleList:
@@ -129,3 +188,55 @@ def _parse_rules_from_jsonl(lines: Iterable[str]) -> RuleList:
         rules.append(rule_type.from_dict(config_raw))
 
     return rules
+
+
+def _penalty_field_names(config: RuleConfig) -> tuple[str, ...]:
+    """Return names of dataclass int fields that encode penalty magnitudes."""
+    if not is_dataclass(config):
+        return ()
+    names: list[str] = []
+    for field in fields(config):
+        value = getattr(config, field.name)
+        if isinstance(value, bool) or not isinstance(value, int):
+            continue
+        if (
+            field.name == "penalty"
+            or field.name.endswith("_penalty")
+            or field.name.endswith("_penalty_step")
+        ):
+            names.append(field.name)
+    return tuple(names)
+
+
+def _scale_penalty_fields(
+    config: RuleConfig, field_names: tuple[str, ...], scale: float
+) -> None:
+    """Scale selected config penalty fields in-place."""
+    if scale < 0.0:
+        raise ValueError("scale must be non-negative")
+    for field_name in field_names:
+        value = getattr(config, field_name)
+        if isinstance(value, bool) or not isinstance(value, int):
+            continue
+        if value == 0 or scale == 0.0:
+            setattr(config, field_name, 0)
+            continue
+
+        scaled_magnitude = max(1, int(round(abs(value) * scale)))
+        setattr(config, field_name, -scaled_magnitude if value < 0 else scaled_magnitude)
+
+
+def _mean_at_indices(values: list[float], indices: list[int]) -> float:
+    """Return mean for selected indices; zero when empty."""
+    if not indices:
+        return 0.0
+    total = sum(values[index] for index in indices)
+    return total / len(indices)
+
+
+def _rate_nonzero_at_indices(values: list[float], indices: list[int]) -> float:
+    """Return fraction of selected indices where value is nonzero."""
+    if not indices:
+        return 0.0
+    nonzero = sum(1 for index in indices if not math.isclose(values[index], 0.0))
+    return nonzero / len(indices)

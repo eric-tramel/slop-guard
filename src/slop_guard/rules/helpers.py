@@ -192,11 +192,60 @@ def fit_penalty_contrastive(
 
     positive_rate = positive_matches / positive_total
     negative_rate = negative_matches / negative_total
-    contrast = clamp_float(negative_rate - positive_rate, -1.0, 1.0)
-    confidence = negative_total / (negative_total + 5.0)
-    scale = clamp_float(1.0 + (contrast * confidence), 0.5, 2.0)
+    if negative_rate <= positive_rate:
+        return 0
+
+    separation = negative_rate - positive_rate
+    confidence = negative_total / (negative_total + positive_total + 6.0)
+    scale = clamp_float(0.75 + (1.75 * separation) + (0.5 * confidence), 0.5, 2.5)
     magnitude = max(1, int(round(abs(baseline) * scale)))
     return -magnitude if base_penalty < 0 else magnitude
+
+
+def _threshold_candidates(
+    *,
+    default_value: float,
+    positive_values: NumericSeq,
+    negative_values: NumericSeq,
+    lower: float,
+    upper: float,
+) -> list[float]:
+    """Build threshold candidates from default and empirical quantiles."""
+    candidates = {clamp_float(default_value, lower, upper), lower, upper}
+    combined = [float(value) for value in (*positive_values, *negative_values)]
+    if not combined:
+        return sorted(candidates)
+    if len(combined) == 1:
+        candidates.add(clamp_float(combined[0], lower, upper))
+        return sorted(candidates)
+
+    for index in range(21):
+        quantile = index / 20.0
+        candidates.add(clamp_float(percentile(combined, quantile), lower, upper))
+    return sorted(candidates)
+
+
+def _contrastive_rate_stats(
+    *,
+    threshold: float,
+    positive_values: NumericSeq,
+    negative_values: NumericSeq,
+    mode: str,
+) -> tuple[float, float]:
+    """Return positive and negative match rates for one threshold."""
+    if mode not in ("high", "low"):
+        raise ValueError("mode must be 'high' or 'low'")
+
+    if mode == "high":
+        positive_hits = sum(1 for value in positive_values if float(value) > threshold)
+        negative_hits = sum(1 for value in negative_values if float(value) > threshold)
+    else:
+        positive_hits = sum(1 for value in positive_values if float(value) < threshold)
+        negative_hits = sum(1 for value in negative_values if float(value) < threshold)
+
+    positive_rate = positive_hits / len(positive_values) if positive_values else 0.0
+    negative_rate = negative_hits / len(negative_values) if negative_values else 0.0
+    return positive_rate, negative_rate
 
 
 def fit_threshold_high_contrastive(
@@ -214,16 +263,59 @@ def fit_threshold_high_contrastive(
     if not positive_values:
         return clamp_float(default_value, lower, upper)
 
-    positive_anchor = percentile(positive_values, positive_quantile)
-    candidate = positive_anchor
+    default_clamped = clamp_float(default_value, lower, upper)
+    candidates = _threshold_candidates(
+        default_value=default_clamped,
+        positive_values=positive_values,
+        negative_values=negative_values,
+        lower=lower,
+        upper=upper,
+    )
+    candidates.extend(
+        (
+            clamp_float(percentile(positive_values, positive_quantile), lower, upper),
+            clamp_float(percentile(positive_values, 0.99), lower, upper),
+        )
+    )
     if negative_values:
-        negative_anchor = percentile(negative_values, negative_quantile)
-        if negative_anchor > positive_anchor:
-            candidate = (positive_anchor + negative_anchor) * 0.5
+        candidates.extend(
+            (
+                clamp_float(percentile(negative_values, negative_quantile), lower, upper),
+                clamp_float(percentile(negative_values, 0.01), lower, upper),
+            )
+        )
+    candidates = sorted(set(candidates))
+
+    best_candidate = default_clamped
+    best_gap = float("-inf")
+    best_key = (float("-inf"), float("-inf"), float("-inf"), float("-inf"))
+    for candidate in candidates:
+        positive_rate, negative_rate = _contrastive_rate_stats(
+            threshold=candidate,
+            positive_values=positive_values,
+            negative_values=negative_values,
+            mode="high",
+        )
+        gap = negative_rate - positive_rate
+        objective = -positive_rate
+        if negative_values:
+            objective = gap - (0.40 * positive_rate)
+            if positive_rate <= 0.20:
+                objective += 0.10
+            if negative_rate <= positive_rate:
+                objective -= 0.25
+        key = (objective, gap, -positive_rate, negative_rate)
+        if key > best_key:
+            best_key = key
+            best_gap = gap
+            best_candidate = candidate
+
+    if negative_values and best_gap <= 0.0:
+        return default_clamped
 
     blended = blend_toward_default_float(
-        default_value,
-        candidate,
+        default_clamped,
+        best_candidate,
         len(positive_values) + len(negative_values),
         pivot=blend_pivot,
     )
@@ -245,16 +337,59 @@ def fit_threshold_low_contrastive(
     if not positive_values:
         return clamp_float(default_value, lower, upper)
 
-    positive_anchor = percentile(positive_values, positive_quantile)
-    candidate = positive_anchor
+    default_clamped = clamp_float(default_value, lower, upper)
+    candidates = _threshold_candidates(
+        default_value=default_clamped,
+        positive_values=positive_values,
+        negative_values=negative_values,
+        lower=lower,
+        upper=upper,
+    )
+    candidates.extend(
+        (
+            clamp_float(percentile(positive_values, positive_quantile), lower, upper),
+            clamp_float(percentile(positive_values, 0.01), lower, upper),
+        )
+    )
     if negative_values:
-        negative_anchor = percentile(negative_values, negative_quantile)
-        if positive_anchor > negative_anchor:
-            candidate = (positive_anchor + negative_anchor) * 0.5
+        candidates.extend(
+            (
+                clamp_float(percentile(negative_values, negative_quantile), lower, upper),
+                clamp_float(percentile(negative_values, 0.99), lower, upper),
+            )
+        )
+    candidates = sorted(set(candidates))
+
+    best_candidate = default_clamped
+    best_gap = float("-inf")
+    best_key = (float("-inf"), float("-inf"), float("-inf"), float("-inf"))
+    for candidate in candidates:
+        positive_rate, negative_rate = _contrastive_rate_stats(
+            threshold=candidate,
+            positive_values=positive_values,
+            negative_values=negative_values,
+            mode="low",
+        )
+        gap = negative_rate - positive_rate
+        objective = -positive_rate
+        if negative_values:
+            objective = gap - (0.40 * positive_rate)
+            if positive_rate <= 0.20:
+                objective += 0.10
+            if negative_rate <= positive_rate:
+                objective -= 0.25
+        key = (objective, gap, -positive_rate, negative_rate)
+        if key > best_key:
+            best_key = key
+            best_gap = gap
+            best_candidate = candidate
+
+    if negative_values and best_gap <= 0.0:
+        return default_clamped
 
     blended = blend_toward_default_float(
-        default_value,
-        candidate,
+        default_clamped,
+        best_candidate,
         len(positive_values) + len(negative_values),
         pivot=blend_pivot,
     )
@@ -277,18 +412,71 @@ def fit_count_cap_contrastive(
     if not positive_values:
         return clamp_int(default_value, lower, upper)
 
-    positive_anchor = percentile_ceil(positive_values, positive_quantile)
-    candidate = positive_anchor
+    default_clamped = clamp_int(default_value, lower, upper)
+    cap_upper = clamp_int(int(round(default_clamped * max_multiplier)), lower, upper)
+    candidates: set[int] = {default_clamped, lower, upper, cap_upper}
+    combined = [float(value) for value in (*positive_values, *negative_values)]
+    if len(combined) == 1:
+        candidates.add(clamp_int(int(round(combined[0])), lower, upper))
+    elif combined:
+        for index in range(21):
+            quantile = index / 20.0
+            candidates.add(clamp_int(int(round(percentile(combined, quantile))), lower, upper))
+    candidates.add(clamp_int(percentile_ceil(positive_values, positive_quantile), lower, upper))
     if negative_values:
-        negative_anchor = percentile_ceil(negative_values, negative_quantile)
-        candidate = max(
-            positive_anchor,
-            min(negative_anchor, int(round(default_value * max_multiplier))),
+        candidates.add(
+            clamp_int(percentile_ceil(negative_values, negative_quantile), lower, upper)
         )
 
+    best_candidate = default_clamped
+    best_gap = float("-inf")
+    best_key = (float("-inf"), float("-inf"), float("-inf"), float("-inf"))
+    for candidate in sorted(candidates):
+        positive_clipped_mean = (
+            sum(min(float(value), candidate) for value in positive_values)
+            / len(positive_values)
+        )
+        negative_clipped_mean = (
+            sum(min(float(value), candidate) for value in negative_values)
+            / len(negative_values)
+            if negative_values
+            else 0.0
+        )
+        positive_nonzero_rate = (
+            sum(1 for value in positive_values if min(float(value), candidate) > 0.0)
+            / len(positive_values)
+        )
+        negative_nonzero_rate = (
+            sum(1 for value in negative_values if min(float(value), candidate) > 0.0)
+            / len(negative_values)
+            if negative_values
+            else 0.0
+        )
+        gap = negative_clipped_mean - positive_clipped_mean
+        objective = -positive_clipped_mean
+        if negative_values:
+            objective = gap - (0.25 * positive_clipped_mean)
+            if positive_nonzero_rate <= 0.20:
+                objective += 0.10
+            if negative_nonzero_rate <= positive_nonzero_rate:
+                objective -= 0.25
+        key = (
+            objective,
+            gap,
+            -positive_clipped_mean,
+            negative_clipped_mean,
+        )
+        if key > best_key:
+            best_key = key
+            best_gap = gap
+            best_candidate = candidate
+
+    if negative_values and best_gap <= 0.0:
+        return default_clamped
+
     blended = blend_toward_default_float(
-        float(default_value),
-        float(candidate),
+        float(default_clamped),
+        float(best_candidate),
         len(positive_values) + len(negative_values),
         pivot=blend_pivot,
     )

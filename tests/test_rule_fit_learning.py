@@ -225,4 +225,4 @@ def test_fit_uses_negative_labels_for_contrastive_adjustment() -> None:
     )
 
     assert contrastive.config.record_cap > positive_only.config.record_cap
-    assert contrastive.config.advice_min > positive_only.config.advice_min
+    assert contrastive.config.penalty != positive_only.config.penalty
