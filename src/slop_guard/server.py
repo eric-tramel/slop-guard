@@ -1,6 +1,7 @@
 """MCP server for prose linting with modular rule execution."""
 
 
+import argparse
 import json
 from pathlib import Path
 
@@ -17,13 +18,19 @@ from .analysis import (
     score_from_density,
     short_text_result,
 )
-from .rules import build_default_rules, run_rule_pipeline
+from .rules import Pipeline
 
 MCP_SERVER_NAME = "slop-guard"
 mcp_server = FastMCP(MCP_SERVER_NAME)
+DEFAULT_PIPELINE = Pipeline.from_jsonl()
+ACTIVE_PIPELINE = DEFAULT_PIPELINE
 
 
-def _analyze(text: str, hyperparameters: Hyperparameters) -> dict:
+def _analyze(
+    text: str,
+    hyperparameters: Hyperparameters,
+    pipeline: Pipeline | None = None,
+) -> dict:
     """Run all configured rules and return score, diagnostics, and advice."""
     document = AnalysisDocument.from_text(text)
 
@@ -34,8 +41,8 @@ def _analyze(text: str, hyperparameters: Hyperparameters) -> dict:
             hyperparameters,
         )
 
-    rules = build_default_rules(hyperparameters)
-    state = run_rule_pipeline(document, rules)
+    active_pipeline = ACTIVE_PIPELINE if pipeline is None else pipeline
+    state = active_pipeline.forward(document)
 
     total_penalty = sum(violation.penalty for violation in state.violations)
     weighted_sum = compute_weighted_sum(
@@ -97,6 +104,25 @@ def check_slop_file(file_path: str) -> str:
     return json.dumps(result, indent=2)
 
 
-def main() -> None:
+def _build_parser() -> argparse.ArgumentParser:
+    """Construct the MCP server CLI parser."""
+    parser = argparse.ArgumentParser(
+        prog="slop-guard",
+        description="Run the slop-guard MCP server on stdio.",
+    )
+    parser.add_argument(
+        "-c", "--config",
+        default=None,
+        metavar="JSONL",
+        help="Path to JSONL rule configuration. Defaults to packaged settings.",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
     """Run the slop-guard MCP server on stdio."""
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+    global ACTIVE_PIPELINE
+    ACTIVE_PIPELINE = Pipeline.from_jsonl(args.config)
     mcp_server.run()

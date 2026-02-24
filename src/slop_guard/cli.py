@@ -17,8 +17,11 @@ Usage examples::
     # Verbose: show individual violations
     sg -v draft.md
 
-    # Concise: score only
-    sg -c draft.md
+    # Score only
+    sg -s draft.md
+
+    # Use a custom JSONL rule config
+    sg -c config.jsonl draft.md
 
     # Set exit code threshold (default: 0 = always exit 0 unless error)
     sg -t 60 draft.md   # exit 1 if any file scores below 60
@@ -35,6 +38,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, TextIO, TypeAlias
 
+from .rules import Pipeline
 from .server import HYPERPARAMETERS, Hyperparameters, _analyze
 
 # ---------------------------------------------------------------------------
@@ -114,17 +118,22 @@ def _analyze_text(
     text: str,
     label: str,
     hyperparameters: Hyperparameters,
+    pipeline: Pipeline,
 ) -> dict:
     """Run analysis and attach the source label."""
-    result = _analyze(text, hyperparameters)
+    result = _analyze(text, hyperparameters, pipeline=pipeline)
     result["source"] = label
     return result
 
 
-def _analyze_file(path: Path, hyperparameters: Hyperparameters) -> dict:
+def _analyze_file(
+    path: Path,
+    hyperparameters: Hyperparameters,
+    pipeline: Pipeline,
+) -> dict:
     """Read a file and analyze its contents."""
     text = path.read_text(encoding="utf-8")
-    return _analyze_text(text, str(path), hyperparameters)
+    return _analyze_text(text, str(path), hyperparameters, pipeline)
 
 
 # ---------------------------------------------------------------------------
@@ -171,7 +180,13 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Minimum passing score (0-100). Exit 1 if any input scores below this.",
     )
     p.add_argument(
-        "-c", "--concise",
+        "-c", "--config",
+        default=None,
+        metavar="JSONL",
+        help="Path to JSONL rule configuration. Defaults to packaged settings.",
+    )
+    p.add_argument(
+        "-s", "--score-only",
         action="store_true",
         default=False,
         help="Print score only.",
@@ -220,7 +235,7 @@ def _emit_result(result: dict, args: argparse.Namespace) -> None:
     fails_threshold = args.threshold > 0 and result["score"] < args.threshold
     if args.quiet and not fails_threshold:
         return
-    if args.concise:
+    if args.score_only:
         print(result["score"], flush=True)
         return
 
@@ -252,14 +267,15 @@ def cli_main(argv: list[str] | None = None) -> int:
     results: list[dict] = []
     threshold_failed = False
     hp = HYPERPARAMETERS
+    pipeline = Pipeline.from_jsonl(args.config)
 
     for target in inputs:
         if target.kind == "stdin":
             text = sys.stdin.read()
-            result = _analyze_text(text, target.label, hp)
+            result = _analyze_text(text, target.label, hp, pipeline)
         elif target.kind == "text":
             assert isinstance(target.value, str)
-            result = _analyze_text(target.value, target.label, hp)
+            result = _analyze_text(target.value, target.label, hp, pipeline)
         else:
             assert isinstance(target.value, Path)
             path = target.value
@@ -267,7 +283,7 @@ def cli_main(argv: list[str] | None = None) -> int:
                 print(f"sg: {path}: No such file", file=sys.stderr)
                 continue
             try:
-                result = _analyze_file(path, hp)
+                result = _analyze_file(path, hp, pipeline)
             except (OSError, UnicodeDecodeError) as exc:
                 print(f"sg: {path}: {exc}", file=sys.stderr)
                 continue

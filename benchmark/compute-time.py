@@ -25,9 +25,9 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from slop_guard.analysis import AnalysisDocument, HYPERPARAMETERS  # noqa: E402
+from slop_guard.analysis import AnalysisDocument  # noqa: E402
 from slop_guard.rules.base import Rule, RuleConfig  # noqa: E402
-from slop_guard.rules.registry import build_default_rules  # noqa: E402
+from slop_guard.rules import build_default_rules  # noqa: E402
 
 RuleList: TypeAlias = list[Rule[RuleConfig]]
 BenchmarkRecord: TypeAlias = dict[str, str | int | float]
@@ -308,7 +308,7 @@ def parse_args() -> argparse.Namespace:
     """Parse benchmark CLI arguments."""
     parser = argparse.ArgumentParser(
         description=(
-            "Measure forward-pass compute time for every default registry rule "
+            "Measure forward-pass compute time for every default configured rule "
             "across synthetic text lengths."
         )
     )
@@ -506,7 +506,7 @@ def main() -> None:
         length_mode=args.length_mode,
         num_lengths=args.num_lengths,
     )
-    rules = build_default_rules(HYPERPARAMETERS)
+    rules = build_default_rules()
     word_stream = build_word_stream(seed=args.seed, max_words=args.max_words)
     output_path = Path(args.output)
 
