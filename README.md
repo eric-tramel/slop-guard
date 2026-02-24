@@ -151,6 +151,39 @@ sg -q -t 60 **/*.md
 | 1 | One or more files scored below the threshold |
 | 2 | Error (bad file path, read failure, etc.) |
 
+## Fit Rule Configs (`sg-fit`)
+
+Use `sg-fit` to fit a rule JSONL config from corpus data:
+
+```bash
+sg-fit TARGET_CORPUS OUTPUT
+```
+
+Example:
+
+```bash
+sg-fit data.jsonl rules.fitted.jsonl
+```
+
+Optional arguments:
+
+- `--init JSONL` -- Start from a specific rule config JSONL instead of packaged defaults.
+- `--negative-dataset JSONL` -- Add negative examples; all rows in this file are normalized to label `0`.
+
+Target corpus rows can be either:
+
+```json
+{"text": "body of text", "label": 1}
+```
+
+or:
+
+```json
+{"text": "body of text"}
+```
+
+If `label` is omitted in the target corpus, `sg-fit` treats it as `1` (positive/target style).
+
 ## Installation
 
 Requires [uv](https://docs.astral.sh/uv/).
@@ -189,6 +222,7 @@ From a local checkout:
 uv run slop-guard               # MCP server
 uv run slop-guard -c config.jsonl
 uv run sg            # CLI linter
+uv run sg-fit data.jsonl rules.fitted.jsonl
 ```
 
 ## MCP Tools

@@ -34,6 +34,7 @@ Issues = "https://github.com/eric-tramel/slop-guard/issues"
 [project.scripts]
 slop-guard = "slop_guard:main"
 sg = "slop_guard.cli:main"
+sg-fit = "slop_guard.fit_cli:main"
 
 [tool.hatch.build]
 exclude = [
