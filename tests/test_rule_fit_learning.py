@@ -203,3 +203,26 @@ def test_fit_updates_rule_hyperparameters(
 
     assert fitted is rule
     assert getattr(rule.config, field_name) != before
+
+
+def test_fit_uses_negative_labels_for_contrastive_adjustment() -> None:
+    """Negative-labeled samples should influence fitted contrastive thresholds."""
+    defaults = {type(rule): rule for rule in build_default_rules()}
+    positive_corpus = [
+        "focus, not frenzy.",
+        "clarity, not complexity.",
+    ]
+    negative_sample = (
+        "focus, not frenzy. clarity, not complexity. speed, not haste. "
+        "signal, not noise. quality, not quantity. craft, not chaos."
+    )
+    negative_corpus = [negative_sample] * 30
+
+    positive_only = deepcopy(defaults[ContrastPairRule]).fit(positive_corpus)
+    contrastive = deepcopy(defaults[ContrastPairRule]).fit(
+        positive_corpus + negative_corpus,
+        [1] * len(positive_corpus) + [0] * len(negative_corpus),
+    )
+
+    assert contrastive.config.record_cap > positive_only.config.record_cap
+    assert contrastive.config.advice_min > positive_only.config.advice_min

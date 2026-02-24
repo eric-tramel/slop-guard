@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
-from slop_guard.rules.helpers import fit_penalty
+from slop_guard.rules.helpers import fit_penalty_contrastive
 
 _META_COMM_LITERALS: tuple[str, ...] = (
     "would you like",
@@ -228,30 +228,48 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
         self, samples: list[str], labels: list[Label] | None
     ) -> ToneMarkerRuleConfig:
         """Fit tone penalties from empirical marker prevalence."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
 
-        tone_matched_documents = 0
-        opener_matched_documents = 0
-        for sample in fit_samples:
+        positive_tone_matches = 0
+        positive_opener_matches = 0
+        for sample in positive_samples:
             lower_text = sample.lower()
             has_tone_marker = any(phrase in lower_text for phrase in _META_COMM_LITERALS) or any(
                 phrase in lower_text for phrase in _FALSE_NARRATIVITY_LITERALS
             )
             if has_tone_marker:
-                tone_matched_documents += 1
+                positive_tone_matches += 1
             if any(pattern.search(sample) is not None for pattern in _SENTENCE_OPENER_PATTERNS):
-                opener_matched_documents += 1
+                positive_opener_matches += 1
+
+        negative_tone_matches = 0
+        negative_opener_matches = 0
+        for sample in negative_samples:
+            lower_text = sample.lower()
+            has_tone_marker = any(phrase in lower_text for phrase in _META_COMM_LITERALS) or any(
+                phrase in lower_text for phrase in _FALSE_NARRATIVITY_LITERALS
+            )
+            if has_tone_marker:
+                negative_tone_matches += 1
+            if any(pattern.search(sample) is not None for pattern in _SENTENCE_OPENER_PATTERNS):
+                negative_opener_matches += 1
 
         return ToneMarkerRuleConfig(
-            tone_penalty=fit_penalty(
-                self.config.tone_penalty, tone_matched_documents, len(fit_samples)
+            tone_penalty=fit_penalty_contrastive(
+                base_penalty=self.config.tone_penalty,
+                positive_matches=positive_tone_matches,
+                positive_total=len(positive_samples),
+                negative_matches=negative_tone_matches,
+                negative_total=len(negative_samples),
             ),
-            sentence_opener_penalty=fit_penalty(
-                self.config.sentence_opener_penalty,
-                opener_matched_documents,
-                len(fit_samples),
+            sentence_opener_penalty=fit_penalty_contrastive(
+                base_penalty=self.config.sentence_opener_penalty,
+                positive_matches=positive_opener_matches,
+                positive_total=len(positive_samples),
+                negative_matches=negative_opener_matches,
+                negative_total=len(negative_samples),
             ),
             context_window_chars=self.config.context_window_chars,
         )

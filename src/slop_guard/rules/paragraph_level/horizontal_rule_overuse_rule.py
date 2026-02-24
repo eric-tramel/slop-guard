@@ -25,7 +25,10 @@ from dataclasses import dataclass
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
-from slop_guard.rules.helpers import clamp_int, fit_penalty, percentile_ceil
+from slop_guard.rules.helpers import (
+    fit_penalty_contrastive,
+    fit_threshold_high_contrastive,
+)
 
 _HORIZONTAL_RULE_RE = re.compile(r"^\s*(?:---+|\*\*\*+|___+)\s*$", re.MULTILINE)
 
@@ -85,15 +88,38 @@ class HorizontalRuleOveruseRule(Rule[HorizontalRuleOveruseRuleConfig]):
         self, samples: list[str], labels: list[Label] | None
     ) -> HorizontalRuleOveruseRuleConfig:
         """Fit horizontal-rule threshold from corpus separator counts."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
 
-        counts = [len(_HORIZONTAL_RULE_RE.findall(sample)) for sample in fit_samples]
-        min_count = clamp_int(percentile_ceil(counts, 0.90), 1, 64)
-        matched_documents = sum(1 for count in counts if count >= min_count)
+        positive_counts = [
+            len(_HORIZONTAL_RULE_RE.findall(sample)) for sample in positive_samples
+        ]
+        negative_counts = [
+            len(_HORIZONTAL_RULE_RE.findall(sample)) for sample in negative_samples
+        ]
+        min_count = int(
+            fit_threshold_high_contrastive(
+                default_value=float(self.config.min_count),
+                positive_values=positive_counts,
+                negative_values=negative_counts,
+                lower=1.0,
+                upper=64.0,
+                positive_quantile=0.90,
+                negative_quantile=0.10,
+                blend_pivot=18.0,
+            )
+        )
+        positive_matches = sum(1 for count in positive_counts if count >= min_count)
+        negative_matches = sum(1 for count in negative_counts if count >= min_count)
 
         return HorizontalRuleOveruseRuleConfig(
             min_count=min_count,
-            penalty=fit_penalty(self.config.penalty, matched_documents, len(counts)),
+            penalty=fit_penalty_contrastive(
+                base_penalty=self.config.penalty,
+                positive_matches=positive_matches,
+                positive_total=len(positive_counts),
+                negative_matches=negative_matches,
+                negative_total=len(negative_counts),
+            ),
         )

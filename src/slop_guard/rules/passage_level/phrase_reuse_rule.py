@@ -26,7 +26,9 @@ from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, Hyperpa
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import (
     clamp_int,
-    fit_penalty,
+    fit_count_cap_contrastive,
+    fit_penalty_contrastive,
+    fit_threshold_high_contrastive,
     find_repeated_ngrams_from_tokens,
     has_repeated_ngram_prefix,
     percentile_ceil,
@@ -129,8 +131,8 @@ class PhraseReuseRule(Rule[PhraseReuseRuleConfig]):
         self, samples: list[str], labels: list[Label] | None
     ) -> PhraseReuseRuleConfig:
         """Fit n-gram reuse thresholds from observed repeated phrases."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
 
         scan_hp = Hyperparameters(
@@ -138,45 +140,119 @@ class PhraseReuseRule(Rule[PhraseReuseRuleConfig]):
             repeated_ngram_max_n=8,
             repeated_ngram_min_count=2,
         )
-        observed_n_values: list[int] = []
-        observed_counts: list[int] = []
-        per_document_hits: list[int] = []
-        for sample in fit_samples:
+        positive_n_values: list[int] = []
+        positive_counts: list[int] = []
+        positive_per_document_hits: list[int] = []
+        for sample in positive_samples:
             document = AnalysisDocument.from_text(sample)
             repeated = find_repeated_ngrams_from_tokens(
                 document.ngram_tokens_lower, scan_hp
             )
-            per_document_hits.append(len(repeated))
+            positive_per_document_hits.append(len(repeated))
             for hit in repeated:
-                observed_n_values.append(int(hit["n"]))
-                observed_counts.append(int(hit["count"]))
+                positive_n_values.append(int(hit["n"]))
+                positive_counts.append(int(hit["count"]))
 
-        matched_documents = sum(1 for count in per_document_hits if count > 0)
+        if not positive_n_values or not positive_counts:
+            return self.config
 
-        repeated_ngram_min_n = self.config.repeated_ngram_min_n
-        repeated_ngram_max_n = self.config.repeated_ngram_max_n
-        if observed_n_values:
-            repeated_ngram_min_n = clamp_int(
-                percentile_floor(observed_n_values, 0.20), 2, 12
+        negative_n_values: list[int] = []
+        negative_counts: list[int] = []
+        negative_per_document_hits: list[int] = []
+        for sample in negative_samples:
+            document = AnalysisDocument.from_text(sample)
+            repeated = find_repeated_ngrams_from_tokens(
+                document.ngram_tokens_lower, scan_hp
             )
-            repeated_ngram_max_n = clamp_int(
-                percentile_ceil(observed_n_values, 0.90), repeated_ngram_min_n, 16
-            )
+            negative_per_document_hits.append(len(repeated))
+            for hit in repeated:
+                negative_n_values.append(int(hit["n"]))
+                negative_counts.append(int(hit["count"]))
 
-        repeated_ngram_min_count = self.config.repeated_ngram_min_count
-        if observed_counts:
-            repeated_ngram_min_count = clamp_int(
-                percentile_ceil(observed_counts, 0.75), 2, 32
-            )
+        positive_matches = sum(1 for count in positive_per_document_hits if count > 0)
+        negative_matches = sum(1 for count in negative_per_document_hits if count > 0)
 
-        record_cap = self.config.record_cap
-        if matched_documents:
-            positive_hit_counts = [count for count in per_document_hits if count > 0]
-            record_cap = clamp_int(percentile_ceil(positive_hit_counts, 0.90), 1, 128)
+        positive_repeated_ngram_min_n = clamp_int(
+            percentile_floor(positive_n_values, 0.20), 2, 12
+        )
+        repeated_ngram_min_n = clamp_int(
+            int(
+                round(
+                    fit_threshold_high_contrastive(
+                        default_value=float(positive_repeated_ngram_min_n),
+                        positive_values=positive_n_values,
+                        negative_values=negative_n_values,
+                        lower=2.0,
+                        upper=12.0,
+                        positive_quantile=0.20,
+                        negative_quantile=0.80,
+                        blend_pivot=16.0,
+                    )
+                )
+            ),
+            2,
+            12,
+        )
+        repeated_ngram_max_n = fit_count_cap_contrastive(
+            default_value=clamp_int(
+                percentile_ceil(positive_n_values, 0.90), repeated_ngram_min_n, 16
+            ),
+            positive_values=positive_n_values,
+            negative_values=negative_n_values,
+            lower=repeated_ngram_min_n,
+            upper=16,
+            positive_quantile=0.90,
+            negative_quantile=0.90,
+            blend_pivot=16.0,
+        )
+
+        repeated_ngram_min_count = clamp_int(
+            int(
+                round(
+                    fit_threshold_high_contrastive(
+                        default_value=float(
+                            clamp_int(percentile_ceil(positive_counts, 0.75), 2, 32)
+                        ),
+                        positive_values=positive_counts,
+                        negative_values=negative_counts,
+                        lower=2.0,
+                        upper=32.0,
+                        positive_quantile=0.75,
+                        negative_quantile=0.25,
+                        blend_pivot=12.0,
+                    )
+                )
+            ),
+            2,
+            32,
+        )
+
+        record_cap = fit_count_cap_contrastive(
+            default_value=clamp_int(
+                percentile_ceil(
+                    [count for count in positive_per_document_hits if count > 0], 0.90
+                ),
+                1,
+                128,
+            )
+            if positive_matches > 0
+            else self.config.record_cap,
+            positive_values=[count for count in positive_per_document_hits if count > 0],
+            negative_values=[count for count in negative_per_document_hits if count > 0],
+            lower=1,
+            upper=128,
+            positive_quantile=0.90,
+            negative_quantile=0.90,
+            blend_pivot=20.0,
+        )
 
         return PhraseReuseRuleConfig(
-            penalty=fit_penalty(
-                self.config.penalty, matched_documents, len(fit_samples)
+            penalty=fit_penalty_contrastive(
+                base_penalty=self.config.penalty,
+                positive_matches=positive_matches,
+                positive_total=len(positive_samples),
+                negative_matches=negative_matches,
+                negative_total=len(negative_samples),
             ),
             record_cap=record_cap,
             repeated_ngram_min_n=repeated_ngram_min_n,

@@ -23,7 +23,10 @@ from dataclasses import dataclass
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
-from slop_guard.rules.helpers import clamp_float, fit_penalty, percentile
+from slop_guard.rules.helpers import (
+    fit_penalty_contrastive,
+    fit_threshold_high_contrastive,
+)
 
 
 @dataclass
@@ -88,27 +91,49 @@ class BulletDensityRule(Rule[BulletDensityRuleConfig]):
         self, samples: list[str], labels: list[Label] | None
     ) -> BulletDensityRuleConfig:
         """Fit bullet-density threshold from corpus line ratios."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
 
-        ratio_values: list[float] = []
-        for sample in fit_samples:
+        positive_ratios: list[float] = []
+        for sample in positive_samples:
             document = AnalysisDocument.from_text(sample)
             total_non_empty = len(document.non_empty_lines)
             if total_non_empty <= 0:
                 continue
-            ratio_values.append(document.non_empty_bullet_count / total_non_empty)
+            positive_ratios.append(document.non_empty_bullet_count / total_non_empty)
 
-        if not ratio_values:
+        if not positive_ratios:
             return self.config
 
-        ratio_threshold = clamp_float(percentile(ratio_values, 0.90), 0.0, 1.0)
-        matched_documents = sum(1 for ratio in ratio_values if ratio > ratio_threshold)
+        negative_ratios: list[float] = []
+        for sample in negative_samples:
+            document = AnalysisDocument.from_text(sample)
+            total_non_empty = len(document.non_empty_lines)
+            if total_non_empty <= 0:
+                continue
+            negative_ratios.append(document.non_empty_bullet_count / total_non_empty)
+
+        ratio_threshold = fit_threshold_high_contrastive(
+            default_value=self.config.ratio_threshold,
+            positive_values=positive_ratios,
+            negative_values=negative_ratios,
+            lower=0.0,
+            upper=1.0,
+            positive_quantile=0.90,
+            negative_quantile=0.10,
+            blend_pivot=18.0,
+        )
+        positive_matches = sum(1 for ratio in positive_ratios if ratio > ratio_threshold)
+        negative_matches = sum(1 for ratio in negative_ratios if ratio > ratio_threshold)
 
         return BulletDensityRuleConfig(
             ratio_threshold=ratio_threshold,
-            penalty=fit_penalty(
-                self.config.penalty, matched_documents, len(ratio_values)
+            penalty=fit_penalty_contrastive(
+                base_penalty=self.config.penalty,
+                positive_matches=positive_matches,
+                positive_total=len(positive_ratios),
+                negative_matches=negative_matches,
+                negative_total=len(negative_ratios),
             ),
         )

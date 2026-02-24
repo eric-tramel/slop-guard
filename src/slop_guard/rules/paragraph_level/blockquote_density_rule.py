@@ -25,9 +25,11 @@ from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import (
+    blend_toward_default_float,
     clamp_int,
-    fit_penalty,
-    percentile_ceil,
+    fit_count_cap_contrastive,
+    fit_penalty_contrastive,
+    fit_threshold_high_contrastive,
     percentile_floor,
 )
 
@@ -105,12 +107,12 @@ class BlockquoteDensityRule(Rule[BlockquoteDensityRuleConfig]):
         self, samples: list[str], labels: list[Label] | None
     ) -> BlockquoteDensityRuleConfig:
         """Fit blockquote density thresholds from corpus line counts."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
 
-        blockquote_counts: list[int] = []
-        for sample in fit_samples:
+        positive_counts: list[int] = []
+        for sample in positive_samples:
             document = AnalysisDocument.from_text(sample)
             in_code_block = False
             blockquote_count = 0
@@ -120,21 +122,72 @@ class BlockquoteDensityRule(Rule[BlockquoteDensityRuleConfig]):
                     continue
                 if not in_code_block and is_blockquote:
                     blockquote_count += 1
-            blockquote_counts.append(blockquote_count)
+            positive_counts.append(blockquote_count)
 
-        min_lines = clamp_int(percentile_ceil(blockquote_counts, 0.90), 1, 128)
-        free_lines = clamp_int(
-            percentile_floor(blockquote_counts, 0.50), 0, max(0, min_lines - 1)
+        negative_counts: list[int] = []
+        for sample in negative_samples:
+            document = AnalysisDocument.from_text(sample)
+            in_code_block = False
+            blockquote_count = 0
+            for line, is_blockquote in zip(document.lines, document.line_is_blockquote):
+                if line.strip().startswith("```"):
+                    in_code_block = not in_code_block
+                    continue
+                if not in_code_block and is_blockquote:
+                    blockquote_count += 1
+            negative_counts.append(blockquote_count)
+
+        min_lines = int(
+            fit_threshold_high_contrastive(
+                default_value=float(self.config.min_lines),
+                positive_values=positive_counts,
+                negative_values=negative_counts,
+                lower=1.0,
+                upper=128.0,
+                positive_quantile=0.90,
+                negative_quantile=0.10,
+                blend_pivot=18.0,
+            )
         )
-        excess_values = [max(0, count - free_lines) for count in blockquote_counts]
-        cap = clamp_int(percentile_ceil(excess_values, 0.90), 1, 128)
-        matched_documents = sum(1 for count in blockquote_counts if count >= min_lines)
+        free_lines = clamp_int(
+            int(
+                round(
+                    blend_toward_default_float(
+                        float(self.config.free_lines),
+                        float(percentile_floor(positive_counts, 0.50)),
+                        len(positive_counts) + len(negative_counts),
+                        pivot=20.0,
+                    )
+                )
+            ),
+            0,
+            max(0, min_lines - 1),
+        )
+        positive_excess = [max(0, count - free_lines) for count in positive_counts]
+        negative_excess = [max(0, count - free_lines) for count in negative_counts]
+        cap = fit_count_cap_contrastive(
+            default_value=self.config.cap,
+            positive_values=positive_excess,
+            negative_values=negative_excess,
+            lower=1,
+            upper=128,
+            positive_quantile=0.90,
+            negative_quantile=0.75,
+            blend_pivot=18.0,
+            max_multiplier=2.0,
+        )
+        positive_matches = sum(1 for count in positive_counts if count >= min_lines)
+        negative_matches = sum(1 for count in negative_counts if count >= min_lines)
 
         return BlockquoteDensityRuleConfig(
             min_lines=min_lines,
             free_lines=free_lines,
             cap=cap,
-            penalty_step=fit_penalty(
-                self.config.penalty_step, matched_documents, len(blockquote_counts)
+            penalty_step=fit_penalty_contrastive(
+                base_penalty=self.config.penalty_step,
+                positive_matches=positive_matches,
+                positive_total=len(positive_counts),
+                negative_matches=negative_matches,
+                negative_total=len(negative_counts),
             ),
         )
