@@ -66,7 +66,11 @@ class Pipeline:
         return state
 
     def fit(
-        self, samples: list[str], labels: list[Label] | None = None
+        self,
+        samples: list[str],
+        labels: list[Label] | None = None,
+        *,
+        calibrate_contrastive: bool = True,
     ) -> "Pipeline":
         """Fit each rule against shared samples/labels and return self.
 
@@ -74,11 +78,14 @@ class Pipeline:
             samples: Text samples used to fit each rule.
             labels: Optional integer labels. If omitted, all samples are
                 treated as positives.
+            calibrate_contrastive: Whether to run post-fit contrastive penalty
+                calibration when both positive and negative labels exist.
         """
         fit_labels = labels if labels is not None else [1] * len(samples)
         for rule in self.rules:
             rule.fit(samples, fit_labels)
-        self._calibrate_contrastive_penalties(samples, fit_labels)
+        if calibrate_contrastive:
+            self._calibrate_contrastive_penalties(samples, fit_labels)
         return self
 
     def _calibrate_contrastive_penalties(

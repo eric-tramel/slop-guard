@@ -6,27 +6,15 @@ import argparse
 import glob
 import json
 import sys
-from dataclasses import dataclass
 from pathlib import Path
+from typing import TypeAlias
 
 from .rules import Pipeline
 
 EXIT_OK = 0
 EXIT_ERROR = 2
 _TEXT_DATASET_SUFFIXES = frozenset({".txt", ".md"})
-
-
-@dataclass(frozen=True)
-class FitExample:
-    """One training example used when fitting a rule pipeline.
-
-    Attributes:
-        text: Raw prose sample.
-        label: Binary class label where 1 means target style and 0 means negative.
-    """
-
-    text: str
-    label: int
+FitSamplesAndLabels: TypeAlias = tuple[list[str], list[int]]
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -74,6 +62,14 @@ def _build_parser() -> argparse.ArgumentParser:
             "All negative rows are normalized to label 0."
         ),
     )
+    parser.add_argument(
+        "--no-calibration",
+        action="store_true",
+        help=(
+            "Skip post-fit contrastive penalty calibration. This speeds up fitting on "
+            "large corpora."
+        ),
+    )
     return parser
 
 
@@ -93,7 +89,7 @@ def _load_jsonl_dataset(
     *,
     default_label: int | None,
     force_label: int | None = None,
-) -> list[FitExample]:
+) -> FitSamplesAndLabels:
     """Load JSONL examples from ``path``.
 
     Args:
@@ -102,46 +98,48 @@ def _load_jsonl_dataset(
         force_label: If set, overrides any row-provided label.
 
     Returns:
-        List of parsed fit examples.
+        Two aligned lists: samples and labels.
     """
     if not path.is_file():
         raise FileNotFoundError(f"File not found: {path}")
 
-    examples: list[FitExample] = []
-    lines = path.read_text(encoding="utf-8").splitlines()
-    for line_number, line in enumerate(lines, start=1):
-        stripped = line.strip()
-        if not stripped:
-            continue
-        try:
-            payload = json.loads(stripped)
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"{path}:{line_number}: invalid JSON: {exc.msg}") from exc
+    samples: list[str] = []
+    labels: list[int] = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            stripped = line.strip()
+            if not stripped:
+                continue
+            try:
+                payload = json.loads(stripped)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"{path}:{line_number}: invalid JSON: {exc.msg}") from exc
 
-        if not isinstance(payload, dict):
-            raise TypeError(f"{path}:{line_number}: row must be a JSON object")
+            if not isinstance(payload, dict):
+                raise TypeError(f"{path}:{line_number}: row must be a JSON object")
 
-        text_raw = payload.get("text")
-        if not isinstance(text_raw, str):
-            raise TypeError(f"{path}:{line_number}: missing string 'text' field")
+            text_raw = payload.get("text")
+            if not isinstance(text_raw, str):
+                raise TypeError(f"{path}:{line_number}: missing string 'text' field")
 
-        label: int
-        if force_label is not None:
-            label = force_label
-        elif "label" in payload:
-            label = _coerce_binary_label(payload["label"], path, line_number)
-        elif default_label is not None:
-            label = default_label
-        else:
-            raise ValueError(
-                f"{path}:{line_number}: missing 'label' and no default label was provided"
-            )
+            label: int
+            if force_label is not None:
+                label = force_label
+            elif "label" in payload:
+                label = _coerce_binary_label(payload["label"], path, line_number)
+            elif default_label is not None:
+                label = default_label
+            else:
+                raise ValueError(
+                    f"{path}:{line_number}: missing 'label' and no default label was provided"
+                )
 
-        examples.append(FitExample(text=text_raw, label=label))
+            samples.append(text_raw)
+            labels.append(label)
 
-    if not examples:
+    if not samples:
         raise ValueError(f"{path}: dataset contains no JSONL records")
-    return examples
+    return samples, labels
 
 
 def _flatten_inputs(groups: list[list[str]] | None) -> list[str]:
@@ -197,11 +195,11 @@ def _expand_input_paths(raw_inputs: list[str], *, role: str) -> list[Path]:
     return paths
 
 
-def _load_text_file(path: Path, *, label: int) -> list[FitExample]:
+def _load_text_file(path: Path, *, label: int) -> FitSamplesAndLabels:
     """Load one text/markdown file as a single fit sample."""
     if not path.is_file():
         raise FileNotFoundError(f"File not found: {path}")
-    return [FitExample(text=path.read_text(encoding="utf-8"), label=label)]
+    return [path.read_text(encoding="utf-8")], [label]
 
 
 def _load_path_examples(
@@ -209,7 +207,7 @@ def _load_path_examples(
     *,
     default_label: int | None,
     force_label: int | None = None,
-) -> list[FitExample]:
+) -> FitSamplesAndLabels:
     """Load examples from one dataset path based on file extension."""
     suffix = path.suffix.lower()
     if suffix == ".jsonl":
@@ -238,20 +236,21 @@ def _load_examples_from_paths(
     *,
     default_label: int | None,
     force_label: int | None = None,
-) -> list[FitExample]:
+) -> FitSamplesAndLabels:
     """Load and concatenate fit examples from multiple paths."""
-    examples: list[FitExample] = []
+    samples: list[str] = []
+    labels: list[int] = []
     for path in paths:
-        examples.extend(
-            _load_path_examples(
-                path,
-                default_label=default_label,
-                force_label=force_label,
-            )
+        path_samples, path_labels = _load_path_examples(
+            path,
+            default_label=default_label,
+            force_label=force_label,
         )
-    if not examples:
+        samples.extend(path_samples)
+        labels.extend(path_labels)
+    if not samples:
         raise ValueError("dataset contains no records")
-    return examples
+    return samples, labels
 
 
 def fit_main(argv: list[str] | None = None) -> int:
@@ -270,20 +269,21 @@ def fit_main(argv: list[str] | None = None) -> int:
         )
 
         pipeline = Pipeline.from_jsonl(args.init)
-        examples = _load_examples_from_paths(train_paths, default_label=1)
+        samples, labels = _load_examples_from_paths(train_paths, default_label=1)
         if negative_paths:
-            examples.extend(
-                _load_examples_from_paths(
-                    negative_paths,
-                    default_label=0,
-                    force_label=0,
-                )
+            negative_samples, negative_labels = _load_examples_from_paths(
+                negative_paths,
+                default_label=0,
+                force_label=0,
             )
+            samples.extend(negative_samples)
+            labels.extend(negative_labels)
 
-        samples = [example.text for example in examples]
-        labels = [example.label for example in examples]
-
-        pipeline.fit(samples, labels)
+        pipeline.fit(
+            samples,
+            labels,
+            calibrate_contrastive=not args.no_calibration,
+        )
         pipeline.to_jsonl(output_path)
     except (OSError, TypeError, ValueError) as exc:
         print(f"sg-fit: {exc}", file=sys.stderr)
@@ -297,7 +297,8 @@ def fit_main(argv: list[str] | None = None) -> int:
         f"{len(labels)} samples "
         f"(positive={positive_count}, negative={negative_count}) "
         f"from {len(train_paths)} train files and {len(negative_paths)} negative files "
-        f"using init={init_source} -> {output_path}"
+        f"using init={init_source} calibration="
+        f"{'off' if args.no_calibration else 'on'} -> {output_path}"
     )
     return EXIT_OK
 

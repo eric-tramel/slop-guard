@@ -19,6 +19,7 @@ Severity: Low per instance, medium when repeated frequently in one passage.
 """
 
 
+import math
 import re
 from dataclasses import dataclass
 
@@ -138,20 +139,19 @@ class ContrastPairRule(Rule[ContrastPairRuleConfig]):
             blend_pivot=20.0,
         )
         advice_min = clamp_int(
-            int(
-                round(
-                    fit_threshold_high_contrastive(
-                        default_value=float(
-                            clamp_int(percentile_ceil(positive_counts, 0.75), 1, 64)
-                        ),
-                        positive_values=positive_counts,
-                        negative_values=negative_counts,
-                        lower=1.0,
-                        upper=64.0,
-                        positive_quantile=0.75,
-                        negative_quantile=0.25,
-                        blend_pivot=16.0,
-                    )
+            math.ceil(
+                fit_threshold_high_contrastive(
+                    default_value=float(
+                        clamp_int(percentile_ceil(positive_counts, 0.75), 1, 64)
+                    ),
+                    positive_values=positive_counts,
+                    negative_values=negative_counts,
+                    lower=1.0,
+                    upper=64.0,
+                    positive_quantile=0.75,
+                    negative_quantile=0.25,
+                    blend_pivot=16.0,
+                    match_mode="ge",
                 )
             ),
             1,

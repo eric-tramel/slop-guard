@@ -18,6 +18,7 @@ Example Non-Violations:
 Severity: Medium to high when long runs appear in the same section.
 """
 
+import math
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
@@ -152,23 +153,22 @@ class BoldTermBulletRunRule(Rule[BoldTermBulletRunRuleConfig]):
                 negative_matched_documents += 1
 
         min_run_length = clamp_int(
-            int(
-                round(
-                    fit_threshold_high_contrastive(
-                        default_value=float(
-                            clamp_int(percentile_ceil(positive_run_lengths, 0.90), 2, 64)
-                        )
-                        if positive_run_lengths
-                        else float(self.config.min_run_length),
-                        positive_values=positive_run_lengths
-                        or [self.config.min_run_length],
-                        negative_values=negative_run_lengths,
-                        lower=2.0,
-                        upper=64.0,
-                        positive_quantile=0.90,
-                        negative_quantile=0.10,
-                        blend_pivot=16.0,
+            math.ceil(
+                fit_threshold_high_contrastive(
+                    default_value=float(
+                        clamp_int(percentile_ceil(positive_run_lengths, 0.90), 2, 64)
                     )
+                    if positive_run_lengths
+                    else float(self.config.min_run_length),
+                    positive_values=positive_run_lengths
+                    or [self.config.min_run_length],
+                    negative_values=negative_run_lengths,
+                    lower=2.0,
+                    upper=64.0,
+                    positive_quantile=0.90,
+                    negative_quantile=0.10,
+                    blend_pivot=16.0,
+                    match_mode="ge",
                 )
             ),
             2,

@@ -165,20 +165,19 @@ class RhythmRule(Rule[RhythmRuleConfig]):
             negative_cv_values.append(math.sqrt(variance) / mean)
 
         min_sentences = clamp_int(
-            int(
-                round(
-                    fit_threshold_high_contrastive(
-                        default_value=float(
-                            clamp_int(percentile_floor(positive_sentence_counts, 0.25), 2, 200)
-                        ),
-                        positive_values=positive_sentence_counts,
-                        negative_values=negative_sentence_counts,
-                        lower=2.0,
-                        upper=200.0,
-                        positive_quantile=0.25,
-                        negative_quantile=0.75,
-                        blend_pivot=28.0,
-                    )
+            math.ceil(
+                fit_threshold_high_contrastive(
+                    default_value=float(
+                        clamp_int(percentile_floor(positive_sentence_counts, 0.25), 2, 200)
+                    ),
+                    positive_values=positive_sentence_counts,
+                    negative_values=negative_sentence_counts,
+                    lower=2.0,
+                    upper=200.0,
+                    positive_quantile=0.25,
+                    negative_quantile=0.75,
+                    blend_pivot=28.0,
+                    match_mode="ge",
                 )
             ),
             2,
@@ -193,6 +192,7 @@ class RhythmRule(Rule[RhythmRuleConfig]):
             positive_quantile=0.10,
             negative_quantile=0.90,
             blend_pivot=20.0,
+            match_mode="lt",
         )
         positive_matches = sum(1 for value in positive_cv_values if value < cv_threshold)
         negative_matches = sum(1 for value in negative_cv_values if value < cv_threshold)

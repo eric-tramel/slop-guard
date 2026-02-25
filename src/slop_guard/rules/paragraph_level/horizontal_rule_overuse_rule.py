@@ -19,6 +19,7 @@ Severity: Low to medium; mostly a formatting signal unless heavily repeated.
 """
 
 
+import math
 import re
 from dataclasses import dataclass
 
@@ -98,7 +99,7 @@ class HorizontalRuleOveruseRule(Rule[HorizontalRuleOveruseRuleConfig]):
         negative_counts = [
             len(_HORIZONTAL_RULE_RE.findall(sample)) for sample in negative_samples
         ]
-        min_count = int(
+        min_count = math.ceil(
             fit_threshold_high_contrastive(
                 default_value=float(self.config.min_count),
                 positive_values=positive_counts,
@@ -108,6 +109,7 @@ class HorizontalRuleOveruseRule(Rule[HorizontalRuleOveruseRuleConfig]):
                 positive_quantile=0.90,
                 negative_quantile=0.10,
                 blend_pivot=18.0,
+                match_mode="ge",
             )
         )
         positive_matches = sum(1 for count in positive_counts if count >= min_count)

@@ -5,6 +5,7 @@ from typing import TypeAlias
 
 import pytest
 
+from slop_guard.analysis import AnalysisDocument
 from slop_guard.rules import Rule, build_default_rules
 from slop_guard.rules.paragraph_level import (
     BlockquoteDensityRule,
@@ -55,8 +56,20 @@ FIT_CASES: tuple[FitCase, ...] = (
         StructuralPatternRule,
         "bold_header_min",
         [
-            "**Problem:** the first claim.",
-            "**Result:** the second claim.",
+            (
+                "**Problem:** first\n"
+                "**Cause:** second\n"
+                "**Fix:** third\n"
+                "**Impact:** fourth\n"
+                "**Scope:** fifth"
+            ),
+            (
+                "**Input:** first\n"
+                "**Process:** second\n"
+                "**Output:** third\n"
+                "**Risk:** fourth\n"
+                "**Control:** fifth"
+            ),
         ],
     ),
     (
@@ -153,8 +166,8 @@ FIT_CASES: tuple[FitCase, ...] = (
         BlockquoteDensityRule,
         "min_lines",
         [
-            "> one\nnormal",
-            "> two\nnormal",
+            "> one\n> two\n> three\n> four\n> five\nnormal",
+            "> six\n> seven\n> eight\n> nine\n> ten\nnormal",
         ],
     ),
     (
@@ -169,16 +182,24 @@ FIT_CASES: tuple[FitCase, ...] = (
         HorizontalRuleOveruseRule,
         "min_count",
         [
-            "---\ntext",
-            "---\nmore text",
+            "---\n---\n---\n---\n---\ntext",
+            "---\n---\n---\n---\n---\nmore text",
         ],
     ),
     (
         PhraseReuseRule,
         "repeated_ngram_min_n",
         [
-            "alpha beta gamma alpha beta delta alpha beta epsilon alpha beta zeta",
-            "alpha beta one alpha beta two alpha beta three alpha beta four",
+            (
+                "alpha beta gamma delta epsilon zeta "
+                "alpha beta gamma delta epsilon zeta "
+                "alpha beta gamma delta epsilon zeta"
+            ),
+            (
+                "one two three four five six seven "
+                "one two three four five six seven "
+                "one two three four five six seven"
+            ),
         ],
     ),
 )
@@ -226,3 +247,30 @@ def test_fit_uses_negative_labels_for_contrastive_adjustment() -> None:
 
     assert contrastive.config.record_cap > positive_only.config.record_cap
     assert contrastive.config.penalty != positive_only.config.penalty
+
+
+def test_fit_thresholds_align_with_inclusive_count_based_rules() -> None:
+    """Inclusive ``>=`` count rules should preserve contrastive separation."""
+    defaults = {type(rule): rule for rule in build_default_rules()}
+    rule = deepcopy(defaults[HorizontalRuleOveruseRule])
+
+    positive_corpus = ["---\n---\ntext"] * 20
+    negative_corpus = ["---\n---\n---\ntext"] * 20
+    fitted = rule.fit(
+        positive_corpus + negative_corpus,
+        [1] * len(positive_corpus) + [0] * len(negative_corpus),
+    )
+
+    positive_hits = sum(
+        1
+        for sample in positive_corpus
+        if fitted.forward(AnalysisDocument.from_text(sample)).violations
+    )
+    negative_hits = sum(
+        1
+        for sample in negative_corpus
+        if fitted.forward(AnalysisDocument.from_text(sample)).violations
+    )
+
+    assert negative_hits > positive_hits
+    assert fitted.config.penalty < 0

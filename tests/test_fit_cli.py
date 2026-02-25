@@ -15,6 +15,7 @@ class _FakePipeline:
     loaded_path: str | None = None
     last_samples: list[str] = []
     last_labels: list[int] = []
+    last_calibrate_contrastive: bool | None = None
     output_path: Path | None = None
 
     @classmethod
@@ -23,10 +24,17 @@ class _FakePipeline:
         cls.loaded_path = path
         return cls()
 
-    def fit(self, samples: list[str], labels: list[int] | None = None) -> "_FakePipeline":
+    def fit(
+        self,
+        samples: list[str],
+        labels: list[int] | None = None,
+        *,
+        calibrate_contrastive: bool = True,
+    ) -> "_FakePipeline":
         """Record fit inputs."""
         self.__class__.last_samples = list(samples)
         self.__class__.last_labels = [] if labels is None else list(labels)
+        self.__class__.last_calibrate_contrastive = calibrate_contrastive
         return self
 
     def to_jsonl(self, path: str | Path) -> None:
@@ -40,6 +48,7 @@ def _reset_fake_pipeline_state() -> None:
     _FakePipeline.loaded_path = None
     _FakePipeline.last_samples = []
     _FakePipeline.last_labels = []
+    _FakePipeline.last_calibrate_contrastive = None
     _FakePipeline.output_path = None
 
 
@@ -69,6 +78,7 @@ def test_fit_main_uses_default_positive_labels_and_writes_output(
         "second target sample",
     ]
     assert _FakePipeline.last_labels == [1, 1]
+    assert _FakePipeline.last_calibrate_contrastive is True
     assert _FakePipeline.output_path == output
 
     captured = capsys.readouterr()
@@ -102,6 +112,7 @@ def test_fit_main_supports_multi_input_mode_with_output_flag(
         "second markdown body",
     ]
     assert _FakePipeline.last_labels == [1, 1]
+    assert _FakePipeline.last_calibrate_contrastive is True
     assert _FakePipeline.output_path == output
 
 
@@ -260,6 +271,28 @@ def test_fit_main_supports_repeated_negative_dataset_flags(
     ]
     assert _FakePipeline.last_labels == [1, 0, 0]
     assert _FakePipeline.output_path == output
+
+
+def test_fit_main_can_disable_post_fit_calibration(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """``--no-calibration`` should disable post-fit contrastive calibration."""
+    target = tmp_path / "target.txt"
+    output = tmp_path / "rules.fitted.jsonl"
+    target.write_text("target body", encoding="utf-8")
+
+    monkeypatch.setattr(fit_cli, "Pipeline", _FakePipeline)
+    exit_code = fit_cli.fit_main(
+        [
+            "--no-calibration",
+            "--output",
+            str(output),
+            str(target),
+        ]
+    )
+
+    assert exit_code == fit_cli.EXIT_OK
+    assert _FakePipeline.last_calibrate_contrastive is False
 
 
 def test_fit_main_returns_error_for_invalid_dataset(

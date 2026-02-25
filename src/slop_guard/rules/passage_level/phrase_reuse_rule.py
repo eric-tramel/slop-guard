@@ -19,6 +19,7 @@ Severity: Medium to high; repeated long phrases are strong formulaicity signals.
 """
 
 
+import math
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, Hyperparameters
@@ -176,18 +177,17 @@ class PhraseReuseRule(Rule[PhraseReuseRuleConfig]):
             percentile_floor(positive_n_values, 0.20), 2, 12
         )
         repeated_ngram_min_n = clamp_int(
-            int(
-                round(
-                    fit_threshold_high_contrastive(
-                        default_value=float(positive_repeated_ngram_min_n),
-                        positive_values=positive_n_values,
-                        negative_values=negative_n_values,
-                        lower=2.0,
-                        upper=12.0,
-                        positive_quantile=0.20,
-                        negative_quantile=0.80,
-                        blend_pivot=16.0,
-                    )
+            math.ceil(
+                fit_threshold_high_contrastive(
+                    default_value=float(positive_repeated_ngram_min_n),
+                    positive_values=positive_n_values,
+                    negative_values=negative_n_values,
+                    lower=2.0,
+                    upper=12.0,
+                    positive_quantile=0.20,
+                    negative_quantile=0.80,
+                    blend_pivot=16.0,
+                    match_mode="ge",
                 )
             ),
             2,
@@ -207,20 +207,19 @@ class PhraseReuseRule(Rule[PhraseReuseRuleConfig]):
         )
 
         repeated_ngram_min_count = clamp_int(
-            int(
-                round(
-                    fit_threshold_high_contrastive(
-                        default_value=float(
-                            clamp_int(percentile_ceil(positive_counts, 0.75), 2, 32)
-                        ),
-                        positive_values=positive_counts,
-                        negative_values=negative_counts,
-                        lower=2.0,
-                        upper=32.0,
-                        positive_quantile=0.75,
-                        negative_quantile=0.25,
-                        blend_pivot=12.0,
-                    )
+            math.ceil(
+                fit_threshold_high_contrastive(
+                    default_value=float(
+                        clamp_int(percentile_ceil(positive_counts, 0.75), 2, 32)
+                    ),
+                    positive_values=positive_counts,
+                    negative_values=negative_counts,
+                    lower=2.0,
+                    upper=32.0,
+                    positive_quantile=0.75,
+                    negative_quantile=0.25,
+                    blend_pivot=12.0,
+                    match_mode="ge",
                 )
             ),
             2,

@@ -174,6 +174,7 @@ Optional arguments:
 
 - `--init JSONL` -- Start from a specific rule config JSONL instead of packaged defaults.
 - `--negative-dataset INPUT [INPUT ...]` -- Add negative dataset inputs. This flag can be repeated; all negative rows are normalized to label `0`.
+- `--no-calibration` -- Skip post-fit contrastive penalty calibration for faster fitting on large corpora.
 - `--output JSONL` -- Required when you pass more than one training input.
 
 Target corpus rows can be either:

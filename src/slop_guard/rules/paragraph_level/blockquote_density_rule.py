@@ -18,7 +18,7 @@ Example Non-Violations:
 Severity: Medium; usually indicates a style issue rather than factual error.
 """
 
-
+import math
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
@@ -137,17 +137,22 @@ class BlockquoteDensityRule(Rule[BlockquoteDensityRuleConfig]):
                     blockquote_count += 1
             negative_counts.append(blockquote_count)
 
-        min_lines = int(
-            fit_threshold_high_contrastive(
-                default_value=float(self.config.min_lines),
-                positive_values=positive_counts,
-                negative_values=negative_counts,
-                lower=1.0,
-                upper=128.0,
-                positive_quantile=0.90,
-                negative_quantile=0.10,
-                blend_pivot=18.0,
-            )
+        min_lines = clamp_int(
+            math.ceil(
+                fit_threshold_high_contrastive(
+                    default_value=float(self.config.min_lines),
+                    positive_values=positive_counts,
+                    negative_values=negative_counts,
+                    lower=1.0,
+                    upper=128.0,
+                    positive_quantile=0.90,
+                    negative_quantile=0.10,
+                    blend_pivot=18.0,
+                    match_mode="ge",
+                )
+            ),
+            1,
+            128,
         )
         free_lines = clamp_int(
             int(

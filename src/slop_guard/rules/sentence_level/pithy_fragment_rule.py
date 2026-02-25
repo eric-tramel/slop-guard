@@ -19,6 +19,7 @@ Severity: Low to medium; mostly stylistic alone, stronger when clustered.
 """
 
 
+import math
 import re
 from dataclasses import dataclass
 
@@ -140,18 +141,17 @@ class PithyFragmentRule(Rule[PithyFragmentRuleConfig]):
             negative_counts.append(sample_count)
 
         max_sentence_words = clamp_int(
-            int(
-                round(
-                    fit_threshold_low_contrastive(
-                        default_value=float(self.config.max_sentence_words),
-                        positive_values=positive_lengths,
-                        negative_values=negative_lengths,
-                        lower=2.0,
-                        upper=64.0,
-                        positive_quantile=0.90,
-                        negative_quantile=0.10,
-                        blend_pivot=16.0,
-                    )
+            math.floor(
+                fit_threshold_low_contrastive(
+                    default_value=float(self.config.max_sentence_words),
+                    positive_values=positive_lengths,
+                    negative_values=negative_lengths,
+                    lower=2.0,
+                    upper=64.0,
+                    positive_quantile=0.90,
+                    negative_quantile=0.10,
+                    blend_pivot=16.0,
+                    match_mode="le",
                 )
             ),
             2,

@@ -230,18 +230,23 @@ def _contrastive_rate_stats(
     threshold: float,
     positive_values: NumericSeq,
     negative_values: NumericSeq,
-    mode: str,
+    match_mode: str,
 ) -> tuple[float, float]:
     """Return positive and negative match rates for one threshold."""
-    if mode not in ("high", "low"):
-        raise ValueError("mode must be 'high' or 'low'")
-
-    if mode == "high":
+    if match_mode == "gt":
         positive_hits = sum(1 for value in positive_values if float(value) > threshold)
         negative_hits = sum(1 for value in negative_values if float(value) > threshold)
-    else:
+    elif match_mode == "ge":
+        positive_hits = sum(1 for value in positive_values if float(value) >= threshold)
+        negative_hits = sum(1 for value in negative_values if float(value) >= threshold)
+    elif match_mode == "lt":
         positive_hits = sum(1 for value in positive_values if float(value) < threshold)
         negative_hits = sum(1 for value in negative_values if float(value) < threshold)
+    elif match_mode == "le":
+        positive_hits = sum(1 for value in positive_values if float(value) <= threshold)
+        negative_hits = sum(1 for value in negative_values if float(value) <= threshold)
+    else:
+        raise ValueError("match_mode must be one of: gt, ge, lt, le")
 
     positive_rate = positive_hits / len(positive_values) if positive_values else 0.0
     negative_rate = negative_hits / len(negative_values) if negative_values else 0.0
@@ -258,10 +263,26 @@ def fit_threshold_high_contrastive(
     positive_quantile: float = 0.90,
     negative_quantile: float = 0.10,
     blend_pivot: float = 12.0,
+    match_mode: str = "gt",
 ) -> float:
-    """Fit ``x > threshold`` style thresholds from contrastive distributions."""
+    """Fit high-tail thresholds from contrastive distributions.
+
+    Args:
+        default_value: Baseline threshold value from defaults.
+        positive_values: Measurements from positive-labeled samples.
+        negative_values: Measurements from negative-labeled samples.
+        lower: Minimum allowable threshold.
+        upper: Maximum allowable threshold.
+        positive_quantile: Positive cohort quantile included in candidates.
+        negative_quantile: Negative cohort quantile included in candidates.
+        blend_pivot: Support pivot for blending toward defaults.
+        match_mode: Threshold comparator, either ``"gt"`` (``x > t``) or
+            ``"ge"`` (``x >= t``).
+    """
     if not positive_values:
         return clamp_float(default_value, lower, upper)
+    if match_mode not in ("gt", "ge"):
+        raise ValueError("match_mode for high thresholds must be 'gt' or 'ge'")
 
     default_clamped = clamp_float(default_value, lower, upper)
     candidates = _threshold_candidates(
@@ -294,7 +315,7 @@ def fit_threshold_high_contrastive(
             threshold=candidate,
             positive_values=positive_values,
             negative_values=negative_values,
-            mode="high",
+            match_mode=match_mode,
         )
         gap = negative_rate - positive_rate
         objective = -positive_rate
@@ -332,10 +353,26 @@ def fit_threshold_low_contrastive(
     positive_quantile: float = 0.10,
     negative_quantile: float = 0.90,
     blend_pivot: float = 12.0,
+    match_mode: str = "lt",
 ) -> float:
-    """Fit ``x < threshold`` style thresholds from contrastive distributions."""
+    """Fit low-tail thresholds from contrastive distributions.
+
+    Args:
+        default_value: Baseline threshold value from defaults.
+        positive_values: Measurements from positive-labeled samples.
+        negative_values: Measurements from negative-labeled samples.
+        lower: Minimum allowable threshold.
+        upper: Maximum allowable threshold.
+        positive_quantile: Positive cohort quantile included in candidates.
+        negative_quantile: Negative cohort quantile included in candidates.
+        blend_pivot: Support pivot for blending toward defaults.
+        match_mode: Threshold comparator, either ``"lt"`` (``x < t``) or
+            ``"le"`` (``x <= t``).
+    """
     if not positive_values:
         return clamp_float(default_value, lower, upper)
+    if match_mode not in ("lt", "le"):
+        raise ValueError("match_mode for low thresholds must be 'lt' or 'le'")
 
     default_clamped = clamp_float(default_value, lower, upper)
     candidates = _threshold_candidates(
@@ -368,7 +405,7 @@ def fit_threshold_low_contrastive(
             threshold=candidate,
             positive_values=positive_values,
             negative_values=negative_values,
-            mode="low",
+            match_mode=match_mode,
         )
         gap = negative_rate - positive_rate
         objective = -positive_rate

@@ -19,6 +19,7 @@ Severity: Medium to high when multiple structural signals co-occur.
 """
 
 
+import math
 import re
 from dataclasses import dataclass
 
@@ -229,7 +230,7 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
             if has_run:
                 negative_bullet_run_documents += 1
 
-        bold_header_min = int(
+        bold_header_min = math.ceil(
             fit_threshold_high_contrastive(
                 default_value=float(self.config.bold_header_min),
                 positive_values=positive_bold_header_counts,
@@ -239,9 +240,10 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
                 positive_quantile=0.90,
                 negative_quantile=0.10,
                 blend_pivot=18.0,
+                match_mode="ge",
             )
         )
-        bullet_run_min = int(
+        bullet_run_min = math.ceil(
             fit_threshold_high_contrastive(
                 default_value=float(self.config.bullet_run_min),
                 positive_values=positive_bullet_run_lengths or [self.config.bullet_run_min],
@@ -251,6 +253,7 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
                 positive_quantile=0.90,
                 negative_quantile=0.10,
                 blend_pivot=18.0,
+                match_mode="ge",
             )
         )
 
@@ -267,7 +270,7 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
             blend_pivot=18.0,
             max_multiplier=2.0,
         )
-        triadic_advice_min = int(
+        triadic_advice_min = math.ceil(
             fit_threshold_high_contrastive(
                 default_value=float(self.config.triadic_advice_min),
                 positive_values=positive_triadic_counts,
@@ -277,6 +280,7 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
                 positive_quantile=0.75,
                 negative_quantile=0.50,
                 blend_pivot=18.0,
+                match_mode="ge",
             )
         )
 

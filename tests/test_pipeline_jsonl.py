@@ -172,3 +172,24 @@ def test_pipeline_fit_calibrates_penalties_for_contrastive_labels() -> None:
         list(negative_state.violations), negative_state.counts, HYPERPARAMETERS
     )
     assert positive_weighted < negative_weighted
+
+
+def test_pipeline_fit_can_skip_contrastive_calibration() -> None:
+    """Callers should be able to skip calibration for faster fitting."""
+    positive_rule = _MarkerPenaltyRule(
+        _MarkerPenaltyConfig(penalty=-5, marker="POS_ONLY_MARKER")
+    )
+    negative_rule = _MarkerPenaltyRule(
+        _MarkerPenaltyConfig(penalty=-5, marker="NEG_ONLY_MARKER")
+    )
+    pipeline = Pipeline([positive_rule, negative_rule])
+
+    samples = [
+        "This text has POS_ONLY_MARKER",
+        "This text has NEG_ONLY_MARKER",
+    ]
+    labels = [1, 0]
+    pipeline.fit(samples, labels, calibrate_contrastive=False)
+
+    assert positive_rule.config.penalty == -5
+    assert negative_rule.config.penalty == -5
