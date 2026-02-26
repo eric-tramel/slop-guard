@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TypeAlias
 
 from .rules import Pipeline
+from .version import PACKAGE_VERSION
 
 EXIT_OK = 0
 EXIT_ERROR = 2
@@ -26,6 +27,12 @@ def _build_parser() -> argparse.ArgumentParser:
             "Inputs can be .jsonl, .txt, or .md. JSONL rows must contain a string "
             "'text' field and may include an integer 'label' field."
         ),
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=PACKAGE_VERSION,
+        help="Show package version and exit.",
     )
     parser.add_argument(
         "inputs",

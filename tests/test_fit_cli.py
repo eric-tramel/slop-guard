@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from slop_guard import fit_cli
+from slop_guard.version import PACKAGE_VERSION
 
 
 class _FakePipeline:
@@ -50,6 +51,19 @@ def _reset_fake_pipeline_state() -> None:
     _FakePipeline.last_labels = []
     _FakePipeline.last_calibrate_contrastive = None
     _FakePipeline.output_path = None
+
+
+def test_fit_main_version_flag_prints_package_version(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """``sg-fit --version`` should print package version and exit cleanly."""
+    with pytest.raises(SystemExit) as raised:
+        fit_cli.fit_main(["--version"])
+
+    assert raised.value.code == fit_cli.EXIT_OK
+    captured = capsys.readouterr()
+    assert captured.out.strip() == PACKAGE_VERSION
+    assert captured.err == ""
 
 
 def test_fit_main_uses_default_positive_labels_and_writes_output(

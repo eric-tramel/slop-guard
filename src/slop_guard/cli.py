@@ -40,6 +40,7 @@ from typing import Literal, TextIO, TypeAlias
 
 from .rules import Pipeline
 from .server import HYPERPARAMETERS, Hyperparameters, _analyze
+from .version import PACKAGE_VERSION
 
 # ---------------------------------------------------------------------------
 # Exit codes
@@ -147,6 +148,12 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="sg",
         description="Prose linter for AI slop patterns.",
         epilog="Pass file paths, '-' for stdin, or quoted inline text.",
+    )
+    p.add_argument(
+        "--version",
+        action="version",
+        version=PACKAGE_VERSION,
+        help="Show package version and exit.",
     )
     p.add_argument(
         "inputs",
