@@ -2,11 +2,11 @@
 # requires-python = ">=3.11"
 # dependencies = ["data-designer"]
 # ///
-"""Generate pure-slop benchmark text with Data Designer defaults.
+"""Generate broad writing samples with Data Designer defaults.
 
-This script intentionally generates low-quality, generic prose to benchmark slop
-detectors. It uses Data Designer's default model/provider configuration and the
-`nvidia-text` model alias by default.
+This script samples open-ended prompts and captures raw model output for
+benchmarking. It uses Data Designer's default model/provider configuration and
+the `nvidia-text` model alias by default.
 
 Example:
     uv run benchmark/generate-pure-slop-data-designer.py
@@ -35,9 +35,9 @@ JsonRecord: TypeAlias = dict[str, str]
 
 DEFAULT_MODEL_ALIAS = "nvidia-text"
 DEFAULT_NUM_RECORDS = 64
-DEFAULT_DATASET_NAME = "pure_slop_data_designer"
-DEFAULT_ARTIFACT_DIR = Path("benchmark/output/data_designer_pure_slop_artifacts")
-DEFAULT_OUTPUT_PATH = Path("benchmark/output/data_designer_pure_slop.jsonl")
+DEFAULT_DATASET_NAME = "data_designer_prompt_samples"
+DEFAULT_ARTIFACT_DIR = Path("benchmark/output/data_designer_prompt_samples_artifacts")
+DEFAULT_OUTPUT_PATH = Path("benchmark/output/data_designer_prompt_samples.jsonl")
 
 PROMPT_TEMPLATES: PromptTemplateValues = (
     "Write a blog about",
@@ -189,26 +189,16 @@ TOPICS_BY_DOMAIN: TopicValuesByDomain = {
     ),
 }
 
-SLOP_SYSTEM_PROMPT = """You write intentionally low-quality AI slop.
-Produce generic, repetitive, buzzword-heavy prose with vague claims, empty
-insights, and broad platitudes. Avoid concrete details, data, citations, and
-specific examples. Keep the tone confident and polished while saying very
-little of substance."""
+MODEL_PROMPT = """{{ prompt_template }} {{ topic }}.
 
-SLOP_USER_PROMPT = """{{ prompt_template }} {{ topic }}.
-
-Output requirements:
-- 3-5 paragraphs of pure AI slop prose.
-- Include cliches, transitions, and broad motivational framing.
-- Keep content generic and non-specific.
-- No bullets, no markdown, no headings."""
+Write 3-5 paragraphs for a general audience using a clear, confident tone."""
 
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line options."""
     parser = argparse.ArgumentParser(
         description=(
-            "Generate slop-heavy text samples using Data Designer defaults and "
+            "Generate text samples using Data Designer defaults and "
             "export them as JSONL."
         )
     )
@@ -216,7 +206,7 @@ def parse_args() -> argparse.Namespace:
         "--num-records",
         type=int,
         default=DEFAULT_NUM_RECORDS,
-        help=f"Number of slop examples to generate (default: {DEFAULT_NUM_RECORDS}).",
+        help=f"Number of examples to generate (default: {DEFAULT_NUM_RECORDS}).",
     )
     parser.add_argument(
         "--model-alias",
@@ -274,8 +264,7 @@ def build_config_builder(model_alias: str) -> DataDesignerConfigBuilder:
     config_builder.add_column(
         LLMTextColumnConfig(
             name="text",
-            prompt=SLOP_USER_PROMPT,
-            system_prompt=SLOP_SYSTEM_PROMPT,
+            prompt=MODEL_PROMPT,
             model_alias=model_alias,
         )
     )
@@ -317,7 +306,7 @@ def main() -> None:
     text_rows: list[JsonRecord] = [{"text": str(value)} for value in dataset["text"]]
     write_jsonl(path=output_path, rows=text_rows)
 
-    print(f"Generated {len(text_rows):,} pure slop examples.")
+    print(f"Generated {len(text_rows):,} examples.")
     print(f"JSONL output: {output_path.resolve()}")
     print(f"Artifacts: {results.artifact_storage.base_dataset_path.resolve()}")
 
