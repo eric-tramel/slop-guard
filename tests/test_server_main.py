@@ -2,7 +2,23 @@
 
 from __future__ import annotations
 
+import pytest
+
 from slop_guard import server
+from slop_guard.version import PACKAGE_VERSION
+
+
+def test_main_version_flag_prints_package_version(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """``slop-guard --version`` should print package version and exit cleanly."""
+    with pytest.raises(SystemExit) as raised:
+        server.main(["--version"])
+
+    assert raised.value.code == 0
+    captured = capsys.readouterr()
+    assert captured.out.strip() == PACKAGE_VERSION
+    assert captured.err == ""
 
 
 def test_main_loads_default_pipeline_when_config_not_provided(

@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from slop_guard import cli
+from slop_guard.version import PACKAGE_VERSION
 
 
 def _fake_result(source: str, score: int = 75) -> dict[str, object]:
@@ -29,6 +30,19 @@ def test_requires_at_least_one_input(capsys: pytest.CaptureFixture[str]) -> None
 
     assert raised.value.code == cli.EXIT_ERROR
     assert "the following arguments are required: INPUT" in capsys.readouterr().err
+
+
+def test_version_flag_prints_package_version(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """``--version`` should print package version and exit cleanly."""
+    with pytest.raises(SystemExit) as raised:
+        cli.cli_main(["--version"])
+
+    assert raised.value.code == cli.EXIT_OK
+    captured = capsys.readouterr()
+    assert captured.out.strip() == PACKAGE_VERSION
+    assert captured.err == ""
 
 
 def test_accepts_inline_text_input(capsys: pytest.CaptureFixture[str]) -> None:

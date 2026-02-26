@@ -19,6 +19,7 @@ from .analysis import (
     short_text_result,
 )
 from .rules import Pipeline
+from .version import PACKAGE_VERSION
 
 MCP_SERVER_NAME = "slop-guard"
 mcp_server = FastMCP(MCP_SERVER_NAME)
@@ -109,6 +110,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="slop-guard",
         description="Run the slop-guard MCP server on stdio.",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=PACKAGE_VERSION,
+        help="Show package version and exit.",
     )
     parser.add_argument(
         "-c", "--config",
