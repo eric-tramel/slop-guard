@@ -26,10 +26,10 @@ from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import (
-    clamp_float,
     clamp_int,
-    fit_penalty,
-    percentile,
+    fit_penalty_contrastive,
+    fit_threshold_high_contrastive,
+    fit_threshold_low_contrastive,
     percentile_floor,
 )
 
@@ -119,18 +119,18 @@ class RhythmRule(Rule[RhythmRuleConfig]):
 
     def _fit(self, samples: list[str], labels: list[Label] | None) -> RhythmRuleConfig:
         """Fit rhythm thresholds from sentence-length distributions."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
 
-        sentence_counts: list[int] = []
-        cv_values: list[float] = []
-        for sample in fit_samples:
+        positive_sentence_counts: list[int] = []
+        positive_cv_values: list[float] = []
+        for sample in positive_samples:
             document = AnalysisDocument.from_text(sample)
             sentence_count = len(document.sentence_word_counts)
             if sentence_count <= 0:
                 continue
-            sentence_counts.append(sentence_count)
+            positive_sentence_counts.append(sentence_count)
             if sentence_count < 2:
                 continue
             mean = sum(document.sentence_word_counts) / sentence_count
@@ -140,18 +140,69 @@ class RhythmRule(Rule[RhythmRuleConfig]):
                 sum((value - mean) ** 2 for value in document.sentence_word_counts)
                 / sentence_count
             )
-            cv_values.append(math.sqrt(variance) / mean)
+            positive_cv_values.append(math.sqrt(variance) / mean)
 
-        if not sentence_counts:
+        if not positive_sentence_counts:
             return self.config
 
-        min_sentences = clamp_int(percentile_floor(sentence_counts, 0.25), 2, 200)
-        cv_threshold = self.config.cv_threshold
-        penalty = self.config.penalty
-        if cv_values:
-            cv_threshold = clamp_float(percentile(cv_values, 0.10), 0.05, 2.0)
-            matched_documents = sum(1 for value in cv_values if value < cv_threshold)
-            penalty = fit_penalty(self.config.penalty, matched_documents, len(cv_values))
+        negative_sentence_counts: list[int] = []
+        negative_cv_values: list[float] = []
+        for sample in negative_samples:
+            document = AnalysisDocument.from_text(sample)
+            sentence_count = len(document.sentence_word_counts)
+            if sentence_count <= 0:
+                continue
+            negative_sentence_counts.append(sentence_count)
+            if sentence_count < 2:
+                continue
+            mean = sum(document.sentence_word_counts) / sentence_count
+            if mean <= 0:
+                continue
+            variance = (
+                sum((value - mean) ** 2 for value in document.sentence_word_counts)
+                / sentence_count
+            )
+            negative_cv_values.append(math.sqrt(variance) / mean)
+
+        min_sentences = clamp_int(
+            math.ceil(
+                fit_threshold_high_contrastive(
+                    default_value=float(
+                        clamp_int(percentile_floor(positive_sentence_counts, 0.25), 2, 200)
+                    ),
+                    positive_values=positive_sentence_counts,
+                    negative_values=negative_sentence_counts,
+                    lower=2.0,
+                    upper=200.0,
+                    positive_quantile=0.25,
+                    negative_quantile=0.75,
+                    blend_pivot=28.0,
+                    match_mode="ge",
+                )
+            ),
+            2,
+            200,
+        )
+        cv_threshold = fit_threshold_low_contrastive(
+            default_value=self.config.cv_threshold,
+            positive_values=positive_cv_values or [self.config.cv_threshold],
+            negative_values=negative_cv_values,
+            lower=0.05,
+            upper=2.0,
+            positive_quantile=0.10,
+            negative_quantile=0.90,
+            blend_pivot=20.0,
+            match_mode="lt",
+        )
+        positive_matches = sum(1 for value in positive_cv_values if value < cv_threshold)
+        negative_matches = sum(1 for value in negative_cv_values if value < cv_threshold)
+        penalty = fit_penalty_contrastive(
+            base_penalty=self.config.penalty,
+            positive_matches=positive_matches,
+            positive_total=len(positive_samples),
+            negative_matches=negative_matches,
+            negative_total=len(negative_samples),
+        )
 
         return RhythmRuleConfig(
             min_sentences=min_sentences,

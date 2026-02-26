@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
-from slop_guard.rules.helpers import fit_penalty
+from slop_guard.rules.helpers import fit_penalty_contrastive
 
 _WEASEL_LITERALS: tuple[str, ...] = (
     "some critics argue",
@@ -139,17 +139,29 @@ class WeaselPhraseRule(Rule[WeaselPhraseRuleConfig]):
         self, samples: list[str], labels: list[Label] | None
     ) -> WeaselPhraseRuleConfig:
         """Fit penalty from weasel-phrase prevalence."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
-        matched_documents = 0
-        for sample in fit_samples:
+
+        positive_matches = 0
+        for sample in positive_samples:
             lower_text = sample.lower()
             if any(phrase in lower_text for phrase in _WEASEL_LITERALS):
-                matched_documents += 1
+                positive_matches += 1
+
+        negative_matches = 0
+        for sample in negative_samples:
+            lower_text = sample.lower()
+            if any(phrase in lower_text for phrase in _WEASEL_LITERALS):
+                negative_matches += 1
+
         return WeaselPhraseRuleConfig(
-            penalty=fit_penalty(
-                self.config.penalty, matched_documents, len(fit_samples)
+            penalty=fit_penalty_contrastive(
+                base_penalty=self.config.penalty,
+                positive_matches=positive_matches,
+                positive_total=len(positive_samples),
+                negative_matches=negative_matches,
+                negative_total=len(negative_samples),
             ),
             context_window_chars=self.config.context_window_chars,
         )

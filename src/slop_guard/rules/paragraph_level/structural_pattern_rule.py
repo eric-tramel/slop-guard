@@ -19,13 +19,18 @@ Severity: Medium to high when multiple structural signals co-occur.
 """
 
 
+import math
 import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
-from slop_guard.rules.helpers import clamp_int, fit_penalty, percentile_ceil
+from slop_guard.rules.helpers import (
+    fit_count_cap_contrastive,
+    fit_penalty_contrastive,
+    fit_threshold_high_contrastive,
+)
 
 _BOLD_HEADER_RE = re.compile(r"\*\*[^*]+[.:]\*\*\s+\S")
 _TRIADIC_RE = re.compile(r"\w+, \w+, and \w+", re.IGNORECASE)
@@ -156,29 +161,29 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
         self, samples: list[str], labels: list[Label] | None
     ) -> StructuralPatternRuleConfig:
         """Fit structural thresholds from corpus formatting patterns."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
 
-        bold_header_counts: list[int] = []
-        triadic_counts: list[int] = []
-        bullet_run_lengths: list[int] = []
-        bold_documents = 0
-        triadic_documents = 0
-        bullet_run_documents = 0
+        positive_bold_header_counts: list[int] = []
+        positive_triadic_counts: list[int] = []
+        positive_bullet_run_lengths: list[int] = []
+        positive_bold_documents = 0
+        positive_triadic_documents = 0
+        positive_bullet_run_documents = 0
 
-        for sample in fit_samples:
+        for sample in positive_samples:
             document = AnalysisDocument.from_text(sample)
 
             bold_count = len(_BOLD_HEADER_RE.findall(sample))
-            bold_header_counts.append(bold_count)
+            positive_bold_header_counts.append(bold_count)
             if bold_count > 0:
-                bold_documents += 1
+                positive_bold_documents += 1
 
             triadic_count = len(_TRIADIC_RE.findall(sample))
-            triadic_counts.append(triadic_count)
+            positive_triadic_counts.append(triadic_count)
             if triadic_count > 0:
-                triadic_documents += 1
+                positive_triadic_documents += 1
 
             run = 0
             has_run = False
@@ -187,39 +192,122 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
                     run += 1
                     continue
                 if run > 0:
-                    bullet_run_lengths.append(run)
+                    positive_bullet_run_lengths.append(run)
                     has_run = True
                     run = 0
             if has_run:
-                bullet_run_documents += 1
+                positive_bullet_run_documents += 1
 
-        bold_header_min = clamp_int(percentile_ceil(bold_header_counts, 0.90), 1, 128)
+        negative_bold_header_counts: list[int] = []
+        negative_triadic_counts: list[int] = []
+        negative_bullet_run_lengths: list[int] = []
+        negative_bold_documents = 0
+        negative_triadic_documents = 0
+        negative_bullet_run_documents = 0
+        for sample in negative_samples:
+            document = AnalysisDocument.from_text(sample)
 
-        bullet_run_min = self.config.bullet_run_min
-        if bullet_run_lengths:
-            bullet_run_min = clamp_int(percentile_ceil(bullet_run_lengths, 0.90), 2, 128)
+            bold_count = len(_BOLD_HEADER_RE.findall(sample))
+            negative_bold_header_counts.append(bold_count)
+            if bold_count > 0:
+                negative_bold_documents += 1
 
-        triadic_record_cap = self.config.triadic_record_cap
-        triadic_advice_min = self.config.triadic_advice_min
-        if triadic_documents:
-            positive_triadic_counts = [count for count in triadic_counts if count > 0]
-            triadic_record_cap = clamp_int(
-                percentile_ceil(positive_triadic_counts, 0.90), 1, 128
+            triadic_count = len(_TRIADIC_RE.findall(sample))
+            negative_triadic_counts.append(triadic_count)
+            if triadic_count > 0:
+                negative_triadic_documents += 1
+
+            run = 0
+            has_run = False
+            for is_bullet in (*document.line_is_bullet, False):
+                if is_bullet:
+                    run += 1
+                    continue
+                if run > 0:
+                    negative_bullet_run_lengths.append(run)
+                    has_run = True
+                    run = 0
+            if has_run:
+                negative_bullet_run_documents += 1
+
+        bold_header_min = math.ceil(
+            fit_threshold_high_contrastive(
+                default_value=float(self.config.bold_header_min),
+                positive_values=positive_bold_header_counts,
+                negative_values=negative_bold_header_counts,
+                lower=1.0,
+                upper=128.0,
+                positive_quantile=0.90,
+                negative_quantile=0.10,
+                blend_pivot=18.0,
+                match_mode="ge",
             )
-            triadic_advice_min = clamp_int(percentile_ceil(triadic_counts, 0.75), 1, 128)
+        )
+        bullet_run_min = math.ceil(
+            fit_threshold_high_contrastive(
+                default_value=float(self.config.bullet_run_min),
+                positive_values=positive_bullet_run_lengths or [self.config.bullet_run_min],
+                negative_values=negative_bullet_run_lengths,
+                lower=2.0,
+                upper=128.0,
+                positive_quantile=0.90,
+                negative_quantile=0.10,
+                blend_pivot=18.0,
+                match_mode="ge",
+            )
+        )
+
+        positive_triadic_nonzero = [count for count in positive_triadic_counts if count > 0]
+        negative_triadic_nonzero = [count for count in negative_triadic_counts if count > 0]
+        triadic_record_cap = fit_count_cap_contrastive(
+            default_value=self.config.triadic_record_cap,
+            positive_values=positive_triadic_nonzero or [self.config.triadic_record_cap],
+            negative_values=negative_triadic_nonzero,
+            lower=1,
+            upper=128,
+            positive_quantile=0.90,
+            negative_quantile=0.75,
+            blend_pivot=18.0,
+            max_multiplier=2.0,
+        )
+        triadic_advice_min = math.ceil(
+            fit_threshold_high_contrastive(
+                default_value=float(self.config.triadic_advice_min),
+                positive_values=positive_triadic_counts,
+                negative_values=negative_triadic_counts,
+                lower=1.0,
+                upper=128.0,
+                positive_quantile=0.75,
+                negative_quantile=0.50,
+                blend_pivot=18.0,
+                match_mode="ge",
+            )
+        )
 
         return StructuralPatternRuleConfig(
             bold_header_min=bold_header_min,
-            bold_header_penalty=fit_penalty(
-                self.config.bold_header_penalty, bold_documents, len(fit_samples)
+            bold_header_penalty=fit_penalty_contrastive(
+                base_penalty=self.config.bold_header_penalty,
+                positive_matches=positive_bold_documents,
+                positive_total=len(positive_samples),
+                negative_matches=negative_bold_documents,
+                negative_total=len(negative_samples),
             ),
             bullet_run_min=bullet_run_min,
-            bullet_run_penalty=fit_penalty(
-                self.config.bullet_run_penalty, bullet_run_documents, len(fit_samples)
+            bullet_run_penalty=fit_penalty_contrastive(
+                base_penalty=self.config.bullet_run_penalty,
+                positive_matches=positive_bullet_run_documents,
+                positive_total=len(positive_samples),
+                negative_matches=negative_bullet_run_documents,
+                negative_total=len(negative_samples),
             ),
             triadic_record_cap=triadic_record_cap,
-            triadic_penalty=fit_penalty(
-                self.config.triadic_penalty, triadic_documents, len(fit_samples)
+            triadic_penalty=fit_penalty_contrastive(
+                base_penalty=self.config.triadic_penalty,
+                positive_matches=positive_triadic_documents,
+                positive_total=len(positive_samples),
+                negative_matches=negative_triadic_documents,
+                negative_total=len(negative_samples),
             ),
             triadic_advice_min=triadic_advice_min,
             context_window_chars=self.config.context_window_chars,

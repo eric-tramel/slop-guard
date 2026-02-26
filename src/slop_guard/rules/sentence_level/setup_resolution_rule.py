@@ -25,7 +25,12 @@ from dataclasses import dataclass
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
-from slop_guard.rules.helpers import clamp_int, fit_penalty, percentile_ceil
+from slop_guard.rules.helpers import (
+    clamp_int,
+    fit_count_cap_contrastive,
+    fit_penalty_contrastive,
+    percentile_ceil,
+)
 
 _SETUP_RESOLUTION_A_RE = re.compile(
     r"\b(this|that|these|those|it|they|we)\s+"
@@ -124,27 +129,52 @@ class SetupResolutionRule(Rule[SetupResolutionRuleConfig]):
         self, samples: list[str], labels: list[Label] | None
     ) -> SetupResolutionRuleConfig:
         """Fit setup-resolution caps and penalty from corpus prevalence."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
 
-        per_document_counts: list[int] = []
-        for sample in fit_samples:
+        positive_counts: list[int] = []
+        for sample in positive_samples:
             count = sum(
                 len(pattern.findall(sample))
                 for pattern in (_SETUP_RESOLUTION_A_RE, _SETUP_RESOLUTION_B_RE)
             )
-            per_document_counts.append(count)
+            positive_counts.append(count)
 
-        matched_documents = sum(1 for count in per_document_counts if count > 0)
-        record_cap = self.config.record_cap
-        if matched_documents:
-            positive_counts = [count for count in per_document_counts if count > 0]
-            record_cap = clamp_int(percentile_ceil(positive_counts, 0.90), 1, 64)
+        negative_counts: list[int] = []
+        for sample in negative_samples:
+            count = sum(
+                len(pattern.findall(sample))
+                for pattern in (_SETUP_RESOLUTION_A_RE, _SETUP_RESOLUTION_B_RE)
+            )
+            negative_counts.append(count)
+
+        positive_matches = sum(1 for count in positive_counts if count > 0)
+        negative_matches = sum(1 for count in negative_counts if count > 0)
+        positive_nonzero_counts = [count for count in positive_counts if count > 0]
+        negative_nonzero_counts = [count for count in negative_counts if count > 0]
+        record_cap = fit_count_cap_contrastive(
+            default_value=clamp_int(
+                percentile_ceil(positive_nonzero_counts, 0.90), 1, 64
+            )
+            if positive_nonzero_counts
+            else self.config.record_cap,
+            positive_values=positive_nonzero_counts,
+            negative_values=negative_nonzero_counts,
+            lower=1,
+            upper=64,
+            positive_quantile=0.90,
+            negative_quantile=0.90,
+            blend_pivot=20.0,
+        )
 
         return SetupResolutionRuleConfig(
-            penalty=fit_penalty(
-                self.config.penalty, matched_documents, len(fit_samples)
+            penalty=fit_penalty_contrastive(
+                base_penalty=self.config.penalty,
+                positive_matches=positive_matches,
+                positive_total=len(positive_samples),
+                negative_matches=negative_matches,
+                negative_total=len(negative_samples),
             ),
             record_cap=record_cap,
             context_window_chars=self.config.context_window_chars,

@@ -25,7 +25,10 @@ from dataclasses import dataclass
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
-from slop_guard.rules.helpers import clamp_float, fit_penalty, percentile
+from slop_guard.rules.helpers import (
+    fit_penalty_contrastive,
+    fit_threshold_high_contrastive,
+)
 
 _ELABORATION_COLON_RE = re.compile(r": [a-z]")
 _MD_HEADER_LINE_RE = re.compile(r"^\s*#", re.MULTILINE)
@@ -112,12 +115,12 @@ class ColonDensityRule(Rule[ColonDensityRuleConfig]):
         self, samples: list[str], labels: list[Label] | None
     ) -> ColonDensityRuleConfig:
         """Fit colon density threshold from corpus elaboration ratios."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
 
-        ratio_values: list[float] = []
-        for sample in fit_samples:
+        positive_ratios: list[float] = []
+        for sample in positive_samples:
             document = AnalysisDocument.from_text(sample)
             stripped_text = document.text_without_code_blocks
             stripped_word_count = document.word_count_without_code_blocks
@@ -138,20 +141,60 @@ class ColonDensityRule(Rule[ColonDensityRuleConfig]):
                         continue
                     colon_count += 1
 
-            ratio_values.append(
+            positive_ratios.append(
                 (colon_count / stripped_word_count) * self.config.words_basis
             )
 
-        if not ratio_values:
+        if not positive_ratios:
             return self.config
 
-        density_threshold = clamp_float(percentile(ratio_values, 0.90), 0.0, 100.0)
-        matched_documents = sum(1 for ratio in ratio_values if ratio > density_threshold)
+        negative_ratios: list[float] = []
+        for sample in negative_samples:
+            document = AnalysisDocument.from_text(sample)
+            stripped_text = document.text_without_code_blocks
+            stripped_word_count = document.word_count_without_code_blocks
+            if stripped_word_count <= 0:
+                continue
+
+            colon_count = 0
+            for line in stripped_text.split("\n"):
+                if _MD_HEADER_LINE_RE.match(line):
+                    continue
+                for match in _ELABORATION_COLON_RE.finditer(line):
+                    colon_pos = match.start()
+                    before = line[: colon_pos + 1]
+                    if before.endswith("http:") or before.endswith("https:"):
+                        continue
+                    snippet = line[colon_pos : colon_pos + 10]
+                    if _JSON_COLON_RE.match(snippet):
+                        continue
+                    colon_count += 1
+
+            negative_ratios.append(
+                (colon_count / stripped_word_count) * self.config.words_basis
+            )
+
+        density_threshold = fit_threshold_high_contrastive(
+            default_value=self.config.density_threshold,
+            positive_values=positive_ratios,
+            negative_values=negative_ratios,
+            lower=0.0,
+            upper=100.0,
+            positive_quantile=0.90,
+            negative_quantile=0.10,
+            blend_pivot=18.0,
+        )
+        positive_matches = sum(1 for ratio in positive_ratios if ratio > density_threshold)
+        negative_matches = sum(1 for ratio in negative_ratios if ratio > density_threshold)
 
         return ColonDensityRuleConfig(
             words_basis=self.config.words_basis,
             density_threshold=density_threshold,
-            penalty=fit_penalty(
-                self.config.penalty, matched_documents, len(ratio_values)
+            penalty=fit_penalty_contrastive(
+                base_penalty=self.config.penalty,
+                positive_matches=positive_matches,
+                positive_total=len(positive_ratios),
+                negative_matches=negative_matches,
+                negative_total=len(negative_ratios),
             ),
         )

@@ -19,13 +19,20 @@ Severity: Low per instance, medium when repeated frequently in one passage.
 """
 
 
+import math
 import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
-from slop_guard.rules.helpers import clamp_int, fit_penalty, percentile_ceil
+from slop_guard.rules.helpers import (
+    clamp_int,
+    fit_count_cap_contrastive,
+    fit_penalty_contrastive,
+    fit_threshold_high_contrastive,
+    percentile_ceil,
+)
 
 _CONTRAST_PAIR_RE = re.compile(r"\b(\w+), not (\w+)\b")
 
@@ -102,23 +109,62 @@ class ContrastPairRule(Rule[ContrastPairRuleConfig]):
         self, samples: list[str], labels: list[Label] | None
     ) -> ContrastPairRuleConfig:
         """Fit match-driven caps and penalties from corpus counts."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
 
-        match_counts = [len(_CONTRAST_PAIR_RE.findall(sample)) for sample in fit_samples]
-        matched_documents = sum(1 for count in match_counts if count > 0)
+        positive_counts = [
+            len(_CONTRAST_PAIR_RE.findall(sample)) for sample in positive_samples
+        ]
+        negative_counts = [
+            len(_CONTRAST_PAIR_RE.findall(sample)) for sample in negative_samples
+        ]
+        positive_matches = sum(1 for count in positive_counts if count > 0)
+        negative_matches = sum(1 for count in negative_counts if count > 0)
+        positive_nonzero_counts = [count for count in positive_counts if count > 0]
+        negative_nonzero_counts = [count for count in negative_counts if count > 0]
 
-        record_cap = self.config.record_cap
-        advice_min = self.config.advice_min
-        if matched_documents:
-            positive_counts = [count for count in match_counts if count > 0]
-            record_cap = clamp_int(percentile_ceil(positive_counts, 0.90), 1, 64)
-            advice_min = clamp_int(percentile_ceil(match_counts, 0.75), 1, 64)
+        record_cap = fit_count_cap_contrastive(
+            default_value=clamp_int(
+                percentile_ceil(positive_nonzero_counts, 0.90), 1, 64
+            )
+            if positive_nonzero_counts
+            else self.config.record_cap,
+            positive_values=positive_nonzero_counts,
+            negative_values=negative_nonzero_counts,
+            lower=1,
+            upper=64,
+            positive_quantile=0.90,
+            negative_quantile=0.90,
+            blend_pivot=20.0,
+        )
+        advice_min = clamp_int(
+            math.ceil(
+                fit_threshold_high_contrastive(
+                    default_value=float(
+                        clamp_int(percentile_ceil(positive_counts, 0.75), 1, 64)
+                    ),
+                    positive_values=positive_counts,
+                    negative_values=negative_counts,
+                    lower=1.0,
+                    upper=64.0,
+                    positive_quantile=0.75,
+                    negative_quantile=0.25,
+                    blend_pivot=16.0,
+                    match_mode="ge",
+                )
+            ),
+            1,
+            64,
+        )
 
         return ContrastPairRuleConfig(
-            penalty=fit_penalty(
-                self.config.penalty, matched_documents, len(fit_samples)
+            penalty=fit_penalty_contrastive(
+                base_penalty=self.config.penalty,
+                positive_matches=positive_matches,
+                positive_total=len(positive_samples),
+                negative_matches=negative_matches,
+                negative_total=len(negative_samples),
             ),
             record_cap=record_cap,
             advice_min=advice_min,

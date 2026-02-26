@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
-from slop_guard.rules.helpers import fit_penalty
+from slop_guard.rules.helpers import fit_penalty_contrastive
 
 _PLACEHOLDER_RE = re.compile(
     r"\[insert [^\]]*\]|\[describe [^\]]*\]|\[url [^\]]*\]|\[your [^\]]*\]|\[todo[^\]]*\]",
@@ -99,15 +99,27 @@ class PlaceholderRule(Rule[PlaceholderRuleConfig]):
         self, samples: list[str], labels: list[Label] | None
     ) -> PlaceholderRuleConfig:
         """Fit penalty from unresolved placeholder prevalence."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
-        matched_documents = sum(
-            1 for sample in fit_samples if _PLACEHOLDER_RE.search(sample) is not None
+
+        positive_matches = sum(
+            1
+            for sample in positive_samples
+            if _PLACEHOLDER_RE.search(sample) is not None
+        )
+        negative_matches = sum(
+            1
+            for sample in negative_samples
+            if _PLACEHOLDER_RE.search(sample) is not None
         )
         return PlaceholderRuleConfig(
-            penalty=fit_penalty(
-                self.config.penalty, matched_documents, len(fit_samples)
+            penalty=fit_penalty_contrastive(
+                base_penalty=self.config.penalty,
+                positive_matches=positive_matches,
+                positive_total=len(positive_samples),
+                negative_matches=negative_matches,
+                negative_total=len(negative_samples),
             ),
             context_window_chars=self.config.context_window_chars,
         )

@@ -145,9 +145,29 @@ class Rule(ABC, Generic[ConfigT]):
         If labels are provided and contain positive examples (``label > 0``),
         fitting uses only that positive subset. Otherwise it uses all samples.
         """
+        positive_samples, _ = self._split_fit_samples(samples, labels)
+        return positive_samples
+
+    def _split_fit_samples(
+        self, samples: list[str], labels: list[Label] | None
+    ) -> tuple[list[str], list[str]]:
+        """Split fit samples into positive and negative cohorts.
+
+        Positive labels are ``label > 0`` and negative labels are ``label <= 0``.
+        When no positive labels are present, all samples are treated as positive
+        to preserve the existing unsupervised fitting behavior.
+        """
         if labels is None:
-            return samples
-        positives = [sample for sample, label in zip(samples, labels) if label > 0]
-        if positives:
-            return positives
-        return samples
+            return list(samples), []
+
+        positive_samples: list[str] = []
+        negative_samples: list[str] = []
+        for sample, label in zip(samples, labels):
+            if label > 0:
+                positive_samples.append(sample)
+            else:
+                negative_samples.append(sample)
+
+        if positive_samples:
+            return positive_samples, negative_samples
+        return list(samples), []

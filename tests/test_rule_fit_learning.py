@@ -5,7 +5,7 @@ from typing import TypeAlias
 
 import pytest
 
-from slop_guard.analysis import HYPERPARAMETERS
+from slop_guard.analysis import AnalysisDocument
 from slop_guard.rules import Rule, build_default_rules
 from slop_guard.rules.paragraph_level import (
     BlockquoteDensityRule,
@@ -56,8 +56,20 @@ FIT_CASES: tuple[FitCase, ...] = (
         StructuralPatternRule,
         "bold_header_min",
         [
-            "**Problem:** the first claim.",
-            "**Result:** the second claim.",
+            (
+                "**Problem:** first\n"
+                "**Cause:** second\n"
+                "**Fix:** third\n"
+                "**Impact:** fourth\n"
+                "**Scope:** fifth"
+            ),
+            (
+                "**Input:** first\n"
+                "**Process:** second\n"
+                "**Output:** third\n"
+                "**Risk:** fourth\n"
+                "**Control:** fifth"
+            ),
         ],
     ),
     (
@@ -154,8 +166,8 @@ FIT_CASES: tuple[FitCase, ...] = (
         BlockquoteDensityRule,
         "min_lines",
         [
-            "> one\nnormal",
-            "> two\nnormal",
+            "> one\n> two\n> three\n> four\n> five\nnormal",
+            "> six\n> seven\n> eight\n> nine\n> ten\nnormal",
         ],
     ),
     (
@@ -170,16 +182,24 @@ FIT_CASES: tuple[FitCase, ...] = (
         HorizontalRuleOveruseRule,
         "min_count",
         [
-            "---\ntext",
-            "---\nmore text",
+            "---\n---\n---\n---\n---\ntext",
+            "---\n---\n---\n---\n---\nmore text",
         ],
     ),
     (
         PhraseReuseRule,
         "repeated_ngram_min_n",
         [
-            "alpha beta gamma alpha beta delta alpha beta epsilon alpha beta zeta",
-            "alpha beta one alpha beta two alpha beta three alpha beta four",
+            (
+                "alpha beta gamma delta epsilon zeta "
+                "alpha beta gamma delta epsilon zeta "
+                "alpha beta gamma delta epsilon zeta"
+            ),
+            (
+                "one two three four five six seven "
+                "one two three four five six seven "
+                "one two three four five six seven"
+            ),
         ],
     ),
 )
@@ -187,7 +207,7 @@ FIT_CASES: tuple[FitCase, ...] = (
 
 def test_all_default_rules_override_base_fit_impl() -> None:
     """Each concrete default rule should override the base no-op fit path."""
-    for rule in build_default_rules(HYPERPARAMETERS):
+    for rule in build_default_rules():
         assert type(rule)._fit is not Rule._fit
 
 
@@ -196,7 +216,7 @@ def test_fit_updates_rule_hyperparameters(
     rule_cls: RuleType, field_name: str, corpus: list[str]
 ) -> None:
     """Each rule fit call should update at least one empirical hyperparameter."""
-    defaults = {type(rule): rule for rule in build_default_rules(HYPERPARAMETERS)}
+    defaults = {type(rule): rule for rule in build_default_rules()}
     rule = deepcopy(defaults[rule_cls])
     before = getattr(rule.config, field_name)
 
@@ -204,3 +224,53 @@ def test_fit_updates_rule_hyperparameters(
 
     assert fitted is rule
     assert getattr(rule.config, field_name) != before
+
+
+def test_fit_uses_negative_labels_for_contrastive_adjustment() -> None:
+    """Negative-labeled samples should influence fitted contrastive thresholds."""
+    defaults = {type(rule): rule for rule in build_default_rules()}
+    positive_corpus = [
+        "focus, not frenzy.",
+        "clarity, not complexity.",
+    ]
+    negative_sample = (
+        "focus, not frenzy. clarity, not complexity. speed, not haste. "
+        "signal, not noise. quality, not quantity. craft, not chaos."
+    )
+    negative_corpus = [negative_sample] * 30
+
+    positive_only = deepcopy(defaults[ContrastPairRule]).fit(positive_corpus)
+    contrastive = deepcopy(defaults[ContrastPairRule]).fit(
+        positive_corpus + negative_corpus,
+        [1] * len(positive_corpus) + [0] * len(negative_corpus),
+    )
+
+    assert contrastive.config.record_cap > positive_only.config.record_cap
+    assert contrastive.config.penalty != positive_only.config.penalty
+
+
+def test_fit_thresholds_align_with_inclusive_count_based_rules() -> None:
+    """Inclusive ``>=`` count rules should preserve contrastive separation."""
+    defaults = {type(rule): rule for rule in build_default_rules()}
+    rule = deepcopy(defaults[HorizontalRuleOveruseRule])
+
+    positive_corpus = ["---\n---\ntext"] * 20
+    negative_corpus = ["---\n---\n---\ntext"] * 20
+    fitted = rule.fit(
+        positive_corpus + negative_corpus,
+        [1] * len(positive_corpus) + [0] * len(negative_corpus),
+    )
+
+    positive_hits = sum(
+        1
+        for sample in positive_corpus
+        if fitted.forward(AnalysisDocument.from_text(sample)).violations
+    )
+    negative_hits = sum(
+        1
+        for sample in negative_corpus
+        if fitted.forward(AnalysisDocument.from_text(sample)).violations
+    )
+
+    assert negative_hits > positive_hits
+    assert fitted.config.penalty < 0

@@ -18,12 +18,18 @@ Example Non-Violations:
 Severity: Medium to high when long runs appear in the same section.
 """
 
+import math
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
-from slop_guard.rules.helpers import clamp_int, fit_penalty, percentile_ceil
+from slop_guard.rules.helpers import (
+    clamp_int,
+    fit_penalty_contrastive,
+    fit_threshold_high_contrastive,
+    percentile_ceil,
+)
 
 
 @dataclass
@@ -108,13 +114,13 @@ class BoldTermBulletRunRule(Rule[BoldTermBulletRunRuleConfig]):
         self, samples: list[str], labels: list[Label] | None
     ) -> BoldTermBulletRunRuleConfig:
         """Fit run length threshold from observed bold bullet runs."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
 
-        run_lengths: list[int] = []
-        matched_documents = 0
-        for sample in fit_samples:
+        positive_run_lengths: list[int] = []
+        positive_matched_documents = 0
+        for sample in positive_samples:
             document = AnalysisDocument.from_text(sample)
             run = 0
             has_run = False
@@ -123,19 +129,59 @@ class BoldTermBulletRunRule(Rule[BoldTermBulletRunRuleConfig]):
                     run += 1
                     continue
                 if run > 0:
-                    run_lengths.append(run)
+                    positive_run_lengths.append(run)
                     has_run = True
                     run = 0
             if has_run:
-                matched_documents += 1
+                positive_matched_documents += 1
 
-        min_run_length = self.config.min_run_length
-        if run_lengths:
-            min_run_length = clamp_int(percentile_ceil(run_lengths, 0.90), 2, 64)
+        negative_run_lengths: list[int] = []
+        negative_matched_documents = 0
+        for sample in negative_samples:
+            document = AnalysisDocument.from_text(sample)
+            run = 0
+            has_run = False
+            for is_bold_term_bullet in (*document.line_is_bold_term_bullet, False):
+                if is_bold_term_bullet:
+                    run += 1
+                    continue
+                if run > 0:
+                    negative_run_lengths.append(run)
+                    has_run = True
+                    run = 0
+            if has_run:
+                negative_matched_documents += 1
+
+        min_run_length = clamp_int(
+            math.ceil(
+                fit_threshold_high_contrastive(
+                    default_value=float(
+                        clamp_int(percentile_ceil(positive_run_lengths, 0.90), 2, 64)
+                    )
+                    if positive_run_lengths
+                    else float(self.config.min_run_length),
+                    positive_values=positive_run_lengths
+                    or [self.config.min_run_length],
+                    negative_values=negative_run_lengths,
+                    lower=2.0,
+                    upper=64.0,
+                    positive_quantile=0.90,
+                    negative_quantile=0.10,
+                    blend_pivot=16.0,
+                    match_mode="ge",
+                )
+            ),
+            2,
+            64,
+        )
 
         return BoldTermBulletRunRuleConfig(
             min_run_length=min_run_length,
-            penalty=fit_penalty(
-                self.config.penalty, matched_documents, len(fit_samples)
+            penalty=fit_penalty_contrastive(
+                base_penalty=self.config.penalty,
+                positive_matches=positive_matched_documents,
+                positive_total=len(positive_samples),
+                negative_matches=negative_matched_documents,
+                negative_total=len(negative_samples),
             ),
         )

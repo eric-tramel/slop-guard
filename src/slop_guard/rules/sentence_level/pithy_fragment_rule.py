@@ -19,13 +19,19 @@ Severity: Low to medium; mostly stylistic alone, stronger when clustered.
 """
 
 
+import math
 import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
 
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
-from slop_guard.rules.helpers import clamp_int, fit_penalty, percentile_ceil
+from slop_guard.rules.helpers import (
+    clamp_int,
+    fit_count_cap_contrastive,
+    fit_penalty_contrastive,
+    fit_threshold_low_contrastive,
+)
 
 _PITHY_PIVOT_RE = re.compile(r",\s+(?:but|yet|and|not|or)\b", re.IGNORECASE)
 
@@ -99,13 +105,13 @@ class PithyFragmentRule(Rule[PithyFragmentRuleConfig]):
         self, samples: list[str], labels: list[Label] | None
     ) -> PithyFragmentRuleConfig:
         """Fit pithy fragment thresholds from corpus sentence patterns."""
-        fit_samples = self._select_fit_samples(samples, labels)
-        if not fit_samples:
+        positive_samples, negative_samples = self._split_fit_samples(samples, labels)
+        if not positive_samples:
             return self.config
 
-        pivot_sentence_lengths: list[int] = []
-        per_document_counts: list[int] = []
-        for sample in fit_samples:
+        positive_lengths: list[int] = []
+        positive_counts: list[int] = []
+        for sample in positive_samples:
             document = AnalysisDocument.from_text(sample)
             sample_count = 0
             for sentence_text, sentence_words in zip(
@@ -113,26 +119,65 @@ class PithyFragmentRule(Rule[PithyFragmentRuleConfig]):
             ):
                 if _PITHY_PIVOT_RE.search(sentence_text) is None:
                     continue
-                pivot_sentence_lengths.append(sentence_words)
+                positive_lengths.append(sentence_words)
                 sample_count += 1
-            per_document_counts.append(sample_count)
+            positive_counts.append(sample_count)
 
-        matched_documents = sum(1 for count in per_document_counts if count > 0)
+        if not positive_lengths:
+            return self.config
 
-        max_sentence_words = self.config.max_sentence_words
-        if pivot_sentence_lengths:
-            max_sentence_words = clamp_int(
-                percentile_ceil(pivot_sentence_lengths, 0.90), 2, 64
-            )
+        negative_lengths: list[int] = []
+        negative_counts: list[int] = []
+        for sample in negative_samples:
+            document = AnalysisDocument.from_text(sample)
+            sample_count = 0
+            for sentence_text, sentence_words in zip(
+                document.sentences, document.sentence_word_counts
+            ):
+                if _PITHY_PIVOT_RE.search(sentence_text) is None:
+                    continue
+                negative_lengths.append(sentence_words)
+                sample_count += 1
+            negative_counts.append(sample_count)
 
-        record_cap = self.config.record_cap
-        if matched_documents:
-            positive_counts = [count for count in per_document_counts if count > 0]
-            record_cap = clamp_int(percentile_ceil(positive_counts, 0.90), 1, 64)
+        max_sentence_words = clamp_int(
+            math.floor(
+                fit_threshold_low_contrastive(
+                    default_value=float(self.config.max_sentence_words),
+                    positive_values=positive_lengths,
+                    negative_values=negative_lengths,
+                    lower=2.0,
+                    upper=64.0,
+                    positive_quantile=0.90,
+                    negative_quantile=0.10,
+                    blend_pivot=16.0,
+                    match_mode="le",
+                )
+            ),
+            2,
+            64,
+        )
+        positive_matches = sum(1 for count in positive_counts if count > 0)
+        negative_matches = sum(1 for count in negative_counts if count > 0)
+
+        record_cap = fit_count_cap_contrastive(
+            default_value=self.config.record_cap,
+            positive_values=[count for count in positive_counts if count > 0],
+            negative_values=[count for count in negative_counts if count > 0],
+            lower=1,
+            upper=64,
+            positive_quantile=0.90,
+            negative_quantile=0.90,
+            blend_pivot=20.0,
+        )
 
         return PithyFragmentRuleConfig(
-            penalty=fit_penalty(
-                self.config.penalty, matched_documents, len(fit_samples)
+            penalty=fit_penalty_contrastive(
+                base_penalty=self.config.penalty,
+                positive_matches=positive_matches,
+                positive_total=len(positive_samples),
+                negative_matches=negative_matches,
+                negative_total=len(negative_samples),
             ),
             max_sentence_words=max_sentence_words,
             record_cap=record_cap,
