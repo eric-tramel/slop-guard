@@ -57,6 +57,12 @@ _SLOP_ADJECTIVES = (
     "innovative",
     "cutting-edge",
     "impactful",
+    "foundational",
+    "actionable",
+    "collaborative",
+    "societal",
+    "impeccable",
+    "stylistic",
 )
 
 _SLOP_VERBS = (
@@ -82,6 +88,7 @@ _SLOP_VERBS = (
     "highlighting",
     "emphasizing",
     "reflecting",
+    "reshape",
 )
 
 _SLOP_NOUNS = (
@@ -98,6 +105,10 @@ _SLOP_NOUNS = (
     "pinnacle",
     "realm",
     "intricacies",
+    "ecosystem",
+    "authenticity",
+    "narrative",
+    "perseverance",
 )
 
 _SLOP_HEDGE = (
@@ -114,6 +125,7 @@ _SLOP_HEDGE = (
     "moreover",
     "however",
     "overall",
+    "subtly",
 )
 
 _ALL_SLOP_WORDS = _SLOP_ADJECTIVES + _SLOP_VERBS + _SLOP_NOUNS + _SLOP_HEDGE
