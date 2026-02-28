@@ -12,8 +12,13 @@ from .paragraph_level import (
     StructuralPatternRule,
 )
 from .passage_level import (
+    ClosingAphorismRule,
     ColonDensityRule,
+    CopulaChainRule,
     EmDashDensityRule,
+    ExtremeSentenceRule,
+    ParagraphBalanceRule,
+    ParagraphCVRule,
     PhraseReuseRule,
     RhythmRule,
 )
@@ -51,6 +56,11 @@ DEFAULT_RULE_TYPES: tuple[RuleType, ...] = (
     BoldTermBulletRunRule,
     HorizontalRuleOveruseRule,
     PhraseReuseRule,
+    CopulaChainRule,
+    ExtremeSentenceRule,
+    ClosingAphorismRule,
+    ParagraphBalanceRule,
+    ParagraphCVRule,
 )
 
 
