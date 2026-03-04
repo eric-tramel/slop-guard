@@ -68,7 +68,7 @@ command = "uvx"
 args = ["slop-guard", "-c", "/path/to/config.jsonl"]
 ```
 
-If you want a fixed release, pin it in `args`, for example: `["slop-guard==0.3.0"]`.
+If you want a fixed release, pin it in `args`, for example: `["slop-guard==0.3.1"]`.
 
 ## CLI
 
@@ -214,7 +214,7 @@ uv tool install slop-guard
 Pin versions for reproducibility:
 
 ```bash
-uvx slop-guard==0.3.0
+uvx slop-guard==0.3.1
 ```
 
 Upgrade an installed tool:
