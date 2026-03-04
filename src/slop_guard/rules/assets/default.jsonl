@@ -16,3 +16,8 @@
 {"config": {"min_run_length": 3, "penalty": -5}, "rule_type": "slop_guard.rules.paragraph_level.bold_term_bullet_run_rule.BoldTermBulletRunRule"}
 {"config": {"min_count": 4, "penalty": -3}, "rule_type": "slop_guard.rules.paragraph_level.horizontal_rule_overuse_rule.HorizontalRuleOveruseRule"}
 {"config": {"penalty": -1, "record_cap": 5, "repeated_ngram_max_n": 8, "repeated_ngram_min_count": 3, "repeated_ngram_min_n": 4}, "rule_type": "slop_guard.rules.passage_level.phrase_reuse_rule.PhraseReuseRule"}
+{"config": {"min_sentences": 6, "threshold": 0.5, "penalty": -3}, "rule_type": "slop_guard.rules.passage_level.copula_chain_rule.CopulaChainRule"}
+{"config": {"min_words": 80, "penalty": -5}, "rule_type": "slop_guard.rules.passage_level.extreme_sentence_rule.ExtremeSentenceRule"}
+{"config": {"min_sentences": 4, "penalty": -4}, "rule_type": "slop_guard.rules.passage_level.closing_aphorism_rule.ClosingAphorismRule"}
+{"config": {"min_body_paragraphs": 3, "balance_threshold": 0.75, "penalty": -4}, "rule_type": "slop_guard.rules.passage_level.paragraph_rhythm_rule.ParagraphBalanceRule"}
+{"config": {"min_paragraphs": 5, "cv_threshold": 0.45, "penalty": -1}, "rule_type": "slop_guard.rules.passage_level.paragraph_rhythm_rule.ParagraphCVRule"}
