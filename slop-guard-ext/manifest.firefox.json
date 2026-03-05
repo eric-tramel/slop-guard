@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Slop Guard",
+  "version": "0.3.1",
+  "description": "Score text 0–100 for formulaic AI writing patterns. Powered by slop-guard (pure regex, no API calls).",
+  "permissions": ["activeTab", "contextMenus", "scripting", "storage"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "slop-guard@extension",
+      "strict_min_version": "109.0"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' https://cdn.jsdelivr.net https://files.pythonhosted.org; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; default-src 'self'"
+  }
+}

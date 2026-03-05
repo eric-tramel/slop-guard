@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=600">
+  <title>Slop Guard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0d0d12;
+      --surface: #16161f;
+      --surface-2: #1e1e2a;
+      --border: #2a2a3a;
+      --text: #e0e0e8;
+      --text-dim: #8888a0;
+      --accent: #e94560;
+      --accent-dim: #e9456040;
+      --green: #4ade80;
+      --yellow: #fbbf24;
+      --orange: #f97316;
+      --red: #ef4444;
+    }
+
+    body {
+      width: 580px;
+      max-height: 600px;
+      overflow-y: auto;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* Scrollbar */
+    body::-webkit-scrollbar { width: 6px; }
+    body::-webkit-scrollbar-track { background: var(--bg); }
+    body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .header h1 {
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+    }
+    .header .version {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* Status bar */
+    .status-bar {
+      padding: 10px 18px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      flex-shrink: 0;
+    }
+    .status-dot.ready { background: var(--green); }
+    .status-dot.loading { background: var(--yellow); animation: pulse 1.2s infinite; }
+    .status-dot.error { background: var(--red); }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Input area */
+    .input-section {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 10px 12px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--text-dim); }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    button {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    button:hover { background: var(--border); }
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    button.primary:hover { background: #d13a52; }
+
+    /* Score display */
+    .score-section {
+      display: none;
+      padding: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .score-section.visible { display: block; }
+
+    .score-hero {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .score-ring {
+      position: relative;
+      width: 80px; height: 80px;
+      flex-shrink: 0;
+    }
+    .score-ring svg { transform: rotate(-90deg); }
+    .score-ring .track {
+      fill: none;
+      stroke: var(--surface-2);
+      stroke-width: 6;
+    }
+    .score-ring .fill {
+      fill: none;
+      stroke-width: 6;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.8s ease, stroke 0.3s;
+    }
+    .score-number {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    .score-meta {
+      flex: 1;
+    }
+    .score-band {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+    .score-stats {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+    .score-stats span { color: var(--text); }
+
+    /* Violations */
+    .violations-section {
+      display: none;
+      padding: 0 18px 14px;
+    }
+    .violations-section.visible { display: block; }
+
+    .section-title {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 14px 0 8px;
+    }
+
+    .advice-list {
+      list-style: none;
+    }
+    .advice-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .advice-list li:last-child { border-bottom: none; }
+    .advice-list .rule-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 1px 5px;
+      margin-right: 6px;
+      color: var(--text-dim);
+    }
+
+    /* Violation details (collapsible) */
+    .violations-toggle {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      background: none;
+      border: none;
+      padding: 6px 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .violations-toggle:hover { color: var(--text); }
+
+    .violation-detail {
+      display: none;
+      margin-top: 8px;
+    }
+    .violation-detail.visible { display: block; }
+    .violation-item {
+      padding: 6px 10px;
+      margin-bottom: 4px;
+      background: var(--surface);
+      border-radius: 4px;
+      border-left: 2px solid var(--accent-dim);
+      font-size: 11px;
+    }
+    .violation-item .v-match {
+      font-family: 'DM Mono', monospace;
+      color: var(--accent);
+    }
+    .violation-item .v-context {
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      margin-top: 2px;
+      word-break: break-all;
+    }
+    .violation-item .v-penalty {
+      color: var(--orange);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* Counts summary */
+    .counts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 16px;
+      font-size: 11px;
+    }
+    .counts-grid .count-row {
+      display: flex;
+      justify-content: space-between;
+    }
+    .counts-grid .count-label { color: var(--text-dim); }
+    .counts-grid .count-value {
+      font-family: 'DM Mono', monospace;
+      color: var(--text);
+    }
+    .counts-grid .count-value.zero { color: var(--text-dim); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>SLOP GUARD</h1>
+    <span class="version" id="versionLabel">loading…</span>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-dot loading" id="statusDot"></div>
+    <span id="statusText">Loading Pyodide…</span>
+  </div>
+
+  <div class="input-section">
+    <textarea id="inputText" placeholder="Paste text to analyze, or grab it from the page…"></textarea>
+    <div class="btn-row">
+      <button class="primary" id="analyzeBtn" disabled>Analyze</button>
+      <button id="grabSelBtn" disabled>Grab selection</button>
+      <button id="grabPageBtn" disabled>Grab page text</button>
+      <button id="clearBtn">Clear</button>
+    </div>
+  </div>
+
+  <div class="score-section" id="scoreSection">
+    <div class="score-hero">
+      <div class="score-ring">
+        <svg viewBox="0 0 80 80" width="80" height="80">
+          <circle class="track" cx="40" cy="40" r="34" />
+          <circle class="fill" id="scoreArc" cx="40" cy="40" r="34" 
+                  stroke-dasharray="213.63" stroke-dashoffset="213.63" />
+        </svg>
+        <div class="score-number" id="scoreNumber">—</div>
+      </div>
+      <div class="score-meta">
+        <div class="score-band" id="scoreBand">—</div>
+        <div class="score-stats">
+          <span id="wordCount">0</span> words · 
+          penalty <span id="totalPenalty">0</span> · 
+          density <span id="density">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="violations-section" id="violationsSection">
+    <div class="section-title">Advice</div>
+    <ul class="advice-list" id="adviceList"></ul>
+
+    <div class="section-title">Category counts</div>
+    <div class="counts-grid" id="countsGrid"></div>
+
+    <button class="violations-toggle" id="detailToggle">Show all violations</button>
+    <div class="violation-detail" id="violationDetail"></div>
+  </div>
+
+  <script src="pyodide.js"></script>
+  <script src="python_bundle.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
