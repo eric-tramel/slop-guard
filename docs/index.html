@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>slop-guard | From Slop to Signal</title>
+    <meta
+      name="description"
+      content="slop-guard is a rule-based prose linter for formulaic AI writing. Run it with uvx, install sg, or wire it into Codex and Claude as an MCP server."
+    />
+    <link rel="preload" href="./assets/fonts/Literata-Variable.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <script defer src="./assets/app.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar__inner">
+        <a class="brand" href="#install">slop-guard</a>
+        <nav class="nav" aria-label="Primary">
+          <a href="#install">Install</a>
+          <a href="#ways">Ways To Use It</a>
+          <a href="#demo">Example</a>
+          <a href="#proof">Proof</a>
+          <a href="https://github.com/eric-tramel/slop-guard">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="section quickstart" id="install">
+        <div class="quickstart__grid">
+          <div class="quickstart__copy reveal">
+            <p class="eyebrow">Install / Run</p>
+            <h1>Catch formulaic AI prose before it lands in your docs.</h1>
+            <p class="lede">
+              <code>slop-guard</code> is a rule-based prose linter for formulaic AI
+              writing. It scores text from 0 to 100, points to the exact spans
+              that dragged the score down, and returns direct advice for the
+              rewrite. No LLM judge. No API calls.
+            </p>
+            <div class="badge-row" aria-label="Key points">
+              <span class="badge">~80 compiled patterns</span>
+              <span class="badge">exact match spans</span>
+              <span class="badge">score + advice</span>
+            </div>
+          </div>
+
+          <div class="quickstart__stack reveal">
+            <div class="command-grid">
+              <article class="command-card">
+                <p class="command-card__label">Run Once</p>
+                <pre><code>uvx --from slop-guard sg README.md</code></pre>
+              </article>
+              <article class="command-card">
+                <p class="command-card__label">Install The CLI</p>
+                <pre><code>uv tool install slop-guard</code></pre>
+              </article>
+              <article class="command-card">
+                <p class="command-card__label">Add To Codex</p>
+                <pre><code>codex mcp add slop-guard -- uvx slop-guard</code></pre>
+              </article>
+            </div>
+
+            <div class="morph-card">
+              <div class="morph-card__header">
+                <p class="eyebrow eyebrow--small">From Slop To Clean</p>
+                <div class="score-pair" aria-label="Example score improvement">
+                  <span class="score-pill score-pill--slop">0 / 100</span>
+                  <span class="score-arrow">to</span>
+                  <span class="score-pill score-pill--clean">100 / 100</span>
+                </div>
+              </div>
+              <div class="word-lanes" aria-hidden="true">
+                <div class="word-lane word-lane--slop">
+                  <span class="word-pill word-pill--slop">crucial</span>
+                  <span class="word-pill word-pill--slop">groundbreaking</span>
+                  <span class="word-pill word-pill--slop">paradigm</span>
+                  <span class="word-pill word-pill--slop">unlock</span>
+                  <span class="word-pill word-pill--slop">landscape</span>
+                </div>
+                <div class="word-lane word-lane--clean">
+                  <span class="word-pill word-pill--clean">specific</span>
+                  <span class="word-pill word-pill--clean">measured</span>
+                  <span class="word-pill word-pill--clean">direct</span>
+                  <span class="word-pill word-pill--clean">concrete</span>
+                  <span class="word-pill word-pill--clean">clear</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section overview" id="what">
+        <div class="section-head reveal">
+          <p class="eyebrow">What It Returns</p>
+          <h2>Compiled rules, visible reasons, repeatable output.</h2>
+          <p class="lede">
+            The analyzer walks words, phrases, sentence patterns, formatting,
+            and density signals. Instead of a vibe-based verdict, you get a
+            score, the triggered rule hits, surrounding context, and concrete
+            advice for each match.
+          </p>
+        </div>
+
+        <div class="overview__grid">
+          <article class="signal-card reveal">
+            <p class="signal-card__kicker">Score</p>
+            <h3>0-100 banding</h3>
+            <p>
+              Clean, light, moderate, heavy, or saturated. Useful in a terminal,
+              inside an agent, or as a CI threshold.
+            </p>
+          </article>
+          <article class="signal-card reveal">
+            <p class="signal-card__kicker">Matches</p>
+            <h3>Exact spans</h3>
+            <p>
+              Each violation includes the matched text, surrounding context, and
+              penalty that pushed the draft down.
+            </p>
+          </article>
+          <article class="signal-card reveal">
+            <p class="signal-card__kicker">Advice</p>
+            <h3>Rewrite prompts</h3>
+            <p>
+              The output tells you what to cut or replace so you can move from
+              filler to specific claims fast.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section ways" id="ways">
+        <div class="section-head reveal">
+          <p class="eyebrow">Ways To Use It</p>
+          <h2>Scroll through the same lint pass in different workflows.</h2>
+          <p class="lede">
+            Start inside an agent, drop to the CLI, turn it into a publishing
+            gate, or fit the rules to your own corpus. The preview on the right
+            follows the card in view.
+          </p>
+        </div>
+
+        <div class="usage-layout">
+          <div class="usage-steps">
+            <article class="usage-step reveal" data-preview-key="mcp" tabindex="0">
+              <p class="usage-step__index">01</p>
+              <h3>Inside Codex or Claude</h3>
+              <p>
+                Add <code>slop-guard</code> as an MCP server and let the agent
+                call <code>check_slop</code> or <code>check_slop_file</code>
+                when it drafts docs, release notes, or status updates.
+              </p>
+            </article>
+
+            <article class="usage-step reveal" data-preview-key="cli" tabindex="0">
+              <p class="usage-step__index">02</p>
+              <h3>At the terminal</h3>
+              <p>
+                Run <code>sg</code> on files, inline prose, or stdin. Good for
+                README edits, landing-page copy, changelogs, and generated text.
+              </p>
+            </article>
+
+            <article class="usage-step reveal" data-preview-key="ci" tabindex="0">
+              <p class="usage-step__index">03</p>
+              <h3>As a quality gate</h3>
+              <p>
+                Use thresholds in CI so doc quality has an enforced floor.
+                Low-scoring prose fails before it ships.
+              </p>
+            </article>
+
+            <article class="usage-step reveal" data-preview-key="fit" tabindex="0">
+              <p class="usage-step__index">04</p>
+              <h3>Fit it to your own style</h3>
+              <p>
+                Train a JSONL rule config from positive and negative corpora,
+                then point both the CLI and MCP server at the fitted rules.
+              </p>
+            </article>
+          </div>
+
+          <aside class="terminal-card reveal" aria-live="polite">
+            <div class="terminal-card__chrome" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <p class="terminal-card__label" data-preview-label></p>
+            <h3 data-preview-title></h3>
+            <p class="terminal-card__copy" data-preview-copy></p>
+            <pre class="terminal-card__code"><code data-preview-code></code></pre>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section demo" id="demo">
+        <div class="section-head reveal">
+          <p class="eyebrow">Real Example</p>
+          <h2>Hover the red marks and read the returned advice.</h2>
+          <p class="lede">
+            This demo is driven by a real <code>sg</code> run. The highlighted
+            spans come from the analyzer output, and each hover card uses the
+            rule name, penalty, context, and advice from that payload.
+          </p>
+        </div>
+
+        <div class="demo-shell reveal">
+          <div class="demo-shell__toolbar">
+            <div class="toggle-group" aria-label="Example mode">
+              <button
+                class="toggle-button is-active"
+                type="button"
+                data-mode-button="slop"
+                aria-pressed="true"
+              >
+                Slop Input
+              </button>
+              <button
+                class="toggle-button"
+                type="button"
+                data-mode-button="clean"
+                aria-pressed="false"
+              >
+                Clean Rewrite
+              </button>
+            </div>
+            <p class="demo-shell__caption" data-demo-caption></p>
+          </div>
+
+          <div class="demo-grid">
+            <article class="copy-card">
+              <div class="copy-card__meta">
+                <span class="copy-card__scoreline" data-score-line></span>
+                <span class="copy-card__counts" data-count-summary></span>
+              </div>
+              <div class="annotated-copy" data-annotated-copy></div>
+              <p class="copy-card__note">
+                Hover or focus a highlight to inspect the matching rule.
+              </p>
+            </article>
+
+            <aside class="inspector-card">
+              <div class="score-ring" data-score-ring>
+                <div class="score-ring__inner">
+                  <strong data-score-value>0</strong>
+                  <span data-score-band>saturated</span>
+                </div>
+              </div>
+
+              <div class="inspector-card__summary">
+                <p class="inspector-card__kicker">Current mode</p>
+                <h3 data-inspector-title>Rule hits</h3>
+                <p data-inspector-copy>
+                  Hover a highlight on the left to inspect the returned message.
+                </p>
+              </div>
+
+              <div class="stat-grid" data-stat-grid></div>
+
+              <div class="detail-card">
+                <p class="detail-card__label">Selected match</p>
+                <h4 data-detail-rule>Hover a marked span</h4>
+                <p class="detail-card__advice" data-detail-advice>
+                  The tooltip on the left and this panel both reflect the real
+                  analyzer response.
+                </p>
+                <p class="detail-card__context" data-detail-context></p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="section proof" id="proof">
+        <div class="section-head reveal">
+          <p class="eyebrow">Proof, Not Theater</p>
+          <h2>Rule-based output makes the story inspectable.</h2>
+          <p class="lede">
+            The repo already carries benchmark artifacts and rule configs. That
+            matters because the tool is deterministic: the same text produces
+            the same score, same hits, and same advice every time.
+          </p>
+        </div>
+
+        <div class="proof-layout">
+          <div class="proof-copy">
+            <article class="proof-point reveal">
+              <p class="proof-point__kicker">Deterministic</p>
+              <h3>No black-box judge</h3>
+              <p>
+                The output comes from compiled rules and scoring math, not a
+                remote model grading prose by taste.
+              </p>
+            </article>
+            <article class="proof-point reveal">
+              <p class="proof-point__kicker">Portable</p>
+              <h3>Works in terminals, agents, and CI</h3>
+              <p>
+                One analyzer surfaces through the MCP server, the
+                <code>sg</code> CLI, and fitted rule configs.
+              </p>
+            </article>
+            <article class="proof-point reveal">
+              <p class="proof-point__kicker">Benchmarked</p>
+              <h3>Artifacts live in the repo</h3>
+              <p>
+                The charts here come from committed benchmark outputs, not from
+                an isolated screenshot or a hand-picked example.
+              </p>
+            </article>
+          </div>
+
+          <div class="figure-stack">
+            <figure class="figure-card figure-card--primary reveal">
+              <img
+                src="./assets/images/score_histogram.white.png"
+                alt="Histogram of slop-guard scores on the PleIAs/US-PD-Newspapers training set"
+              />
+              <figcaption>
+                Score distribution artifact in the repo: PleIAs/US-PD-Newspapers
+                train split, <em>N</em> = 9001.
+              </figcaption>
+            </figure>
+
+            <figure class="figure-card figure-card--secondary reveal">
+              <img
+                src="./assets/images/score_vs_length_scatter.white.png"
+                alt="Scatter plot of score versus length on the PleIAs/US-PD-Newspapers training set"
+              />
+              <figcaption>
+                Length does not explain the scores on its own; the rule hits do.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section cta" id="repo">
+        <div class="cta-card reveal">
+          <div>
+            <p class="eyebrow eyebrow--light">Start Here</p>
+            <h2>Keep the draft. Lose the filler.</h2>
+            <p class="lede lede--light">
+              Run it once with <code>uvx</code>, install <code>sg</code> for
+              daily use, or wire the MCP server into the agent that writes your
+              docs.
+            </p>
+          </div>
+          <div class="cta-card__actions">
+            <pre><code>uvx --from slop-guard sg README.md</code></pre>
+            <a class="cta-link" href="https://github.com/eric-tramel/slop-guard">
+              View the repository
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
