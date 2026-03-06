@@ -204,7 +204,8 @@ h1 {
   line-height: 0.78;
   letter-spacing: 0.015em;
   vertical-align: 0.1em;
-  transform: none;
+  transform: rotate(15deg);
+  transform-origin: 50% 62%;
   color: #72923a;
   paint-order: stroke fill;
   -webkit-text-stroke: 0.04em #466026;
