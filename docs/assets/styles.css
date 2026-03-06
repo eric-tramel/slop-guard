@@ -790,11 +790,15 @@ p {
 
 .cta-card__actions pre {
   padding: 1rem;
-  overflow-x: auto;
+  overflow-x: hidden;
   border-radius: 22px;
   border: 1px solid rgba(255, 250, 243, 0.24);
   background: rgba(255, 250, 243, 0.9);
   color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.92rem;
+  line-height: 1.45;
 }
 
 .cta-link {
