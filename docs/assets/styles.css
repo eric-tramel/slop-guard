@@ -773,7 +773,7 @@ p {
 
 .cta-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 25rem);
+  grid-template-columns: minmax(0, 0.92fr) minmax(26rem, 40rem);
   gap: 1.3rem;
   padding: 1.6rem;
   border-radius: calc(var(--radius) + 8px);
@@ -790,13 +790,12 @@ p {
 
 .cta-card__actions pre {
   padding: 1rem;
-  overflow-x: hidden;
+  overflow-x: auto;
   border-radius: 22px;
   border: 1px solid rgba(255, 250, 243, 0.24);
   background: rgba(255, 250, 243, 0.9);
   color: var(--ink);
-  white-space: pre-wrap;
-  word-break: break-word;
+  white-space: pre;
   font-size: 0.92rem;
   line-height: 1.45;
 }
