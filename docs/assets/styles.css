@@ -247,8 +247,6 @@ p {
 .usage-step,
 .copy-card,
 .inspector-card,
-.proof-point,
-.figure-card,
 .morph-card {
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -436,7 +434,6 @@ p {
 }
 
 .signal-card__kicker,
-.proof-point__kicker,
 .inspector-card__kicker,
 .detail-card__label {
   color: var(--muted);
@@ -774,61 +771,6 @@ p {
   font-size: 0.95rem;
 }
 
-.proof-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: 1rem;
-  align-items: center;
-}
-
-.proof-copy {
-  display: grid;
-  gap: 1rem;
-}
-
-.proof-point {
-  display: grid;
-  gap: 0.7rem;
-  padding: 1.3rem;
-}
-
-.figure-stack {
-  position: relative;
-  min-height: 44rem;
-}
-
-.figure-card {
-  position: absolute;
-  right: 0;
-  max-width: 100%;
-  overflow: hidden;
-  padding: 1rem;
-}
-
-.figure-card img {
-  border-radius: 22px;
-  border: 1px solid rgba(29, 39, 31, 0.08);
-}
-
-.figure-card figcaption {
-  margin-top: 0.8rem;
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-.figure-card--primary {
-  top: 0;
-  width: min(100%, 44rem);
-  transform: rotate(-1.5deg);
-}
-
-.figure-card--secondary {
-  bottom: 0;
-  left: 1rem;
-  width: min(88%, 30rem);
-  transform: rotate(3deg);
-}
-
 .cta-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(18rem, 25rem);
@@ -901,7 +843,6 @@ p {
   .overview__grid,
   .usage-layout,
   .demo-grid,
-  .proof-layout,
   .cta-card {
     grid-template-columns: 1fr;
   }
@@ -915,18 +856,6 @@ p {
     top: auto;
   }
 
-  .figure-stack {
-    min-height: auto;
-    display: grid;
-    gap: 1rem;
-  }
-
-  .figure-card {
-    position: relative;
-    inset: auto;
-    width: 100%;
-    transform: none;
-  }
 }
 
 @media (max-width: 760px) {
