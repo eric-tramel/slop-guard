@@ -312,13 +312,13 @@
             <p class="eyebrow eyebrow--light">Start Here</p>
             <h2>Keep the draft. Lose the filler.</h2>
             <p class="lede lede--light">
-              Run it once with <code>uvx</code>, install <code>sg</code> for
-              daily use, or wire the MCP server into the agent that writes your
-              docs.
+              Wire <code>slop-guard</code> into Codex or Claude Code, then let
+              the agent lint the writing before it ships.
             </p>
           </div>
           <div class="cta-card__actions">
-            <pre><code>uvx --from slop-guard sg README.md</code></pre>
+            <pre><code>codex mcp add slop-guard -- uvx slop-guard
+claude mcp add slop-guard -- uvx slop-guard</code></pre>
             <a class="cta-link" href="https://github.com/eric-tramel/slop-guard">
               View the repository
             </a>
