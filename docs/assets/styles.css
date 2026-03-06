@@ -6,6 +6,14 @@
   font-weight: 200 900;
 }
 
+@font-face {
+  font-family: "Rubik Wet Paint";
+  src: url("./fonts/RubikWetPaint-Regular.ttf") format("truetype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
 :root {
   --paper: #f6efe4;
   --paper-strong: #fffaf3;
@@ -189,59 +197,21 @@ h1 {
 }
 
 .hero-slop {
-  position: relative;
   display: inline-block;
-  isolation: isolate;
-  color: var(--slop-deep);
-  letter-spacing: -0.07em;
-  transform: translateY(0.01em) rotate(-2.4deg) skewX(-6deg);
+  margin: 0 0.015em 0 0.035em;
+  font-family: "Rubik Wet Paint", "Trebuchet MS", sans-serif;
+  font-size: 0.82em;
+  line-height: 0.8;
+  letter-spacing: 0.01em;
+  color: #d77b4a;
+  vertical-align: 0.02em;
+  transform: translateY(0.06em) rotate(-2deg);
+  paint-order: stroke fill;
+  -webkit-text-stroke: 0.018em rgba(29, 39, 31, 0.2);
   text-shadow:
-    0.018em 0 rgba(196, 87, 62, 0.44),
-    -0.022em 0 rgba(15, 112, 111, 0.26),
-    0 0.045em rgba(29, 39, 31, 0.08);
-}
-
-.hero-slop::before,
-.hero-slop::after {
-  position: absolute;
-  inset: 0;
-  content: attr(data-text);
-  pointer-events: none;
-}
-
-.hero-slop::before {
-  z-index: -2;
-  color: rgba(196, 87, 62, 0.82);
-  transform: translate(0.028em, 0.048em) skewX(-12deg);
-  filter: blur(0.012em);
-}
-
-.hero-slop::after {
-  z-index: -1;
-  color: rgba(15, 112, 111, 0.52);
-  transform: translate(-0.024em, 0.03em) skewY(7deg);
-  filter: blur(0.01em);
-}
-
-.hero-slop__drips {
-  position: absolute;
-  left: 0.12em;
-  right: 0.08em;
-  bottom: -0.1em;
-  height: 0.26em;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.92;
-  filter: blur(1.2px);
-  background:
-    radial-gradient(closest-side at 50% 0, rgba(196, 87, 62, 0.84) 0 76%, transparent 77%)
-      left 0.08em top 0.02em / 0.14em 0.22em no-repeat,
-    radial-gradient(closest-side at 50% 0, rgba(196, 87, 62, 0.58) 0 76%, transparent 77%)
-      left 1.04em top 0.1em / 0.12em 0.18em no-repeat,
-    radial-gradient(closest-side at 50% 0, rgba(15, 112, 111, 0.42) 0 76%, transparent 77%)
-      right 0.38em top 0.07em / 0.13em 0.19em no-repeat,
-    linear-gradient(180deg, rgba(196, 87, 62, 0.34), rgba(15, 112, 111, 0.2));
-  mask: linear-gradient(180deg, transparent 0, black 22%, black 100%);
+    0.024em 0.024em 0 rgba(255, 250, 243, 0.65),
+    0.052em 0.056em 0 rgba(15, 112, 111, 0.16),
+    0 0.03em 0 rgba(29, 39, 31, 0.08);
 }
 
 h2 {
