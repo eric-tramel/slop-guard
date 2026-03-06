@@ -231,6 +231,7 @@ p {
 .quickstart__stack {
   display: grid;
   gap: 1rem;
+  padding-top: clamp(0.6rem, 1.4vw, 1.1rem);
 }
 
 .command-grid {
