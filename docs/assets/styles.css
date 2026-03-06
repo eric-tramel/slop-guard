@@ -222,7 +222,7 @@ h1 {
 }
 
 .hero-slop__glyph:not(:last-child) {
-  margin-right: -0.08em;
+  margin-right: -0.045em;
 }
 
 .hero-slop__glyph--s {
