@@ -197,21 +197,47 @@ h1 {
 }
 
 .hero-slop {
+  position: relative;
   display: inline-block;
-  margin: 0 0.015em 0 0.035em;
+  isolation: isolate;
+  margin: 0 0.02em 0 0.04em;
   font-family: "Rubik Wet Paint", "Trebuchet MS", sans-serif;
-  font-size: 0.82em;
-  line-height: 0.8;
-  letter-spacing: 0.01em;
-  color: #d77b4a;
-  vertical-align: 0.02em;
-  transform: translateY(0.06em) rotate(-2deg);
+  font-size: 0.9em;
+  line-height: 0.78;
+  letter-spacing: 0.015em;
+  vertical-align: middle;
+  transform: translateY(0.08em) rotate(-1.5deg);
+  background: linear-gradient(180deg, #f2a76f 0%, #df8750 55%, #c8643b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   paint-order: stroke fill;
-  -webkit-text-stroke: 0.018em rgba(29, 39, 31, 0.2);
+  -webkit-text-stroke: 0.012em rgba(92, 54, 35, 0.24);
   text-shadow:
-    0.024em 0.024em 0 rgba(255, 250, 243, 0.65),
-    0.052em 0.056em 0 rgba(15, 112, 111, 0.16),
-    0 0.03em 0 rgba(29, 39, 31, 0.08);
+    -0.012em -0.01em 0 rgba(255, 250, 243, 0.76),
+    0.018em 0.02em 0 rgba(255, 238, 220, 0.88),
+    0.05em 0.056em 0 rgba(180, 95, 61, 0.42),
+    0.072em 0.08em 0 rgba(93, 49, 32, 0.18);
+}
+
+.hero-slop::before,
+.hero-slop::after {
+  position: absolute;
+  inset: 0;
+  content: attr(data-text);
+  pointer-events: none;
+}
+
+.hero-slop::before {
+  z-index: -2;
+  color: rgba(120, 67, 44, 0.42);
+  transform: translate(0.05em, 0.065em);
+}
+
+.hero-slop::after {
+  z-index: -1;
+  color: rgba(255, 250, 243, 0.72);
+  transform: translate(-0.014em, -0.012em);
 }
 
 h2 {
