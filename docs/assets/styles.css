@@ -603,6 +603,7 @@ p {
 
 .copy-card {
   --sample-wash: 0;
+  position: relative;
   display: grid;
   gap: 1.1rem;
   background:
@@ -659,36 +660,38 @@ p {
 
 .annotation-tooltip {
   position: absolute;
-  left: 50%;
-  top: calc(100% + 0.75rem);
+  left: var(--tooltip-left, 50%);
+  top: var(--tooltip-top, 0px);
   z-index: 8;
-  width: min(18rem, 72vw);
+  width: min(18rem, calc(100% - 2.7rem));
   padding: 0.9rem 0.95rem;
   border-radius: 18px;
   background: rgba(22, 29, 27, 0.96);
   color: var(--paper-strong);
   box-shadow: 0 20px 40px rgba(18, 25, 23, 0.32);
   opacity: 0;
+  visibility: hidden;
   transform: translate(-50%, -0.35rem);
   pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease, visibility 0ms linear 160ms;
+}
+
+.annotation-tooltip.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
   transition: opacity 160ms ease, transform 160ms ease;
 }
 
 .annotation-tooltip::before {
   position: absolute;
-  left: 50%;
+  left: var(--tooltip-arrow-left, 50%);
   top: -0.4rem;
   width: 0.8rem;
   height: 0.8rem;
   content: "";
   background: rgba(22, 29, 27, 0.96);
   transform: translateX(-50%) rotate(45deg);
-}
-
-.annotation:hover .annotation-tooltip,
-.annotation:focus-visible .annotation-tooltip {
-  opacity: 1;
-  transform: translate(-50%, 0);
 }
 
 .annotation-tooltip strong,
@@ -939,18 +942,6 @@ p {
   }
 
   .annotation-tooltip {
-    left: 0;
-    width: min(18rem, calc(100vw - 4rem));
-    transform: translate(0, -0.35rem);
-  }
-
-  .annotation-tooltip::before {
-    left: 1.2rem;
-    transform: rotate(45deg);
-  }
-
-  .annotation:hover .annotation-tooltip,
-  .annotation:focus-visible .annotation-tooltip {
-    transform: translate(0, 0);
+    width: min(18rem, calc(100% - 1.8rem));
   }
 }

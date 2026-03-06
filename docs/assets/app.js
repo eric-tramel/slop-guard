@@ -337,10 +337,8 @@ function annotationAlpha(score, hitCount) {
   return Math.min(0.58, base + (hitCount - 1) * 0.09);
 }
 
-function buildTooltipContent(hits) {
-  const tooltip = document.createElement("span");
-  tooltip.className = "annotation-tooltip";
-
+function populateTooltip(tooltip, hits) {
+  tooltip.replaceChildren();
   const label = document.createElement("strong");
   label.textContent =
     hits.length === 1 ? `${formatRule(hits[0].rule)} | ${hits[0].penalty}` : `${hits.length} lint hits`;
@@ -356,8 +354,23 @@ function buildTooltipContent(hits) {
       .join(" ");
   }
   tooltip.appendChild(body);
+}
 
-  return tooltip;
+function positionTooltip(tooltipNode, mark, containerNode) {
+  const containerRect = containerNode.getBoundingClientRect();
+  const markRect = mark.getBoundingClientRect();
+  const tooltipRect = tooltipNode.getBoundingClientRect();
+  const centeredLeft = markRect.left - containerRect.left + markRect.width / 2;
+  const tooltipHalf = tooltipRect.width / 2;
+  const minLeft = tooltipHalf + 20;
+  const maxLeft = containerRect.width - tooltipHalf - 20;
+  const clampedLeft = maxLeft > minLeft ? Math.min(Math.max(centeredLeft, minLeft), maxLeft) : containerRect.width / 2;
+  const arrowOffsetLimit = Math.max(0, tooltipHalf - 28);
+  const arrowOffset = Math.max(-arrowOffsetLimit, Math.min(arrowOffsetLimit, centeredLeft - clampedLeft));
+
+  tooltipNode.style.setProperty("--tooltip-left", `${clampedLeft}px`);
+  tooltipNode.style.setProperty("--tooltip-top", `${markRect.bottom - containerRect.top + 12}px`);
+  tooltipNode.style.setProperty("--tooltip-arrow-left", `calc(50% + ${arrowOffset}px)`);
 }
 
 function setDetailBody(detailNode, hits, sample) {
@@ -444,8 +457,14 @@ function renderAnnotatedText(copyNode, sample, detailNode) {
 
   const annotations = buildAnnotationInstances(sample);
   const highlightMap = buildHighlightMap(sample.text, annotations);
+  const cardNode = copyNode.closest(".copy-card");
+  cardNode?.querySelector(".annotation-tooltip")?.remove();
   let activeMark = null;
   let firstHighlightedMark = null;
+  const tooltipNode = document.createElement("span");
+  tooltipNode.className = "annotation-tooltip";
+  tooltipNode.setAttribute("aria-hidden", "true");
+  cardNode?.appendChild(tooltipNode);
 
   const setActiveMark = (mark, hits) => {
     if (activeMark && activeMark !== mark) {
@@ -454,6 +473,19 @@ function renderAnnotatedText(copyNode, sample, detailNode) {
     activeMark = mark;
     activeMark.classList.add("is-selected");
     setDetailBody(detailNode, hits, sample);
+  };
+
+  const showTooltip = (mark, hits) => {
+    if (!cardNode) {
+      return;
+    }
+    populateTooltip(tooltipNode, hits);
+    positionTooltip(tooltipNode, mark, cardNode);
+    tooltipNode.classList.add("is-visible");
+  };
+
+  const hideTooltip = () => {
+    tooltipNode.classList.remove("is-visible");
   };
 
   const paragraphs = sample.text.split("\n\n");
@@ -494,11 +526,17 @@ function renderAnnotatedText(copyNode, sample, detailNode) {
           mark.classList.add("annotation--stacked");
         }
         mark.textContent = chunk;
-        mark.appendChild(buildTooltipContent(hits));
-
-        mark.addEventListener("mouseenter", () => setActiveMark(mark, hits));
-        mark.addEventListener("focus", () => setActiveMark(mark, hits));
-        mark.addEventListener("click", () => setActiveMark(mark, hits));
+        mark.addEventListener("mousedown", (event) => event.preventDefault());
+        mark.addEventListener("mouseenter", () => {
+          setActiveMark(mark, hits);
+          showTooltip(mark, hits);
+        });
+        mark.addEventListener("mouseleave", hideTooltip);
+        mark.addEventListener("focus", () => {
+          setActiveMark(mark, hits);
+          showTooltip(mark, hits);
+        });
+        mark.addEventListener("blur", hideTooltip);
 
         if (!firstHighlightedMark) {
           firstHighlightedMark = mark;
