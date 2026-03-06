@@ -205,8 +205,8 @@ h1 {
   font-size: 0.9em;
   line-height: 0.78;
   letter-spacing: 0.015em;
-  vertical-align: middle;
-  transform: translateY(0.08em) rotate(-1.5deg);
+  vertical-align: 0.02em;
+  transform: translateY(-0.015em) rotate(-1.5deg);
   background: linear-gradient(180deg, #f2a76f 0%, #df8750 55%, #c8643b 100%);
   -webkit-background-clip: text;
   background-clip: text;
