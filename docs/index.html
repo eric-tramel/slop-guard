@@ -9,7 +9,7 @@
       content="slop-guard is a rule-based prose linter for formulaic AI writing. Run it with uvx, install sg, or wire it into Codex and Claude as an MCP server."
     />
     <link rel="preload" href="./assets/fonts/Literata-Variable.ttf" as="font" type="font/ttf" crossorigin />
-    <link rel="stylesheet" href="./assets/styles.css?v=20260306b" />
+    <link rel="stylesheet" href="./assets/styles.css?v=20260306c" />
     <script defer src="./assets/app.js?v=20260306b"></script>
   </head>
   <body>
@@ -28,7 +28,13 @@
       <section class="section quickstart" id="install">
         <div class="quickstart__grid">
           <div class="quickstart__copy reveal">
-            <h1>Catch slop before it lands in your docs.</h1>
+            <h1>
+              Catch
+              <span class="hero-slop" data-text="slop"
+                >slop<span class="hero-slop__drips" aria-hidden="true"></span
+              ></span>
+              before it lands in your docs.
+            </h1>
             <p class="lede">
               <code>slop-guard</code> is a rule-based prose linter for formulaic AI
               writing. It scores text from 0 to 100, points to the exact spans
