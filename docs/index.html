@@ -18,8 +18,8 @@
         <a class="brand" href="#install">slop-guard</a>
         <nav class="nav" aria-label="Primary">
           <a href="#install">Install</a>
-          <a href="#ways">Ways To Use It</a>
           <a href="#demo">Example</a>
+          <a href="#ways">Ways To Use It</a>
           <a href="https://github.com/eric-tramel/slop-guard">GitHub</a>
         </nav>
       </div>
@@ -163,71 +163,6 @@
         </div>
       </section>
 
-      <section class="section ways" id="ways">
-        <div class="section-head reveal">
-          <p class="eyebrow">Ways To Use It</p>
-          <h2>Scroll through the same lint pass in different workflows.</h2>
-          <p class="lede">
-            Start inside an agent, drop to the CLI, turn it into a publishing
-            gate, or fit the rules to your own corpus. The preview on the right
-            follows the card in view.
-          </p>
-        </div>
-
-        <div class="usage-layout">
-          <div class="usage-steps">
-            <article class="usage-step reveal" data-preview-key="mcp" tabindex="0">
-              <p class="usage-step__index">01</p>
-              <h3>Inside Codex or Claude</h3>
-              <p>
-                Add <code>slop-guard</code> as an MCP server and let the agent
-                call <code>check_slop</code> or <code>check_slop_file</code>
-                when it drafts docs, release notes, or status updates.
-              </p>
-            </article>
-
-            <article class="usage-step reveal" data-preview-key="cli" tabindex="0">
-              <p class="usage-step__index">02</p>
-              <h3>At the terminal</h3>
-              <p>
-                Run <code>sg</code> on files, inline prose, or stdin. Good for
-                README edits, landing-page copy, changelogs, and generated text.
-              </p>
-            </article>
-
-            <article class="usage-step reveal" data-preview-key="ci" tabindex="0">
-              <p class="usage-step__index">03</p>
-              <h3>As a quality gate</h3>
-              <p>
-                Use thresholds in CI so doc quality has an enforced floor.
-                Low-scoring prose fails before it ships.
-              </p>
-            </article>
-
-            <article class="usage-step reveal" data-preview-key="fit" tabindex="0">
-              <p class="usage-step__index">04</p>
-              <h3>Fit it to your own style</h3>
-              <p>
-                Train a JSONL rule config from positive and negative corpora,
-                then point both the CLI and MCP server at the fitted rules.
-              </p>
-            </article>
-          </div>
-
-          <aside class="terminal-card reveal" aria-live="polite">
-            <div class="terminal-card__chrome" aria-hidden="true">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <p class="terminal-card__label" data-preview-label></p>
-            <h3 data-preview-title></h3>
-            <p class="terminal-card__copy" data-preview-copy></p>
-            <pre class="terminal-card__code"><code data-preview-code></code></pre>
-          </aside>
-        </div>
-      </section>
-
       <section class="section demo" id="demo">
         <div class="section-head reveal">
           <p class="eyebrow">Real Example</p>
@@ -303,6 +238,71 @@
               </div>
             </aside>
           </div>
+        </div>
+      </section>
+
+      <section class="section ways" id="ways">
+        <div class="section-head reveal">
+          <p class="eyebrow">Ways To Use It</p>
+          <h2>Scroll through the same lint pass in different workflows.</h2>
+          <p class="lede">
+            Start inside an agent, drop to the CLI, turn it into a publishing
+            gate, or fit the rules to your own corpus. The preview on the right
+            follows the card in view.
+          </p>
+        </div>
+
+        <div class="usage-layout">
+          <div class="usage-steps">
+            <article class="usage-step reveal" data-preview-key="mcp" tabindex="0">
+              <p class="usage-step__index">01</p>
+              <h3>Inside Codex or Claude</h3>
+              <p>
+                Add <code>slop-guard</code> as an MCP server and let the agent
+                call <code>check_slop</code> or <code>check_slop_file</code>
+                when it drafts docs, release notes, or status updates.
+              </p>
+            </article>
+
+            <article class="usage-step reveal" data-preview-key="cli" tabindex="0">
+              <p class="usage-step__index">02</p>
+              <h3>At the terminal</h3>
+              <p>
+                Run <code>sg</code> on files, inline prose, or stdin. Good for
+                README edits, landing-page copy, changelogs, and generated text.
+              </p>
+            </article>
+
+            <article class="usage-step reveal" data-preview-key="ci" tabindex="0">
+              <p class="usage-step__index">03</p>
+              <h3>As a quality gate</h3>
+              <p>
+                Use thresholds in CI so doc quality has an enforced floor.
+                Low-scoring prose fails before it ships.
+              </p>
+            </article>
+
+            <article class="usage-step reveal" data-preview-key="fit" tabindex="0">
+              <p class="usage-step__index">04</p>
+              <h3>Fit it to your own style</h3>
+              <p>
+                Train a JSONL rule config from positive and negative corpora,
+                then point both the CLI and MCP server at the fitted rules.
+              </p>
+            </article>
+          </div>
+
+          <aside class="terminal-card reveal" aria-live="polite">
+            <div class="terminal-card__chrome" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <p class="terminal-card__label" data-preview-label></p>
+            <h3 data-preview-title></h3>
+            <p class="terminal-card__copy" data-preview-copy></p>
+            <pre class="terminal-card__code"><code data-preview-code></code></pre>
+          </aside>
         </div>
       </section>
 
