@@ -221,13 +221,7 @@ h1 {
 
 .hero-slop__glyph--s {
   margin-right: -0.018em;
-  color: #7c9b42;
-  -webkit-text-stroke: 0.032em #466026;
-  transform: translate(0.012em, -0.04em) rotate(-7deg);
-  text-shadow:
-    -0.016em -0.014em 0 rgba(255, 250, 243, 0.42),
-    0.008em 0.01em 0 rgba(255, 250, 243, 0.14),
-    0.016em 0.018em 0 rgba(117, 84, 31, 0.1);
+  transform: translate(0.008em, -0.014em) rotate(-3deg);
 }
 
 .hero-slop__glyph--l {
