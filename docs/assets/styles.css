@@ -197,15 +197,20 @@ h1 {
 }
 
 .hero-slop {
-  display: inline-block;
+  display: inline-flex;
+  align-items: flex-end;
   margin: 0 0.02em 0 0.04em;
   font-family: "Rubik Wet Paint", "Trebuchet MS", sans-serif;
   font-size: 0.9em;
   line-height: 0.78;
-  letter-spacing: 0.015em;
+  letter-spacing: 0;
   vertical-align: 0.1em;
   transform: rotate(15deg);
   transform-origin: 50% 62%;
+}
+
+.hero-slop__glyph {
+  display: inline-block;
   color: #72923a;
   paint-order: stroke fill;
   -webkit-text-stroke: 0.04em #466026;
@@ -214,15 +219,29 @@ h1 {
     0.02em 0.024em 0 rgba(117, 84, 31, 0.14);
 }
 
-.hero-slop__lead {
-  display: inline-block;
+.hero-slop__glyph--s {
   margin-right: -0.018em;
   color: #7c9b42;
   -webkit-text-stroke: 0.032em #466026;
+  transform: translate(0.012em, -0.04em) rotate(-7deg);
   text-shadow:
     -0.016em -0.014em 0 rgba(255, 250, 243, 0.42),
     0.008em 0.01em 0 rgba(255, 250, 243, 0.14),
     0.016em 0.018em 0 rgba(117, 84, 31, 0.1);
+}
+
+.hero-slop__glyph--l {
+  margin-right: -0.03em;
+  transform: translate(-0.026em, 0.026em) rotate(2deg);
+}
+
+.hero-slop__glyph--o {
+  margin-right: -0.028em;
+  transform: translate(-0.03em, -0.008em) rotate(-4deg);
+}
+
+.hero-slop__glyph--p {
+  transform: translate(-0.05em, 0.048em) rotate(4deg);
 }
 
 h2 {
