@@ -15,6 +15,9 @@
   --line: rgba(29, 39, 31, 0.12);
   --shadow: 0 24px 60px rgba(78, 48, 29, 0.12);
   --panel: rgba(255, 250, 243, 0.82);
+  --code-surface: rgba(246, 239, 228, 0.94);
+  --code-surface-strong: rgba(255, 250, 243, 0.98);
+  --code-line: rgba(29, 39, 31, 0.12);
   --slop: #c4573e;
   --slop-deep: #8e2e1d;
   --slop-soft: rgba(196, 87, 62, 0.14);
@@ -22,8 +25,6 @@
   --clean-deep: #0b5958;
   --clean-soft: rgba(15, 112, 111, 0.12);
   --accent: #d5a550;
-  --terminal: #121917;
-  --terminal-line: rgba(255, 250, 243, 0.08);
   --max-width: 1180px;
   --radius: 30px;
   --monospace: "SFMono-Regular", "SF Mono", Menlo, Consolas, monospace;
@@ -259,8 +260,8 @@ p {
   position: relative;
   overflow: hidden;
   padding: 1.15rem 1.15rem 1.2rem;
-  background: linear-gradient(180deg, rgba(18, 25, 23, 0.96), rgba(18, 25, 23, 0.9));
-  color: var(--paper-strong);
+  background: linear-gradient(180deg, var(--code-surface-strong), var(--code-surface));
+  color: var(--ink);
 }
 
 .command-card::before {
@@ -275,7 +276,7 @@ p {
   font-size: 0.74rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255, 250, 243, 0.66);
+  color: var(--muted);
 }
 
 .command-card pre {
@@ -429,8 +430,8 @@ p {
   display: grid;
   gap: 0.9rem;
   padding: 1.3rem;
-  color: var(--paper-strong);
-  background: linear-gradient(180deg, rgba(18, 25, 23, 0.98), rgba(18, 25, 23, 0.92));
+  color: var(--ink);
+  background: linear-gradient(180deg, rgba(250, 245, 236, 0.96), rgba(243, 235, 223, 0.94));
 }
 
 .terminal-card__chrome {
@@ -442,11 +443,11 @@ p {
   width: 0.7rem;
   height: 0.7rem;
   border-radius: 50%;
-  background: rgba(255, 250, 243, 0.2);
+  background: rgba(29, 39, 31, 0.14);
 }
 
 .terminal-card__label {
-  color: rgba(255, 250, 243, 0.64);
+  color: var(--muted);
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -454,15 +455,15 @@ p {
 }
 
 .terminal-card__copy {
-  color: rgba(255, 250, 243, 0.72);
+  color: var(--muted);
 }
 
 .terminal-card__code {
   overflow-x: auto;
   padding: 1rem;
-  border: 1px solid var(--terminal-line);
+  border: 1px solid var(--code-line);
   border-radius: 22px;
-  background: rgba(255, 250, 243, 0.03);
+  background: rgba(255, 250, 243, 0.72);
   font-size: 0.94rem;
   line-height: 1.6;
 }
@@ -794,9 +795,9 @@ p {
   padding: 1rem;
   overflow-x: auto;
   border-radius: 22px;
-  border: 1px solid rgba(255, 250, 243, 0.16);
-  background: rgba(255, 250, 243, 0.06);
-  color: var(--paper-strong);
+  border: 1px solid rgba(255, 250, 243, 0.24);
+  background: rgba(255, 250, 243, 0.9);
+  color: var(--ink);
 }
 
 .cta-link {
