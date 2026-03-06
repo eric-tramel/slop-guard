@@ -183,6 +183,8 @@ h2 {
 h1 {
   max-width: 13ch;
   font-size: clamp(3.2rem, 9vw, 6.7rem);
+  line-height: 1.01;
+  letter-spacing: -0.045em;
 }
 
 h2 {
@@ -231,7 +233,7 @@ p {
 .quickstart__stack {
   display: grid;
   gap: 1rem;
-  padding-top: clamp(0.6rem, 1.4vw, 1.1rem);
+  padding-top: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 .command-grid {
