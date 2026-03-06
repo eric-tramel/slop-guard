@@ -686,8 +686,7 @@ p {
 }
 
 .annotation:hover .annotation-tooltip,
-.annotation:focus-visible .annotation-tooltip,
-.annotation.is-selected .annotation-tooltip {
+.annotation:focus-visible .annotation-tooltip {
   opacity: 1;
   transform: translate(-50%, 0);
 }
@@ -951,8 +950,7 @@ p {
   }
 
   .annotation:hover .annotation-tooltip,
-  .annotation:focus-visible .annotation-tooltip,
-  .annotation.is-selected .annotation-tooltip {
+  .annotation:focus-visible .annotation-tooltip {
     transform: translate(0, 0);
   }
 }
