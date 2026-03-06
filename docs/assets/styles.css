@@ -979,7 +979,7 @@ p {
 
 .cta-card {
   display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(26rem, 40rem);
+  grid-template-columns: minmax(0, 1.08fr) minmax(24rem, 34rem);
   gap: 1.3rem;
   padding: 1.6rem;
   border-radius: calc(var(--radius) + 8px);
@@ -992,6 +992,8 @@ p {
   display: grid;
   gap: 0.9rem;
   align-content: center;
+  justify-self: end;
+  width: min(100%, 34rem);
 }
 
 .cta-card__actions pre {
@@ -1002,7 +1004,7 @@ p {
   background: rgba(255, 250, 243, 0.9);
   color: var(--ink);
   white-space: pre;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   line-height: 1.45;
 }
 
