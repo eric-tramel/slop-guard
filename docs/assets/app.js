@@ -426,6 +426,51 @@ function initUsagePreview() {
   renderPreview(steps[0]?.dataset.previewKey || "mcp");
 }
 
+function initCopyButtons() {
+  const buttons = Array.from(document.querySelectorAll(".copy-button[data-copy-text]"));
+  if (!buttons.length) {
+    return;
+  }
+
+  const copyText = async (text) => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "absolute";
+    area.style.left = "-9999px";
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand("copy");
+    document.body.removeChild(area);
+  };
+
+  buttons.forEach((button) => {
+    const defaultLabel = button.getAttribute("aria-label") || "Copy command";
+
+    button.addEventListener("click", async () => {
+      try {
+        await copyText(button.dataset.copyText || "");
+        button.classList.add("is-copied");
+        button.setAttribute("aria-label", "Copied");
+        window.setTimeout(() => {
+          button.classList.remove("is-copied");
+          button.setAttribute("aria-label", defaultLabel);
+        }, 1200);
+      } catch (_error) {
+        button.setAttribute("aria-label", "Copy failed");
+        window.setTimeout(() => {
+          button.setAttribute("aria-label", defaultLabel);
+        }, 1200);
+      }
+    });
+  });
+}
+
 function initReveals() {
   const nodes = Array.from(document.querySelectorAll(".reveal"));
   if (!nodes.length) {
@@ -459,4 +504,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initReveals();
   initUsagePreview();
   initDemo();
+  initCopyButtons();
 });

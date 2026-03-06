@@ -268,6 +268,68 @@ p {
     0 24px 60px rgba(78, 48, 29, 0.08);
 }
 
+.copy-button {
+  position: absolute;
+  top: 0.95rem;
+  right: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid rgba(29, 39, 31, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 250, 243, 0.9);
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.copy-button:hover,
+.copy-button:focus-visible {
+  border-color: rgba(29, 39, 31, 0.18);
+  background: rgba(255, 250, 243, 1);
+  color: var(--ink);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.copy-button.is-copied {
+  border-color: rgba(15, 112, 111, 0.22);
+  color: var(--clean-deep);
+  background: rgba(15, 112, 111, 0.1);
+}
+
+.copy-button__icon {
+  position: relative;
+  width: 0.92rem;
+  height: 0.92rem;
+}
+
+.copy-button__icon::before,
+.copy-button__icon::after {
+  position: absolute;
+  width: 0.72rem;
+  height: 0.72rem;
+  border: 1.4px solid currentColor;
+  border-radius: 0.18rem;
+  content: "";
+}
+
+.copy-button__icon::before {
+  top: 0;
+  left: 0.18rem;
+}
+
+.copy-button__icon::after {
+  top: 0.18rem;
+  left: 0;
+}
+
 .command-card__label {
   font-size: 0.74rem;
   letter-spacing: 0.16em;
