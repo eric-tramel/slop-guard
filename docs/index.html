@@ -166,35 +166,38 @@
       <section class="section demo" id="demo">
         <div class="section-head reveal">
           <p class="eyebrow">Real Example</p>
-          <h2>Hover the red marks and read the returned advice.</h2>
+          <h2>Slide across real excerpts and watch the linting shift.</h2>
           <p class="lede">
-            This demo is driven by a real <code>sg</code> run. The highlighted
-            spans come from the analyzer output, and each hover card uses the
-            rule name, penalty, context, and advice from that payload.
+            These samples come from the local pure-slop corpus and the true-text
+            corpus. Move the slider to swap excerpts, then hover the rendered
+            passage to inspect the actual lint hits from that sample.
           </p>
         </div>
 
         <div class="demo-shell reveal">
           <div class="demo-shell__toolbar">
-            <div class="toggle-group" aria-label="Example mode">
-              <button
-                class="toggle-button is-active"
-                type="button"
-                data-mode-button="slop"
-                aria-pressed="true"
-              >
-                Slop Input
-              </button>
-              <button
-                class="toggle-button"
-                type="button"
-                data-mode-button="clean"
-                aria-pressed="false"
-              >
-                Clean Rewrite
-              </button>
+            <div class="demo-shell__headline">
+              <p class="demo-shell__eyebrow">Excerpt slider</p>
+              <h3 data-sample-title>Personal brand playbook</h3>
+              <p class="demo-shell__caption" data-demo-caption></p>
             </div>
-            <p class="demo-shell__caption" data-demo-caption></p>
+            <div class="slider-panel">
+              <div class="slider-panel__labels" aria-hidden="true">
+                <span>Pure slop dataset</span>
+                <span>True text corpus</span>
+              </div>
+              <input
+                class="excerpt-slider"
+                type="range"
+                min="0"
+                max="4"
+                step="1"
+                value="0"
+                data-example-slider
+                aria-label="Excerpt comparison slider"
+              />
+              <div class="slider-steps" data-slider-steps></div>
+            </div>
           </div>
 
           <div class="demo-grid">
@@ -205,7 +208,8 @@
               </div>
               <div class="annotated-copy" data-annotated-copy></div>
               <p class="copy-card__note">
-                Hover or focus a highlight to inspect the matching rule.
+                Highlight intensity follows the sample score. Overlapping hits
+                stack.
               </p>
             </article>
 
@@ -218,23 +222,22 @@
               </div>
 
               <div class="inspector-card__summary">
-                <p class="inspector-card__kicker">Current mode</p>
+                <p class="inspector-card__kicker">Current excerpt</p>
                 <h3 data-inspector-title>Rule hits</h3>
                 <p data-inspector-copy>
-                  Hover a highlight on the left to inspect the returned message.
+                  Hover a highlighted span on the left to inspect the returned
+                  analyzer payload.
                 </p>
               </div>
 
               <div class="stat-grid" data-stat-grid></div>
 
               <div class="detail-card">
-                <p class="detail-card__label">Selected match</p>
-                <h4 data-detail-rule>Hover a marked span</h4>
-                <p class="detail-card__advice" data-detail-advice>
-                  The tooltip on the left and this panel both reflect the real
-                  analyzer response.
-                </p>
-                <p class="detail-card__context" data-detail-context></p>
+                <p class="detail-card__label">Selected lint hit</p>
+                <div data-detail-body>
+                  Hover a highlighted span to inspect the matching rule and
+                  advice.
+                </div>
               </div>
             </aside>
           </div>
