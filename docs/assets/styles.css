@@ -197,21 +197,27 @@ h1 {
 }
 
 .hero-slop {
-  display: inline-flex;
-  align-items: flex-end;
+  position: relative;
+  display: inline-block;
+  width: 3.2em;
+  height: 1.55em;
+  overflow: visible;
   margin: 0 0.02em 0 0.04em;
   font-family: "Rubik Wet Paint", "Trebuchet MS", sans-serif;
   font-size: 0.9em;
-  line-height: 0.78;
-  letter-spacing: 0;
-  vertical-align: 0.1em;
+  line-height: 1;
+  vertical-align: 0.24em;
   transform: rotate(15deg);
   transform-origin: 50% 62%;
 }
 
 .hero-slop__glyph {
-  display: inline-block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
   color: #72923a;
+  -webkit-text-fill-color: #72923a;
   paint-order: stroke fill;
   -webkit-text-stroke: 0.04em #466026;
   text-shadow:
@@ -220,22 +226,27 @@ h1 {
 }
 
 .hero-slop__glyph--s {
-  margin-right: -0.018em;
-  transform: translate(0.008em, -0.014em) rotate(-3deg);
+  left: 0;
+  top: 0.07em;
+  transform: rotate(-3deg);
 }
 
 .hero-slop__glyph--l {
-  margin-right: -0.03em;
-  transform: translate(-0.026em, 0.026em) rotate(2deg);
+  left: 0.84em;
+  top: 0;
+  transform: rotate(2deg);
 }
 
 .hero-slop__glyph--o {
-  margin-right: -0.028em;
-  transform: translate(-0.03em, -0.008em) rotate(-4deg);
+  left: 1.47em;
+  top: 0.11em;
+  transform: rotate(-4deg);
 }
 
 .hero-slop__glyph--p {
-  transform: translate(-0.05em, 0.048em) rotate(4deg);
+  left: 2.28em;
+  top: 0.17em;
+  transform: rotate(4deg);
 }
 
 h2 {
