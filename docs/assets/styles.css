@@ -213,6 +213,17 @@ h1 {
     0.02em 0.024em 0 rgba(117, 84, 31, 0.14);
 }
 
+.hero-slop__lead {
+  display: inline-block;
+  margin-right: -0.018em;
+  color: #7c9b42;
+  -webkit-text-stroke: 0.032em #466026;
+  text-shadow:
+    -0.016em -0.014em 0 rgba(255, 250, 243, 0.42),
+    0.008em 0.01em 0 rgba(255, 250, 243, 0.14),
+    0.016em 0.018em 0 rgba(117, 84, 31, 0.1);
+}
+
 h2 {
   max-width: 12ch;
   font-size: clamp(2.3rem, 5.5vw, 4.3rem);
