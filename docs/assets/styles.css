@@ -427,6 +427,17 @@ p {
   gap: 1rem;
 }
 
+.features-stack {
+  display: grid;
+  gap: 2rem;
+}
+
+.features-subhead {
+  display: grid;
+  gap: 0.7rem;
+  max-width: 40rem;
+}
+
 .signal-card {
   display: grid;
   gap: 0.7rem;

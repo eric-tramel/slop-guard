@@ -18,8 +18,7 @@
         <a class="brand" href="#install">slop-guard</a>
         <nav class="nav" aria-label="Primary">
           <a href="#install">Install</a>
-          <a href="#demo">Example</a>
-          <a href="#ways">Ways To Use It</a>
+          <a href="#features">Features</a>
           <a href="https://github.com/eric-tramel/slop-guard">GitHub</a>
         </nav>
       </div>
@@ -123,178 +122,108 @@
         </div>
       </section>
 
-      <section class="section overview" id="what">
+      <section class="section overview" id="features">
         <div class="section-head reveal">
-          <p class="eyebrow">What It Returns</p>
-          <h2>Compiled rules, visible reasons, repeatable output.</h2>
+          <p class="eyebrow">Features</p>
+          <h2>Score the draft, show the spans, and fit the workflow.</h2>
           <p class="lede">
             The analyzer walks words, phrases, sentence patterns, formatting,
-            and density signals. Instead of a vibe-based verdict, you get a
-            score, the triggered rule hits, surrounding context, and concrete
-            advice for each match.
+            and density signals. It returns a score, the triggered rule hits,
+            surrounding context, and concrete advice for each match, then fits
+            into the workflows that already ship your docs.
           </p>
         </div>
 
-        <div class="overview__grid">
-          <article class="signal-card reveal">
-            <p class="signal-card__kicker">Score</p>
-            <h3>0-100 banding</h3>
-            <p>
-              Clean, light, moderate, heavy, or saturated. Useful in a terminal,
-              inside an agent, or as a CI threshold.
-            </p>
-          </article>
-          <article class="signal-card reveal">
-            <p class="signal-card__kicker">Matches</p>
-            <h3>Exact spans</h3>
-            <p>
-              Each violation includes the matched text, surrounding context, and
-              penalty that pushed the draft down.
-            </p>
-          </article>
-          <article class="signal-card reveal">
-            <p class="signal-card__kicker">Advice</p>
-            <h3>Rewrite prompts</h3>
-            <p>
-              The output tells you what to cut or replace so you can move from
-              filler to specific claims fast.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section class="section demo" id="demo">
-        <div class="section-head reveal">
-          <p class="eyebrow">Real Example</p>
-          <h2>Switch between real excerpts and watch the linting shift.</h2>
-          <p class="lede">
-            These samples come from the local pure-slop corpus and the true-text
-            corpus. Use the tabs to swap excerpts, then hover the rendered
-            passage to inspect the actual lint hits from that sample.
-          </p>
-        </div>
-
-        <div class="demo-shell reveal">
-          <div class="demo-shell__toolbar">
-            <div class="demo-shell__headline">
-              <p class="demo-shell__eyebrow">Excerpt tabs</p>
-              <h3 data-sample-title>Personal brand playbook</h3>
-              <p class="demo-shell__caption" data-demo-caption></p>
-            </div>
-            <div
-              class="excerpt-tabs"
-              data-excerpt-tabs
-              role="tablist"
-              aria-label="Excerpt examples"
-            ></div>
-          </div>
-
-          <div class="demo-grid">
-            <article class="copy-card">
-              <div class="copy-card__meta">
-                <span class="copy-card__scoreline" data-score-line></span>
-                <span class="copy-card__counts" data-count-summary></span>
-              </div>
-              <div class="annotated-copy" data-annotated-copy></div>
-              <p class="copy-card__note">
-                Highlight intensity follows the sample score. Overlapping hits
-                stack.
+        <div class="features-stack">
+          <div class="overview__grid">
+            <article class="signal-card reveal">
+              <p class="signal-card__kicker">Score</p>
+              <h3>0-100 banding</h3>
+              <p>
+                Clean, light, moderate, heavy, or saturated. Useful in a
+                terminal, inside an agent, or as a CI threshold.
               </p>
             </article>
+            <article class="signal-card reveal">
+              <p class="signal-card__kicker">Matches</p>
+              <h3>Exact spans</h3>
+              <p>
+                Each violation includes the matched text, surrounding context,
+                and penalty that pushed the draft down.
+              </p>
+            </article>
+            <article class="signal-card reveal">
+              <p class="signal-card__kicker">Advice</p>
+              <h3>Rewrite prompts</h3>
+              <p>
+                The output tells you what to cut or replace so you can move
+                from filler to specific claims fast.
+              </p>
+            </article>
+          </div>
 
-            <aside class="inspector-card">
-              <div class="score-ring" data-score-ring>
-                <div class="score-ring__inner">
-                  <strong data-score-value>0</strong>
-                  <span data-score-band>saturated</span>
-                </div>
-              </div>
+          <div class="features-subhead reveal">
+            <p class="eyebrow eyebrow--small">Where It Fits</p>
+            <p class="lede">
+              Run it inside Codex or Claude, from the terminal, as a CI gate,
+              or against fitted rules for your own corpus.
+            </p>
+          </div>
 
-              <div class="inspector-card__summary">
-                <p class="inspector-card__kicker">Current excerpt</p>
-                <h3 data-inspector-title>Rule hits</h3>
-                <p data-inspector-copy>
-                  Hover a highlighted span on the left to inspect the returned
-                  analyzer payload.
+          <div class="usage-layout">
+            <div class="usage-steps">
+              <article class="usage-step reveal" data-preview-key="mcp" tabindex="0">
+                <p class="usage-step__index">01</p>
+                <h3>Inside Codex or Claude</h3>
+                <p>
+                  Add <code>slop-guard</code> as an MCP server and let the
+                  agent call <code>check_slop</code> or
+                  <code>check_slop_file</code> when it drafts docs, release
+                  notes, or status updates.
                 </p>
-              </div>
+              </article>
 
-              <div class="stat-grid" data-stat-grid></div>
+              <article class="usage-step reveal" data-preview-key="cli" tabindex="0">
+                <p class="usage-step__index">02</p>
+                <h3>At the terminal</h3>
+                <p>
+                  Run <code>sg</code> on files, inline prose, or stdin. Good
+                  for README edits, landing-page copy, changelogs, and
+                  generated text.
+                </p>
+              </article>
 
-              <div class="detail-card">
-                <p class="detail-card__label">Selected lint hit</p>
-                <div data-detail-body>
-                  Hover a highlighted span to inspect the matching rule and
-                  advice.
-                </div>
+              <article class="usage-step reveal" data-preview-key="ci" tabindex="0">
+                <p class="usage-step__index">03</p>
+                <h3>As a quality gate</h3>
+                <p>
+                  Use thresholds in CI so doc quality has an enforced floor.
+                  Low-scoring prose fails before it ships.
+                </p>
+              </article>
+
+              <article class="usage-step reveal" data-preview-key="fit" tabindex="0">
+                <p class="usage-step__index">04</p>
+                <h3>Fit it to your own style</h3>
+                <p>
+                  Train a JSONL rule config from positive and negative corpora,
+                  then point both the CLI and MCP server at the fitted rules.
+                </p>
+              </article>
+            </div>
+
+            <aside class="terminal-card reveal" aria-live="polite">
+              <div class="terminal-card__chrome" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
               </div>
+              <p class="terminal-card__label" data-preview-label></p>
+              <h3 data-preview-title></h3>
+              <p class="terminal-card__copy" data-preview-copy></p>
+              <pre class="terminal-card__code"><code data-preview-code></code></pre>
             </aside>
           </div>
-        </div>
-      </section>
-
-      <section class="section ways" id="ways">
-        <div class="section-head reveal">
-          <p class="eyebrow">Ways To Use It</p>
-          <h2>Scroll through the same lint pass in different workflows.</h2>
-          <p class="lede">
-            Start inside an agent, drop to the CLI, turn it into a publishing
-            gate, or fit the rules to your own corpus. The preview on the right
-            follows the card in view.
-          </p>
-        </div>
-
-        <div class="usage-layout">
-          <div class="usage-steps">
-            <article class="usage-step reveal" data-preview-key="mcp" tabindex="0">
-              <p class="usage-step__index">01</p>
-              <h3>Inside Codex or Claude</h3>
-              <p>
-                Add <code>slop-guard</code> as an MCP server and let the agent
-                call <code>check_slop</code> or <code>check_slop_file</code>
-                when it drafts docs, release notes, or status updates.
-              </p>
-            </article>
-
-            <article class="usage-step reveal" data-preview-key="cli" tabindex="0">
-              <p class="usage-step__index">02</p>
-              <h3>At the terminal</h3>
-              <p>
-                Run <code>sg</code> on files, inline prose, or stdin. Good for
-                README edits, landing-page copy, changelogs, and generated text.
-              </p>
-            </article>
-
-            <article class="usage-step reveal" data-preview-key="ci" tabindex="0">
-              <p class="usage-step__index">03</p>
-              <h3>As a quality gate</h3>
-              <p>
-                Use thresholds in CI so doc quality has an enforced floor.
-                Low-scoring prose fails before it ships.
-              </p>
-            </article>
-
-            <article class="usage-step reveal" data-preview-key="fit" tabindex="0">
-              <p class="usage-step__index">04</p>
-              <h3>Fit it to your own style</h3>
-              <p>
-                Train a JSONL rule config from positive and negative corpora,
-                then point both the CLI and MCP server at the fitted rules.
-              </p>
-            </article>
-          </div>
-
-          <aside class="terminal-card reveal" aria-live="polite">
-            <div class="terminal-card__chrome" aria-hidden="true">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <p class="terminal-card__label" data-preview-label></p>
-            <h3 data-preview-title></h3>
-            <p class="terminal-card__copy" data-preview-copy></p>
-            <pre class="terminal-card__code"><code data-preview-code></code></pre>
-          </aside>
         </div>
       </section>
 
