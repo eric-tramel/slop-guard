@@ -59,38 +59,6 @@ const PREVIEWS = {
 
 const EXCERPTS = [
   {
-    key: "pure_habits",
-    dataset: "Pure slop dataset",
-    title: "Habit-building advice",
-    shortLabel: "Habits",
-    text: `Building consistency with simple, healthy habits starts with a single, clear intention: treat each habit like a tiny, repeatable tool you reach for every day. Instead of trying to overhaul your entire lifestyle at once, pick one behavior that feels almost effortless— a five-minute stretch after waking, a glass of water before each meal, or a ten-minute walk after dinner. When the action is low-stakes and clearly defined, your brain treats it as a familiar cue rather than a daunting challenge, making it far easier to repeat without fatigue or guilt.`,
-    score: 7,
-    band: "saturated",
-    wordCount: 90,
-    counts: {
-      em_dash: 1,
-      colon_density: 1,
-    },
-    violations: [
-      {
-        rule: "em_dash",
-        match: "em_dash_density",
-        context: "1 em dashes in 90 words (1.7 per 150 words)",
-        penalty: -3,
-      },
-      {
-        rule: "colon_density",
-        match: "colon_density",
-        context: "1 elaboration colons in 90 words (1.7 per 150 words)",
-        penalty: -3,
-      },
-    ],
-    advice: [
-      "Too many em dashes (1 in 90 words) — use other punctuation.",
-      "Too many elaboration colons (1 in 90 words) — use periods or restructure sentences.",
-    ],
-  },
-  {
     key: "pure_brand",
     dataset: "Pure slop dataset",
     title: "Personal brand playbook",
