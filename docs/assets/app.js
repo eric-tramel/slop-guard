@@ -43,6 +43,36 @@ function initCopyButtons() {
   });
 }
 
+function initFeatureMeters() {
+  const cards = Array.from(document.querySelectorAll(".feature-card--score"));
+  if (!cards.length) {
+    return;
+  }
+
+  cards.forEach((card) => {
+    const marker = card.querySelector(".feature-meter__marker");
+    if (!marker) {
+      return;
+    }
+
+    const restingValue = marker.dataset.rest || marker.textContent || "";
+    const activeValue = marker.dataset.active || restingValue;
+
+    const setValue = (isActive) => {
+      marker.textContent = isActive ? activeValue : restingValue;
+    };
+
+    card.addEventListener("mouseenter", () => setValue(true));
+    card.addEventListener("mouseleave", () => setValue(false));
+    card.addEventListener("focusin", () => setValue(true));
+    card.addEventListener("focusout", (event) => {
+      if (!card.contains(event.relatedTarget)) {
+        setValue(false);
+      }
+    });
+  });
+}
+
 function initReveals() {
   const nodes = Array.from(document.querySelectorAll(".reveal"));
   if (!nodes.length) {
@@ -75,4 +105,5 @@ function initReveals() {
 document.addEventListener("DOMContentLoaded", () => {
   initReveals();
   initCopyButtons();
+  initFeatureMeters();
 });
