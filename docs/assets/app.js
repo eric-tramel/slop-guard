@@ -373,7 +373,7 @@ function setDetailBody(detailNode, hits, sample) {
     advice.textContent =
       sample.score === 100
         ? "This excerpt passed clean with no returned violations."
-        : "Move the slider or hover a highlighted span to inspect a lint hit.";
+        : "Switch tabs or hover a highlighted span to inspect a lint hit.";
     detailNode.appendChild(advice);
 
     const context = document.createElement("p");
@@ -523,8 +523,7 @@ function renderAnnotatedText(copyNode, sample, detailNode) {
 }
 
 function initDemo() {
-  const slider = document.querySelector("[data-example-slider]");
-  const stepContainer = document.querySelector("[data-slider-steps]");
+  const tabContainer = document.querySelector("[data-excerpt-tabs]");
   const sampleTitleNode = document.querySelector("[data-sample-title]");
   const captionNode = document.querySelector("[data-demo-caption]");
   const copyNode = document.querySelector("[data-annotated-copy]");
@@ -537,14 +536,14 @@ function initDemo() {
   const inspectorCopyNode = document.querySelector("[data-inspector-copy]");
   const statGridNode = document.querySelector("[data-stat-grid]");
   const detailNode = document.querySelector("[data-detail-body]");
+  let activeIndex = 0;
 
-  if (!slider || !stepContainer) {
+  if (!tabContainer) {
     return;
   }
 
-  slider.max = String(EXCERPTS.length - 1);
-
   const renderSample = (index) => {
+    activeIndex = index;
     const sample = EXCERPTS[index];
     sampleTitleNode.textContent = sample.title;
     captionNode.textContent = `${sample.dataset} · ${sample.score}/100 · ${sample.band}`;
@@ -560,28 +559,45 @@ function initDemo() {
     renderStats(statGridNode, buildStats(sample));
     renderAnnotatedText(copyNode, sample, detailNode);
 
-    Array.from(stepContainer.querySelectorAll("button")).forEach((button, buttonIndex) => {
+    Array.from(tabContainer.querySelectorAll("button")).forEach((button, buttonIndex) => {
       const isActive = buttonIndex === index;
       button.classList.toggle("is-active", isActive);
-      button.setAttribute("aria-pressed", String(isActive));
+      button.setAttribute("aria-selected", String(isActive));
+      button.tabIndex = isActive ? 0 : -1;
     });
+  };
+
+  const focusTab = (index) => {
+    const tabs = Array.from(tabContainer.querySelectorAll("button"));
+    tabs[index]?.focus();
   };
 
   EXCERPTS.forEach((sample, index) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "slider-step";
+    button.className = "excerpt-tab";
     button.textContent = sample.shortLabel;
-    button.setAttribute("aria-pressed", "false");
+    button.setAttribute("role", "tab");
+    button.setAttribute("aria-selected", "false");
+    button.tabIndex = -1;
     button.addEventListener("click", () => {
-      slider.value = String(index);
       renderSample(index);
     });
-    stepContainer.appendChild(button);
-  });
-
-  slider.addEventListener("input", () => {
-    renderSample(Number(slider.value));
+    button.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        const nextIndex = (activeIndex + 1) % EXCERPTS.length;
+        renderSample(nextIndex);
+        focusTab(nextIndex);
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        const previousIndex = (activeIndex - 1 + EXCERPTS.length) % EXCERPTS.length;
+        renderSample(previousIndex);
+        focusTab(previousIndex);
+      }
+    });
+    tabContainer.appendChild(button);
   });
 
   renderSample(0);

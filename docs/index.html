@@ -166,10 +166,10 @@
       <section class="section demo" id="demo">
         <div class="section-head reveal">
           <p class="eyebrow">Real Example</p>
-          <h2>Slide across real excerpts and watch the linting shift.</h2>
+          <h2>Switch between real excerpts and watch the linting shift.</h2>
           <p class="lede">
             These samples come from the local pure-slop corpus and the true-text
-            corpus. Move the slider to swap excerpts, then hover the rendered
+            corpus. Use the tabs to swap excerpts, then hover the rendered
             passage to inspect the actual lint hits from that sample.
           </p>
         </div>
@@ -177,27 +177,16 @@
         <div class="demo-shell reveal">
           <div class="demo-shell__toolbar">
             <div class="demo-shell__headline">
-              <p class="demo-shell__eyebrow">Excerpt slider</p>
+              <p class="demo-shell__eyebrow">Excerpt tabs</p>
               <h3 data-sample-title>Personal brand playbook</h3>
               <p class="demo-shell__caption" data-demo-caption></p>
             </div>
-            <div class="slider-panel">
-              <div class="slider-panel__labels" aria-hidden="true">
-                <span>Pure slop dataset</span>
-                <span>True text corpus</span>
-              </div>
-              <input
-                class="excerpt-slider"
-                type="range"
-                min="0"
-                max="4"
-                step="1"
-                value="0"
-                data-example-slider
-                aria-label="Excerpt comparison slider"
-              />
-              <div class="slider-steps" data-slider-steps></div>
-            </div>
+            <div
+              class="excerpt-tabs"
+              data-excerpt-tabs
+              role="tablist"
+              aria-label="Excerpt examples"
+            ></div>
           </div>
 
           <div class="demo-grid">
