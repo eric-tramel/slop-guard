@@ -125,105 +125,169 @@
       <section class="section overview" id="features">
         <div class="section-head reveal">
           <p class="eyebrow">Features</p>
-          <h2>Score the draft, show the spans, and fit the workflow.</h2>
+          <h2>Everything important lives in the card, not off to the side.</h2>
           <p class="lede">
             The analyzer walks words, phrases, sentence patterns, formatting,
             and density signals. It returns a score, the triggered rule hits,
-            surrounding context, and concrete advice for each match, then fits
-            into the workflows that already ship your docs.
+            surrounding context, and concrete advice for each match, then plugs
+            into the workflows that already ship your docs. Hover a card and
+            its visual wakes up.
           </p>
         </div>
 
-        <div class="features-stack">
-          <div class="overview__grid">
-            <article class="signal-card reveal">
-              <p class="signal-card__kicker">Score</p>
+        <div class="feature-grid">
+          <article class="feature-card feature-card--score reveal">
+            <div class="feature-card__copy">
+              <p class="feature-card__kicker">Score</p>
               <h3>0-100 banding</h3>
               <p>
-                Clean, light, moderate, heavy, or saturated. Useful in a
-                terminal, inside an agent, or as a CI threshold.
+                Clean, light, moderate, heavy, or saturated. The score is
+                compact enough for a terminal and sharp enough for a CI floor.
               </p>
-            </article>
-            <article class="signal-card reveal">
-              <p class="signal-card__kicker">Matches</p>
+            </div>
+            <div class="feature-card__visual feature-card__visual--score" aria-hidden="true">
+              <div class="feature-meter">
+                <div class="feature-meter__track">
+                  <span class="feature-meter__segment feature-meter__segment--slop"></span>
+                  <span class="feature-meter__segment feature-meter__segment--mid"></span>
+                  <span class="feature-meter__segment feature-meter__segment--clean"></span>
+                  <span class="feature-meter__marker">72</span>
+                </div>
+                <div class="feature-meter__legend">
+                  <span>heavy</span>
+                  <span>moderate</span>
+                  <span>clean</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="feature-card feature-card--matches reveal">
+            <div class="feature-card__copy">
+              <p class="feature-card__kicker">Matches</p>
               <h3>Exact spans</h3>
               <p>
-                Each violation includes the matched text, surrounding context,
-                and penalty that pushed the draft down.
+                Violations come back with the matched text, surrounding
+                context, and penalty. You can point at the problem instead of
+                arguing about vibes.
               </p>
-            </article>
-            <article class="signal-card reveal">
-              <p class="signal-card__kicker">Advice</p>
+            </div>
+            <div class="feature-card__visual feature-card__visual--matches" aria-hidden="true">
+              <div class="feature-snippet">
+                <p>
+                  Ship the
+                  <span class="feature-highlight">groundbreaking</span>
+                  update with
+                  <span class="feature-highlight feature-highlight--soft">actionable</span>
+                  notes and a clear rollout plan.
+                </p>
+                <div class="feature-bubble">
+                  <strong>exact span | -2</strong>
+                  <span>Replace stock phrasing with a concrete claim.</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="feature-card feature-card--advice reveal">
+            <div class="feature-card__copy">
+              <p class="feature-card__kicker">Advice</p>
               <h3>Rewrite prompts</h3>
               <p>
-                The output tells you what to cut or replace so you can move
-                from filler to specific claims fast.
+                The output tells you what to cut and what kind of wording to
+                replace it with, so the rewrite is faster than a blank restart.
               </p>
-            </article>
-          </div>
-
-          <div class="features-subhead reveal">
-            <p class="eyebrow eyebrow--small">Where It Fits</p>
-            <p class="lede">
-              Run it inside Codex or Claude, from the terminal, as a CI gate,
-              or against fitted rules for your own corpus.
-            </p>
-          </div>
-
-          <div class="usage-layout">
-            <div class="usage-steps">
-              <article class="usage-step reveal" data-preview-key="mcp" tabindex="0">
-                <p class="usage-step__index">01</p>
-                <h3>Inside Codex or Claude</h3>
-                <p>
-                  Add <code>slop-guard</code> as an MCP server and let the
-                  agent call <code>check_slop</code> or
-                  <code>check_slop_file</code> when it drafts docs, release
-                  notes, or status updates.
-                </p>
-              </article>
-
-              <article class="usage-step reveal" data-preview-key="cli" tabindex="0">
-                <p class="usage-step__index">02</p>
-                <h3>At the terminal</h3>
-                <p>
-                  Run <code>sg</code> on files, inline prose, or stdin. Good
-                  for README edits, landing-page copy, changelogs, and
-                  generated text.
-                </p>
-              </article>
-
-              <article class="usage-step reveal" data-preview-key="ci" tabindex="0">
-                <p class="usage-step__index">03</p>
-                <h3>As a quality gate</h3>
-                <p>
-                  Use thresholds in CI so doc quality has an enforced floor.
-                  Low-scoring prose fails before it ships.
-                </p>
-              </article>
-
-              <article class="usage-step reveal" data-preview-key="fit" tabindex="0">
-                <p class="usage-step__index">04</p>
-                <h3>Fit it to your own style</h3>
-                <p>
-                  Train a JSONL rule config from positive and negative corpora,
-                  then point both the CLI and MCP server at the fitted rules.
-                </p>
-              </article>
             </div>
-
-            <aside class="terminal-card reveal" aria-live="polite">
-              <div class="terminal-card__chrome" aria-hidden="true">
-                <span></span>
-                <span></span>
-                <span></span>
+            <div class="feature-card__visual feature-card__visual--advice" aria-hidden="true">
+              <div class="rewrite-flow">
+                <div class="rewrite-column rewrite-column--before">
+                  <span class="rewrite-pill rewrite-pill--before">crucial</span>
+                  <span class="rewrite-pill rewrite-pill--before">paradigm</span>
+                  <span class="rewrite-pill rewrite-pill--before">leverage</span>
+                </div>
+                <div class="rewrite-arrow">rewrite</div>
+                <div class="rewrite-column rewrite-column--after">
+                  <span class="rewrite-pill rewrite-pill--after">specific</span>
+                  <span class="rewrite-pill rewrite-pill--after">direct</span>
+                  <span class="rewrite-pill rewrite-pill--after">measured</span>
+                </div>
               </div>
-              <p class="terminal-card__label" data-preview-label></p>
-              <h3 data-preview-title></h3>
-              <p class="terminal-card__copy" data-preview-copy></p>
-              <pre class="terminal-card__code"><code data-preview-code></code></pre>
-            </aside>
-          </div>
+            </div>
+          </article>
+
+          <article class="feature-card feature-card--agents reveal">
+            <div class="feature-card__copy">
+              <p class="feature-card__kicker">Agent Workflow</p>
+              <h3>Inside Codex or Claude</h3>
+              <p>
+                Add <code>slop-guard</code> as an MCP server and let the agent
+                call <code>check_slop</code> or
+                <code>check_slop_file</code> while it drafts docs, release
+                notes, or project updates.
+              </p>
+            </div>
+            <div class="feature-card__visual feature-card__visual--agents" aria-hidden="true">
+              <div class="agent-visual">
+                <div class="agent-visual__badges">
+                  <span class="agent-badge">Codex</span>
+                  <span class="agent-badge">Claude Code</span>
+                </div>
+                <div class="agent-visual__tools">
+                  <span class="tool-pill">check_slop</span>
+                  <span class="tool-pill">check_slop_file</span>
+                </div>
+                <div class="agent-visual__command">mcp add slop-guard -- uvx slop-guard</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="feature-card feature-card--terminal reveal">
+            <div class="feature-card__copy">
+              <p class="feature-card__kicker">CLI + CI</p>
+              <h3>Run it locally or fail the build</h3>
+              <p>
+                Use <code>sg</code> on files, inline text, or stdin. Add a
+                threshold in CI and low-scoring prose exits non-zero before it
+                ships.
+              </p>
+            </div>
+            <div class="feature-card__visual feature-card__visual--terminal" aria-hidden="true">
+              <div class="mini-terminal">
+                <p><span>$</span> sg -t 60 docs/*.md</p>
+                <p class="mini-terminal__pass">docs/api.md 88</p>
+                <p class="mini-terminal__fail">docs/landing.md 54</p>
+                <div class="mini-terminal__chips">
+                  <span class="terminal-chip terminal-chip--fail">exit 1</span>
+                  <span class="terminal-chip terminal-chip--pass">threshold 60</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="feature-card feature-card--fit reveal">
+            <div class="feature-card__copy">
+              <p class="feature-card__kicker">Custom Rules</p>
+              <h3>Fit it to your own style</h3>
+              <p>
+                Train a JSONL rule config from positive and negative corpora,
+                then point the CLI and MCP server at the fitted rules for your
+                own house style.
+              </p>
+            </div>
+            <div class="feature-card__visual feature-card__visual--fit" aria-hidden="true">
+              <div class="fit-visual">
+                <div class="fit-stack fit-stack--positive">
+                  <span class="fit-sheet">positive/*.md</span>
+                  <span class="fit-sheet">guides/*.md</span>
+                </div>
+                <div class="fit-stack fit-stack--negative">
+                  <span class="fit-sheet fit-sheet--negative">negative/*.md</span>
+                  <span class="fit-sheet fit-sheet--negative">slop/*.md</span>
+                </div>
+                <div class="fit-result">rules.fitted.jsonl</div>
+              </div>
+            </div>
+          </article>
         </div>
       </section>
 
