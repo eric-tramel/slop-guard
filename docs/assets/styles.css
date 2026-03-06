@@ -270,38 +270,35 @@ p {
 
 .copy-button {
   position: absolute;
-  top: 0.95rem;
-  right: 0.95rem;
+  top: 1rem;
+  right: 1rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.2rem;
-  height: 2.2rem;
-  border: 1px solid rgba(29, 39, 31, 0.1);
-  border-radius: 999px;
-  background: rgba(255, 250, 243, 0.9);
-  color: var(--muted);
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(88, 100, 93, 0.46);
   cursor: pointer;
   transition:
-    border-color 180ms ease,
-    background 180ms ease,
     color 180ms ease,
+    opacity 180ms ease,
     transform 180ms ease;
 }
 
 .copy-button:hover,
 .copy-button:focus-visible {
-  border-color: rgba(29, 39, 31, 0.18);
-  background: rgba(255, 250, 243, 1);
-  color: var(--ink);
+  color: rgba(29, 39, 31, 0.66);
+  opacity: 1;
   transform: translateY(-1px);
   outline: none;
 }
 
 .copy-button.is-copied {
-  border-color: rgba(15, 112, 111, 0.22);
-  color: var(--clean-deep);
-  background: rgba(15, 112, 111, 0.1);
+  color: rgba(15, 112, 111, 0.56);
+  opacity: 1;
 }
 
 .copy-button__icon {
@@ -315,7 +312,7 @@ p {
   position: absolute;
   width: 0.72rem;
   height: 0.72rem;
-  border: 1.4px solid currentColor;
+  border: 1.5px solid currentColor;
   border-radius: 0.18rem;
   content: "";
 }
