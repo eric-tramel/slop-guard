@@ -122,7 +122,8 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
                         )
                     )
                     advice.append(
-                        f"Remove '{phrase}' \u2014 this is a direct AI tell."
+                        f"Remove '{phrase}' \u2014 drop the meta-conversation and "
+                        "let the content speak for itself."
                     )
                     count += 1
                     start = hit_end
@@ -149,7 +150,8 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
                         )
                     )
                     advice.append(
-                        f"Cut '{phrase}' \u2014 announce less, show more."
+                        f"Cut '{phrase}' \u2014 describe what happened concretely "
+                        "instead of narrating suspense."
                     )
                     count += 1
                     start = hit_end
@@ -171,7 +173,8 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
                         )
                     )
                     advice.append(
-                        f"Remove '{phrase}' \u2014 this is a direct AI tell."
+                        f"Remove '{phrase}' \u2014 drop the meta-conversation and "
+                        "let the content speak for itself."
                     )
                     count += 1
 
@@ -192,7 +195,8 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
                         )
                     )
                     advice.append(
-                        f"Cut '{phrase}' \u2014 announce less, show more."
+                        f"Cut '{phrase}' \u2014 describe what happened concretely "
+                        "instead of narrating suspense."
                     )
                     count += 1
 
@@ -214,7 +218,8 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
                         )
                     )
                     advice.append(
-                        f"'{word}' as a sentence opener is an AI tell \u2014 just make the point."
+                        f"Drop '{word}' as a sentence opener \u2014 start with the "
+                        "substance of your claim instead."
                     )
                     count += 1
 

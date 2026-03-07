@@ -88,8 +88,8 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
                 )
             )
             advice.append(
-                f"Vary paragraph structure \u2014 {len(bold_matches)} bold-header-explanation "
-                "blocks in a row reads as LLM listicle."
+                f"{len(bold_matches)} bold-header-explanation blocks in a row \u2014 "
+                "merge some into regular paragraphs or use topic sentences instead of bold labels."
             )
             count += 1
 
@@ -148,7 +148,8 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
 
         if triadic_count >= self.config.triadic_advice_min:
             advice.append(
-                f"{triadic_count} triadic structures ('X, Y, and Z') \u2014 vary your list cadence."
+                f"{triadic_count} triadic structures ('X, Y, and Z') \u2014 "
+                "use pairs, longer lists, or single terms to break the three-item pattern."
             )
 
         return RuleResult(

@@ -111,7 +111,8 @@ class AIDisclosureRule(Rule[AIDisclosureRuleConfig]):
                     )
                     advice.append(
                         "Remove "
-                        f"'{phrase}' \u2014 AI self-disclosure in authored prose is a critical tell."
+                        f"'{phrase}' \u2014 state the scope or limitation directly "
+                        "without revealing the author is an AI."
                     )
                     count += 1
                     start = hit_end
@@ -134,7 +135,8 @@ class AIDisclosureRule(Rule[AIDisclosureRuleConfig]):
                     )
                     advice.append(
                         "Remove "
-                        f"'{phrase}' \u2014 AI self-disclosure in authored prose is a critical tell."
+                        f"'{phrase}' \u2014 state the scope or limitation directly "
+                        "without revealing the author is an AI."
                     )
                     count += 1
 
@@ -156,7 +158,8 @@ class AIDisclosureRule(Rule[AIDisclosureRuleConfig]):
                     )
                     advice.append(
                         "Remove "
-                        f"'{phrase}' \u2014 AI self-disclosure in authored prose is a critical tell."
+                        f"'{phrase}' \u2014 state the scope or limitation directly "
+                        "without revealing the author is an AI."
                     )
                     count += 1
         else:
@@ -178,7 +181,8 @@ class AIDisclosureRule(Rule[AIDisclosureRuleConfig]):
                     )
                     advice.append(
                         "Remove "
-                        f"'{phrase}' \u2014 AI self-disclosure in authored prose is a critical tell."
+                        f"'{phrase}' \u2014 state the scope or limitation directly "
+                        "without revealing the author is an AI."
                     )
                     count += 1
 
@@ -200,7 +204,8 @@ class AIDisclosureRule(Rule[AIDisclosureRuleConfig]):
                     )
                     advice.append(
                         "Remove "
-                        f"'{phrase}' \u2014 AI self-disclosure in authored prose is a critical tell."
+                        f"'{phrase}' \u2014 state the scope or limitation directly "
+                        "without revealing the author is an AI."
                     )
                     count += 1
 

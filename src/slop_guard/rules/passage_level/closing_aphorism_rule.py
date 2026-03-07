@@ -116,8 +116,8 @@ class ClosingAphorismRule(Rule[ClosingAphorismRuleConfig]):
                 )
             ],
             advice=[
-                "Your closing sentence is a tidy generalization - a strong AI "
-                "tell. End on a specific detail, a fragment, or just stop."
+                "Your closing sentence generalizes abstractly \u2014 "
+                "end on a specific detail, a concrete next step, or just stop."
             ],
             count_deltas={self.count_key: 1},
         )

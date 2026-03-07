@@ -83,8 +83,8 @@ class BoldTermBulletRunRule(Rule[BoldTermBulletRunRuleConfig]):
                     )
                 )
                 advice.append(
-                    f"Run of {run} bold-term bullets \u2014 this is an LLM listicle pattern. "
-                    "Use varied paragraph structure."
+                    f"Run of {run} bold-term bullets \u2014 convert some items into "
+                    "flowing prose paragraphs or group related points together."
                 )
                 count += 1
             run = 0

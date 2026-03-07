@@ -85,7 +85,8 @@ class PlaceholderRule(Rule[PlaceholderRuleConfig]):
                 )
             )
             advice.append(
-                f"Remove placeholder '{value}' \u2014 this is unfinished template text."
+                f"Replace placeholder '{value}' with the actual content \u2014 "
+                "fill in the real value before publishing."
             )
             count += 1
 

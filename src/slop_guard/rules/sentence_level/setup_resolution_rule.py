@@ -114,8 +114,8 @@ class SetupResolutionRule(Rule[SetupResolutionRuleConfig]):
                         )
                     )
                     advice.append(
-                        f"'{matched_text}' \u2014 setup-and-resolution is a Claude rhetorical tic. "
-                        "Just state the point directly."
+                        f"'{matched_text}' \u2014 merge the negation and resolution into one "
+                        "direct statement, e.g. 'X emphasizes Y' instead of 'X isn't A, it's Y'."
                     )
                 count += 1
 

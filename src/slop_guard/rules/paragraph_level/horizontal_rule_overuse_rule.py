@@ -79,8 +79,8 @@ class HorizontalRuleOveruseRule(Rule[HorizontalRuleOveruseRuleConfig]):
                 )
             ],
             advice=[
-                f"{count} horizontal rules \u2014 section headers alone are sufficient, "
-                "dividers are a crutch."
+                f"{count} horizontal rules \u2014 use section headers or paragraph "
+                "breaks instead of visual dividers to separate content."
             ],
             count_deltas={self.count_key: 1},
         )

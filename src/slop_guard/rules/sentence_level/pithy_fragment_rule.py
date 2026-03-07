@@ -90,8 +90,8 @@ class PithyFragmentRule(Rule[PithyFragmentRuleConfig]):
                     )
                 )
                 advice.append(
-                    f"'{sentence_text}' \u2014 pithy evaluative fragments are a Claude tell. "
-                    "Expand or cut."
+                    f"'{sentence_text}' \u2014 expand this into a full sentence with "
+                    "a concrete claim, or fold it into the surrounding paragraph."
                 )
             count += 1
 

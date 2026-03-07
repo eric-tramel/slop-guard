@@ -90,13 +90,14 @@ class ContrastPairRule(Rule[ContrastPairRuleConfig]):
                 )
             )
             advice.append(
-                f"'{snippet}' \u2014 'X, not Y' contrast \u2014 consider rephrasing to avoid the Claude pattern."
+                f"'{snippet}' uses 'X, not Y' contrast \u2014 try 'X rather than Y', "
+                "'X over Y', or state X directly without the negation."
             )
 
         if len(matches) >= self.config.advice_min:
             advice.append(
-                f"{len(matches)} 'X, not Y' contrasts \u2014 this is a Claude rhetorical tic. "
-                "Vary your phrasing."
+                f"{len(matches)} 'X, not Y' contrasts in one passage \u2014 "
+                "rephrase some using 'rather than', 'instead of', or drop the contrast entirely."
             )
 
         return RuleResult(

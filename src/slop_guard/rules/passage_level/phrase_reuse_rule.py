@@ -118,7 +118,8 @@ class PhraseReuseRule(Rule[PhraseReuseRuleConfig]):
                 )
             )
             advice.append(
-                f"'{phrase}' appears {phrase_count} times \u2014 vary your phrasing to avoid repetition."
+                f"'{phrase}' appears {phrase_count} times \u2014 "
+                "use synonyms, pronouns, or restructure sentences to eliminate the repeated wording."
             )
             count += 1
 

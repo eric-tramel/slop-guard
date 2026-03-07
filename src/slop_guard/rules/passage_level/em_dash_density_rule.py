@@ -87,7 +87,7 @@ class EmDashDensityRule(Rule[EmDashDensityRuleConfig]):
             ],
             advice=[
                 f"Too many em dashes ({em_dash_count} in {document.word_count} words) "
-                "\u2014 use other punctuation."
+                "\u2014 replace some with commas, parentheses, or separate sentences."
             ],
             count_deltas={self.count_key: 1},
         )
