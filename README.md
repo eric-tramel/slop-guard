@@ -296,3 +296,8 @@ Example per-rule compute-time curves from `benchmark/compute-time.py` +
 ## License
 
 MIT
+
+## Acknowledgements
+
+- [@secemp9](https://x.com/secemp9) for his original [anti-slop rubric](https://github.com/secemp9/rubrics/blob/main/special_ones/anti_slop_rubric.xml) & inspiriation.
+- [@myainotez](https://x.com/myainotez) for their valuable conversations, thoughts, and contributions on this project. 
