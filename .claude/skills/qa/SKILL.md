@@ -35,13 +35,16 @@ If `$ARGUMENTS` specifies a focus area (`mcp`, `cli`, `fit`, `docs`, or `workflo
 gh issue list --repo eric-tramel/slop-guard --limit 100 --state open --json number,title,body,labels
 ```
 
-5. Create temporary QA fixtures under `/tmp/slop-guard-qa` or another untracked temp directory. Do not write throwaway QA files into the git worktree unless the user asked for them.
+5. If the repo already contains local QA fixtures or sample prose files provided by the user, prefer those as test cases. Treat them as local-only assets: do not commit, rename, move, or delete them.
+6. If no local QA fixtures are available, create temporary QA fixtures under `/tmp/slop-guard-qa` or another untracked temp directory. Do not write throwaway QA files into the git worktree unless the user asked for them.
 
 ## Testing Angles
 
 Launch one background subagent per angle. Each subagent prompt must include the full open issues list so it can avoid filing duplicates.
 
 All findings must come from public-interface testing. Do not read source code to discover or justify issues.
+
+When local QA fixtures are present, use them across the relevant testing angles before inventing synthetic examples. Synthetic examples are still useful for edge cases that the local files do not cover.
 
 ### 1. MCP Agent Interface (`mcp`)
 
