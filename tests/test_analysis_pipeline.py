@@ -66,3 +66,30 @@ def test_analysis_document_cached_views() -> None:
     assert document.word_count_without_code_blocks == word_count(
         document.text_without_code_blocks
     )
+
+
+def test_analysis_document_sentence_analysis_strips_markdown_blocks() -> None:
+    """Sentence analysis should ignore fenced code blocks and pipe tables."""
+    text = (
+        "Intro sentence.\n\n"
+        "```text\n"
+        + " ".join(["code"] * 100)
+        + "\n```\n\n"
+        "| name | details |\n"
+        "| --- | --- |\n"
+        "| alpha | "
+        + " ".join(["cell"] * 40)
+        + " |\n"
+        "| beta | "
+        + " ".join(["cell"] * 40)
+        + " |\n\n"
+        "Closing sentence."
+    )
+    document = AnalysisDocument.from_text(text)
+
+    assert any(word_count >= 80 for word_count in document.sentence_word_counts)
+    assert document.sentence_analysis_sentences == (
+        "Intro sentence",
+        "Closing sentence",
+    )
+    assert document.sentence_analysis_word_counts == (2, 2)

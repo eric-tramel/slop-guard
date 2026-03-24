@@ -59,7 +59,10 @@ class ExtremeSentenceRule(Rule[ExtremeSentenceRuleConfig]):
         count = 0
 
         for idx, (sentence, wc) in enumerate(
-            zip(document.sentences, document.sentence_word_counts)
+            zip(
+                document.sentence_analysis_sentences,
+                document.sentence_analysis_word_counts,
+            )
         ):
             if wc >= self.config.min_words:
                 preview = f'"{sentence[:80]}..."' if len(sentence) > 80 else f'"{sentence}"'
@@ -96,7 +99,10 @@ class ExtremeSentenceRule(Rule[ExtremeSentenceRuleConfig]):
 
         def has_extreme(sample: str) -> bool:
             doc = AnalysisDocument.from_text(sample)
-            return any(wc >= self.config.min_words for wc in doc.sentence_word_counts)
+            return any(
+                wc >= self.config.min_words
+                for wc in doc.sentence_analysis_word_counts
+            )
 
         positive_matches = sum(1 for s in positive_samples if has_extreme(s))
         negative_matches = sum(1 for s in negative_samples if has_extreme(s))
