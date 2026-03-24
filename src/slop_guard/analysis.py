@@ -110,8 +110,61 @@ _SENTENCE_SPLIT_RE = re.compile(r"[.!?][\"'\u201D\u2019)\]]*(?:\s|$)")
 _BULLET_LINE_RE = re.compile(r"^\s*[-*]\s|^\s*\d+[.)]\s")
 _BOLD_TERM_BULLET_LINE_RE = re.compile(r"^\s*[-*]\s+\*\*|^\s*\d+[.)]\s+\*\*")
 _FENCED_CODE_BLOCK_RE = re.compile(r"```.*?```", re.DOTALL)
+_MARKDOWN_TABLE_DELIMITER_CELL_RE = re.compile(r"^\s*:?-{3,}:?\s*$")
 _WORD_TOKEN_RE = re.compile(r"\w+")
 _EDGE_WORD_STRIP_RE = re.compile(r"^[^\w]+|[^\w]+$")
+
+
+def _split_sentences(text: str) -> tuple[str, ...]:
+    """Return trimmed sentence-like spans from ``text``."""
+    return tuple(s.strip() for s in _SENTENCE_SPLIT_RE.split(text) if s.strip())
+
+
+def _looks_like_markdown_table_row(line: str) -> bool:
+    """Return whether ``line`` looks like a standard pipe-table row."""
+    stripped = line.strip()
+    if "|" not in stripped:
+        return False
+
+    cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+    return len(cells) >= 2 and any(cell for cell in cells)
+
+
+def _is_markdown_table_delimiter(line: str) -> bool:
+    """Return whether ``line`` is a Markdown pipe-table delimiter row."""
+    stripped = line.strip()
+    if "|" not in stripped:
+        return False
+
+    cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+    return len(cells) >= 2 and all(
+        _MARKDOWN_TABLE_DELIMITER_CELL_RE.match(cell) is not None for cell in cells
+    )
+
+
+def _replace_markdown_tables_with_sentence_breaks(text: str) -> str:
+    """Replace standard pipe tables with sentence separators."""
+    lines = text.split("\n")
+    normalized_lines: list[str] = []
+    index = 0
+
+    while index < len(lines):
+        line = lines[index]
+        if (
+            index + 1 < len(lines)
+            and _looks_like_markdown_table_row(line)
+            and _is_markdown_table_delimiter(lines[index + 1])
+        ):
+            normalized_lines.append(".")
+            index += 2
+            while index < len(lines) and _looks_like_markdown_table_row(lines[index]):
+                index += 1
+            continue
+
+        normalized_lines.append(line)
+        index += 1
+
+    return "\n".join(normalized_lines)
 
 
 @dataclass(frozen=True)
@@ -129,9 +182,7 @@ class AnalysisDocument:
         return cls(
             text=text,
             lines=tuple(text.split("\n")),
-            sentences=tuple(
-                s.strip() for s in _SENTENCE_SPLIT_RE.split(text) if s.strip()
-            ),
+            sentences=_split_sentences(text),
             word_count=word_count(text),
         )
 
@@ -139,6 +190,24 @@ class AnalysisDocument:
     def sentence_word_counts(self) -> tuple[int, ...]:
         """Return cached word counts aligned with ``sentences``."""
         return tuple(len(sentence.split()) for sentence in self.sentences)
+
+    @cached_property
+    def sentence_analysis_text(self) -> str:
+        """Return sentence-analysis text with Markdown blocks replaced."""
+        text_without_code_blocks = _FENCED_CODE_BLOCK_RE.sub("\n.\n", self.text)
+        return _replace_markdown_tables_with_sentence_breaks(text_without_code_blocks)
+
+    @cached_property
+    def sentence_analysis_sentences(self) -> tuple[str, ...]:
+        """Return markdown-sanitized sentences used by sentence-length rules."""
+        return _split_sentences(self.sentence_analysis_text)
+
+    @cached_property
+    def sentence_analysis_word_counts(self) -> tuple[int, ...]:
+        """Return word counts aligned with ``sentence_analysis_sentences``."""
+        return tuple(
+            len(sentence.split()) for sentence in self.sentence_analysis_sentences
+        )
 
     @cached_property
     def lower_text(self) -> str:
