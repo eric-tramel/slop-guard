@@ -5,10 +5,31 @@ import math
 import re
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import TypeAlias
+from typing import Literal, TypeAlias, TypedDict
 
 Counts: TypeAlias = dict[str, int]
 ViolationPayload: TypeAlias = dict[str, object]
+BandLabel: TypeAlias = Literal["clean", "light", "moderate", "heavy", "saturated"]
+
+
+class AnalysisPayload(TypedDict):
+    """Structured analyzer result returned by CLI and MCP surfaces."""
+
+    score: int
+    band: BandLabel
+    word_count: int
+    violations: list[ViolationPayload]
+    counts: Counts
+    total_penalty: int
+    weighted_sum: float
+    density: float
+    advice: list[str]
+
+
+class FileAnalysisPayload(AnalysisPayload):
+    """Structured analyzer result augmented with the analyzed file path."""
+
+    file: str
 
 
 @dataclass(frozen=True)
@@ -303,7 +324,11 @@ def word_count(text: str) -> int:
     return len(text.split())
 
 
-def short_text_result(word_count_value: int, counts: Counts, hp: Hyperparameters) -> dict:
+def short_text_result(
+    word_count_value: int,
+    counts: Counts,
+    hp: Hyperparameters,
+) -> AnalysisPayload:
     """Build the fixed response shape for short texts that are skipped."""
     return {
         "score": hp.score_max,

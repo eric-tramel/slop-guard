@@ -2,13 +2,14 @@
 
 
 import argparse
-import json
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
 from .analysis import (
     AnalysisDocument,
+    AnalysisPayload,
+    FileAnalysisPayload,
     HYPERPARAMETERS,
     Hyperparameters,
     band_for_score,
@@ -31,7 +32,7 @@ def _analyze(
     text: str,
     hyperparameters: Hyperparameters,
     pipeline: Pipeline | None = None,
-) -> dict:
+) -> AnalysisPayload:
     """Run all configured rules and return score, diagnostics, and advice."""
     document = AnalysisDocument.from_text(text)
 
@@ -73,36 +74,50 @@ def _analyze(
 
 
 @mcp_server.tool()
-def check_slop(text: str) -> str:
+def check_slop(text: str) -> AnalysisPayload:
     """Analyze text for AI slop patterns.
 
     Returns a JSON object with a score (0-100), band label, list of specific
     violations with context, and actionable advice for each issue found.
     """
-    result = _analyze(text, HYPERPARAMETERS)
-    return json.dumps(result, indent=2)
+    return _analyze(text, HYPERPARAMETERS)
+
+
+def _read_analysis_file(file_path: str) -> str:
+    """Read an analysis target file and raise MCP-safe path errors."""
+    if not file_path:
+        raise ValueError("File path must not be empty.")
+
+    path = Path(file_path)
+    try:
+        if path.is_dir():
+            raise ValueError(f"Path is a directory, not a file: {file_path}")
+        if not path.is_file():
+            raise ValueError(f"File not found: {file_path}")
+    except ValueError:
+        raise
+    except OSError as exc:
+        detail = exc.strerror or str(exc)
+        raise ValueError(f"Invalid file path: {detail}") from exc
+
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as exc:
+        detail = exc.strerror or str(exc)
+        raise ValueError(f"Could not read file: {detail}") from exc
 
 
 @mcp_server.tool()
-def check_slop_file(file_path: str) -> str:
+def check_slop_file(file_path: str) -> FileAnalysisPayload:
     """Analyze a file for AI slop patterns.
 
     Reads the file at the given path and runs the same analysis as check_slop.
     Returns a JSON object with a score (0-100), band label, list of specific
     violations with context, and actionable advice for each issue found.
     """
-    path = Path(file_path)
-    if not path.is_file():
-        return json.dumps({"error": f"File not found: {file_path}"})
-
-    try:
-        text = path.read_text(encoding="utf-8")
-    except Exception as exc:  # noqa: BLE001 - returning tool-safe error payload
-        return json.dumps({"error": f"Could not read file: {exc}"})
-
+    text = _read_analysis_file(file_path)
     result = _analyze(text, HYPERPARAMETERS)
-    result["file"] = file_path
-    return json.dumps(result, indent=2)
+    return {**result, "file": file_path}
 
 
 def _build_parser() -> argparse.ArgumentParser:
