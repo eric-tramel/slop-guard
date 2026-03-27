@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -10,15 +11,18 @@ from mcp.server.fastmcp.exceptions import ToolError
 
 from slop_guard import server
 
+ToolGetter = Callable[[str], object]
+ToolRunner = Callable[
+    [str, dict[str, object]],
+    tuple[list[object], dict[str, object]],
+]
 
-def test_check_slop_tool_returns_structured_output() -> None:
+
+def test_check_slop_tool_returns_structured_output(run_mcp_tool: ToolRunner) -> None:
     """``check_slop`` should expose structured MCP output without a wrapper key."""
+    content, structured = run_mcp_tool("check_slop", {"text": "Hello world"})
     tool = server.mcp_server._tool_manager.get_tool("check_slop")
     assert tool is not None
-
-    content, structured = asyncio.run(
-        tool.run({"text": "Hello world"}, convert_result=True)
-    )
 
     assert len(content) == 1
     assert structured["score"] == 100
@@ -30,17 +34,13 @@ def test_check_slop_tool_returns_structured_output() -> None:
 
 def test_check_slop_file_tool_returns_structured_output(
     tmp_path: Path,
+    run_mcp_tool: ToolRunner,
 ) -> None:
     """``check_slop_file`` should include the source path in structured output."""
     target = tmp_path / "sample.txt"
     target.write_text("Hello world", encoding="utf-8")
 
-    tool = server.mcp_server._tool_manager.get_tool("check_slop_file")
-    assert tool is not None
-
-    content, structured = asyncio.run(
-        tool.run({"file_path": str(target)}, convert_result=True)
-    )
+    content, structured = run_mcp_tool("check_slop_file", {"file_path": str(target)})
 
     assert len(content) == 1
     assert structured["file"] == str(target)
@@ -58,19 +58,21 @@ def test_check_slop_file_tool_returns_structured_output(
 def test_check_slop_file_tool_raises_mcp_errors_for_invalid_paths(
     file_path: str,
     message: str,
+    mcp_tool: ToolGetter,
 ) -> None:
     """Invalid file paths should fail through the MCP tool error channel."""
-    tool = server.mcp_server._tool_manager.get_tool("check_slop_file")
-    assert tool is not None
+    tool = mcp_tool("check_slop_file")
 
     with pytest.raises(ToolError, match=message):
         asyncio.run(tool.run({"file_path": file_path}, convert_result=True))
 
 
-def test_check_slop_file_tool_rejects_directories(tmp_path: Path) -> None:
+def test_check_slop_file_tool_rejects_directories(
+    tmp_path: Path,
+    mcp_tool: ToolGetter,
+) -> None:
     """Directory targets should raise a precise MCP tool error."""
-    tool = server.mcp_server._tool_manager.get_tool("check_slop_file")
-    assert tool is not None
+    tool = mcp_tool("check_slop_file")
 
     with pytest.raises(
         ToolError,
@@ -93,13 +95,15 @@ def test_read_analysis_file_normalizes_os_path_errors(
         server._read_analysis_file("a" * 5000)
 
 
-def test_check_slop_file_tool_normalizes_decode_errors(tmp_path: Path) -> None:
+def test_check_slop_file_tool_normalizes_decode_errors(
+    tmp_path: Path,
+    mcp_tool: ToolGetter,
+) -> None:
     """Binary inputs should fail through the normalized MCP read-error path."""
     target = tmp_path / "binary.bin"
     target.write_bytes(b"\xff\xfe\xfa")
 
-    tool = server.mcp_server._tool_manager.get_tool("check_slop_file")
-    assert tool is not None
+    tool = mcp_tool("check_slop_file")
 
     with pytest.raises(
         ToolError,

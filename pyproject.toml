@@ -36,6 +36,12 @@ slop-guard = "slop_guard:main"
 sg = "slop_guard.cli:main"
 sg-fit = "slop_guard.fit_cli:main"
 
+[dependency-groups]
+dev = [
+  "pytest>=8.4.0",
+  "pytest-cov>=7.0.0",
+]
+
 [tool.hatch.build]
 exclude = [
   "benchmark",
@@ -66,3 +72,20 @@ exclude = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/slop_guard"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = [
+  "-ra",
+  "--strict-config",
+  "--strict-markers",
+]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["slop_guard"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
