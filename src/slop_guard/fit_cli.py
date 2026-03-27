@@ -159,6 +159,20 @@ def _flatten_inputs(groups: list[list[str]] | None) -> list[str]:
     return [item for group in groups for item in group]
 
 
+def _matches_option_token(token: str, option: str) -> bool:
+    """Return whether ``token`` encodes ``option``.
+
+    Args:
+        token: One CLI token.
+        option: The long option name to compare against.
+
+    Returns:
+        ``True`` when ``token`` is either the exact option or the ``--name=value``
+        inline form accepted by ``argparse``.
+    """
+    return token == option or token.startswith(f"{option}=")
+
+
 def _normalize_negative_dataset_argv(argv: list[str] | None) -> list[str]:
     """Insert ``--`` when needed to preserve positional inputs.
 
@@ -173,10 +187,14 @@ def _normalize_negative_dataset_argv(argv: list[str] | None) -> list[str]:
         training inputs attached to ``inputs``.
     """
     raw_argv = list(sys.argv[1:] if argv is None else argv)
-    if "--" in raw_argv or _NEGATIVE_DATASET_OPTION not in raw_argv:
+    if "--" in raw_argv or not any(
+        _matches_option_token(token, _NEGATIVE_DATASET_OPTION) for token in raw_argv
+    ):
         return raw_argv
 
-    required_inputs = 1 if "--output" in raw_argv else 2
+    required_inputs = (
+        1 if any(_matches_option_token(token, "--output") for token in raw_argv) else 2
+    )
     outside_positionals = 0
     final_group_start: int | None = None
     final_group_size = 0

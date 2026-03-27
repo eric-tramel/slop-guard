@@ -166,6 +166,33 @@ def test_fit_main_allows_negative_dataset_before_positional_input(
     assert fit_pipeline.output_paths == [output]
 
 
+def test_fit_main_allows_negative_dataset_before_positional_input_with_inline_output(
+    write_text_file,
+    fit_pipeline,
+) -> None:
+    """Inline ``--output=...`` should still preserve the train input."""
+    target = write_text_file("target.txt", "target body")
+    negative = write_text_file("negative.txt", "negative body")
+    output = write_text_file("rules.fitted.jsonl", "")
+
+    exit_code = fit_cli.fit_main(
+        [
+            f"--output={output}",
+            "--negative-dataset",
+            str(negative),
+            str(target),
+        ]
+    )
+
+    assert exit_code == fit_cli.EXIT_OK
+    assert fit_pipeline.fit_calls[0].samples == (
+        "target body",
+        "negative body",
+    )
+    assert fit_pipeline.fit_calls[0].labels == (1, 0)
+    assert fit_pipeline.output_paths == [output]
+
+
 def test_fit_main_allows_negative_dataset_before_legacy_positionals(
     write_text_file,
     fit_pipeline,
