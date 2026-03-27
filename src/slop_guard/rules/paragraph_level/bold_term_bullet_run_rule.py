@@ -76,7 +76,7 @@ class BoldTermBulletRunRule(Rule[BoldTermBulletRunRuleConfig]):
             if run >= self.config.min_run_length:
                 violations.append(
                     Violation(
-                        rule=self.name,
+                        rule=self.count_key,
                         match="bold_bullet_list",
                         context=f"Run of {run} bold-term bullets",
                         penalty=self.config.penalty,
@@ -92,7 +92,7 @@ class BoldTermBulletRunRule(Rule[BoldTermBulletRunRuleConfig]):
         if run >= self.config.min_run_length:
             violations.append(
                 Violation(
-                    rule=self.name,
+                    rule=self.count_key,
                     match="bold_bullet_list",
                     context=f"Run of {run} bold-term bullets",
                     penalty=self.config.penalty,

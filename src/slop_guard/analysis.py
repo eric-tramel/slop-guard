@@ -3,6 +3,7 @@
 
 import math
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from functools import cached_property
 from typing import Literal, TypeAlias, TypedDict
@@ -326,9 +327,9 @@ class AnalysisState:
     counts: Counts
 
     @classmethod
-    def initial(cls) -> "AnalysisState":
+    def initial(cls, count_keys: Iterable[str] | None = None) -> "AnalysisState":
         """Construct an empty state with canonical counts initialized to zero."""
-        return cls(violations=(), advice=(), counts=initial_counts())
+        return cls(violations=(), advice=(), counts=initial_counts(count_keys))
 
     def merge(self, result: RuleResult) -> "AnalysisState":
         """Merge one rule result into a new state instance."""
@@ -355,20 +356,26 @@ _COUNT_KEYS: tuple[str, ...] = (
     "rhythm",
     "em_dash",
     "contrast_pairs",
+    "setup_resolution",
     "colon_density",
     "pithy_fragment",
-    "setup_resolution",
     "bullet_density",
     "blockquote_density",
     "bold_bullet_list",
     "horizontal_rules",
     "phrase_reuse",
+    "copula_chain",
+    "extreme_sentence",
+    "closing_aphorism",
+    "paragraph_balance",
+    "paragraph_cv",
 )
 
 
-def initial_counts() -> Counts:
+def initial_counts(count_keys: Iterable[str] | None = None) -> Counts:
     """Create the canonical per-rule counter map used by the analyzer."""
-    return {key: 0 for key in _COUNT_KEYS}
+    keys = _COUNT_KEYS if count_keys is None else tuple(dict.fromkeys(count_keys))
+    return {key: 0 for key in keys}
 
 
 def context_around(

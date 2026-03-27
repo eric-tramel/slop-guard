@@ -72,7 +72,7 @@ class BulletDensityRule(Rule[BulletDensityRuleConfig]):
         return RuleResult(
             violations=[
                 Violation(
-                    rule=self.name,
+                    rule=self.count_key,
                     match="bullet_density",
                     context=(
                         f"{bullet_count} of {total_non_empty} non-empty lines are bullets "

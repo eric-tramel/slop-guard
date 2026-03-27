@@ -37,6 +37,38 @@ def test_analyze_short_text_uses_clean_short_circuit() -> None:
     assert result["advice"] == []
 
 
+def test_analyze_short_text_exposes_full_count_schema() -> None:
+    """Short text should still expose the full active count schema."""
+    result = _analyze("Hi there.", HYPERPARAMETERS)
+
+    assert {
+        "closing_aphorism",
+        "copula_chain",
+        "extreme_sentence",
+        "paragraph_balance",
+        "paragraph_cv",
+    }.issubset(result["counts"])
+    assert result["counts"]["closing_aphorism"] == 0
+    assert result["counts"]["paragraph_cv"] == 0
+
+
+def test_structural_subcategory_violations_use_specific_count_keys() -> None:
+    """Structural subcategory violations should align with their count keys."""
+    text = (
+        "Intro line.\n"
+        "- **Reliability** improved\n"
+        "- **Scalability** improved\n"
+        "- **Security** improved\n"
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+
+    assert result["counts"]["bullet_density"] == 1
+    assert result["counts"]["bold_bullet_list"] == 1
+    assert any(v["rule"] == "bullet_density" for v in result["violations"])
+    assert any(v["rule"] == "bold_bullet_list" for v in result["violations"])
+
+
 def test_analysis_document_cached_views() -> None:
     """AnalysisDocument should expose stable cached projections for reuse."""
     text = (

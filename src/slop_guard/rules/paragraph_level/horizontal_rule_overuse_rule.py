@@ -72,7 +72,7 @@ class HorizontalRuleOveruseRule(Rule[HorizontalRuleOveruseRuleConfig]):
         return RuleResult(
             violations=[
                 Violation(
-                    rule=self.name,
+                    rule=self.count_key,
                     match="horizontal_rules",
                     context=f"{count} horizontal rules \u2014 excessive section dividers",
                     penalty=self.config.penalty,
