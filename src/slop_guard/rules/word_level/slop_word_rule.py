@@ -23,6 +23,7 @@ language and accumulate penalty quickly.
 from collections import Counter
 import re
 from dataclasses import dataclass
+from typing import TypeAlias
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
@@ -143,6 +144,8 @@ _SLOP_WORD_RE = re.compile(
     r"\b(" + "|".join(re.escape(word) for word in _ALL_SLOP_WORDS) + r")\b",
     re.IGNORECASE,
 )
+_TITLE_CASE_NAME_TOKEN_RE = re.compile(r"[A-Z][a-z]+(?:['-][A-Z][a-z]+)*|[A-Z]\.")
+WordSpan: TypeAlias = tuple[int, int]
 
 
 def _occurrence_suffix(count: int) -> str:
@@ -178,6 +181,56 @@ def _slop_word_advice(word: str, count: int) -> str:
             "or consequence."
         )
     return f"Replace '{word}'{suffix} with the concrete object, event, or claim."
+
+
+def _previous_word_span(text: str, start: int) -> WordSpan | None:
+    """Return the previous word-like span before ``start`` when one exists."""
+    index = start - 1
+    while index >= 0 and text[index].isspace():
+        index -= 1
+    if index < 0 or not text[index].isalpha():
+        return None
+
+    end = index + 1
+    while index >= 0 and (text[index].isalpha() or text[index] in "'.-"):
+        index -= 1
+    span = (index + 1, end)
+    return span if span[0] < span[1] else None
+
+
+def _next_word_span(text: str, end: int) -> WordSpan | None:
+    """Return the next word-like span after ``end`` when one exists."""
+    index = end
+    while index < len(text) and text[index].isspace():
+        index += 1
+    if index >= len(text) or not text[index].isalpha():
+        return None
+
+    start = index
+    while index < len(text) and (text[index].isalpha() or text[index] in "'.-"):
+        index += 1
+    span = (start, index)
+    return span if span[0] < span[1] else None
+
+
+def _is_probable_proper_noun_match(text: str, match: re.Match[str]) -> bool:
+    """Return whether a hit looks like part of a title-cased name phrase."""
+    matched_text = match.group(0)
+    if not matched_text[:1].isupper():
+        return False
+
+    previous_span = _previous_word_span(text, match.start())
+    if previous_span is not None:
+        previous_token = text[previous_span[0] : previous_span[1]]
+        if _TITLE_CASE_NAME_TOKEN_RE.fullmatch(previous_token) is not None:
+            return True
+
+    next_span = _next_word_span(text, match.end())
+    if next_span is None:
+        return False
+
+    next_token = text[next_span[0] : next_span[1]]
+    return _TITLE_CASE_NAME_TOKEN_RE.fullmatch(next_token) is not None
 
 
 @dataclass
@@ -225,6 +278,8 @@ class SlopWordRule(Rule[SlopWordRuleConfig]):
             return RuleResult()
 
         for match in _SLOP_WORD_RE.finditer(document.text):
+            if _is_probable_proper_noun_match(document.text, match):
+                continue
             word = match.group(0).lower()
             violations.append(
                 Violation(
