@@ -44,6 +44,36 @@ def test_repeated_slop_words_report_occurrence_counts_in_advice() -> None:
     ]
 
 
+def test_proper_name_surname_does_not_trigger_slop_word_violation() -> None:
+    """Capitalized surnames after a given name should not count as slop words."""
+    text = (
+        "The bridge was designed by Norman Foster, one of the most celebrated "
+        "architects in the world."
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+
+    assert result["score"] == HYPERPARAMETERS.score_max
+    assert result["violations"] == []
+    assert result["advice"] == []
+
+
+def test_capitalized_sentence_initial_foster_still_triggers_slop_word_advice() -> None:
+    """Sentence-initial ``Foster`` should still match the verb form."""
+    text = "Foster stronger review habits by naming the concrete change each week."
+
+    result = _analyze(text, HYPERPARAMETERS)
+
+    assert any(
+        violation["rule"] == "slop_word" and violation["match"] == "foster"
+        for violation in result["violations"]
+    )
+    assert (
+        "Replace 'foster' with the specific action, result, or evidence."
+        in result["advice"]
+    )
+
+
 @pytest.mark.parametrize(
     "transition_word",
     (

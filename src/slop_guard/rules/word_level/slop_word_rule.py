@@ -23,6 +23,7 @@ language and accumulate penalty quickly.
 from collections import Counter
 import re
 from dataclasses import dataclass
+from typing import TypeAlias
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
@@ -143,6 +144,8 @@ _SLOP_WORD_RE = re.compile(
     r"\b(" + "|".join(re.escape(word) for word in _ALL_SLOP_WORDS) + r")\b",
     re.IGNORECASE,
 )
+_TITLE_CASE_NAME_TOKEN_RE = re.compile(r"[A-Z][a-z]+(?:['-][A-Z][a-z]+)*|[A-Z]\.")
+WordSpan: TypeAlias = tuple[int, int]
 
 
 def _occurrence_suffix(count: int) -> str:
@@ -178,6 +181,35 @@ def _slop_word_advice(word: str, count: int) -> str:
             "or consequence."
         )
     return f"Replace '{word}'{suffix} with the concrete object, event, or claim."
+
+
+def _previous_word_span(text: str, start: int) -> WordSpan | None:
+    """Return the previous word-like span before ``start`` when one exists."""
+    index = start - 1
+    while index >= 0 and text[index].isspace():
+        index -= 1
+    if index < 0 or not text[index].isalpha():
+        return None
+
+    end = index + 1
+    while index >= 0 and (text[index].isalpha() or text[index] in "'.-"):
+        index -= 1
+    span = (index + 1, end)
+    return span if span[0] < span[1] else None
+
+
+def _is_probable_proper_noun_match(text: str, match: re.Match[str]) -> bool:
+    """Return whether a hit looks like a surname after a title-cased token."""
+    matched_text = match.group(0)
+    if not matched_text[:1].isupper():
+        return False
+
+    previous_span = _previous_word_span(text, match.start())
+    if previous_span is None:
+        return False
+
+    previous_token = text[previous_span[0] : previous_span[1]]
+    return _TITLE_CASE_NAME_TOKEN_RE.fullmatch(previous_token) is not None
 
 
 @dataclass
@@ -225,6 +257,8 @@ class SlopWordRule(Rule[SlopWordRuleConfig]):
             return RuleResult()
 
         for match in _SLOP_WORD_RE.finditer(document.text):
+            if _is_probable_proper_noun_match(document.text, match):
+                continue
             word = match.group(0).lower()
             violations.append(
                 Violation(
