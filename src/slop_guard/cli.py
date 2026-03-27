@@ -75,6 +75,10 @@ class InputTarget:
     display_label: str
 
 
+class InputResolutionError(ValueError):
+    """Raised when a CLI positional input cannot be resolved."""
+
+
 def _format_score_line(
     label: str,
     result: dict,
@@ -219,9 +223,17 @@ def _is_inline_text_argument(value: str) -> bool:
 
 
 def _resolve_inputs(args: argparse.Namespace) -> list[InputTarget]:
-    """Resolve positional args into typed input targets."""
+    """Resolve positional args into typed input targets.
+
+    Raises:
+        InputResolutionError: If any positional input is an empty string.
+    """
     inputs: list[InputTarget] = []
     for index, raw in enumerate(args.inputs, start=1):
+        if raw == "":
+            raise InputResolutionError(
+                f"input {index} is empty; pass non-empty inline text, a file path, or '-' for stdin"
+            )
         if raw == "-":
             inputs.append(InputTarget(kind="stdin", value=raw, display_label="<stdin>"))
             continue
@@ -286,7 +298,11 @@ def cli_main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
 
-    inputs = _resolve_inputs(args)
+    try:
+        inputs = _resolve_inputs(args)
+    except InputResolutionError as exc:
+        print(f"sg: {exc}", file=sys.stderr)
+        return EXIT_ERROR
 
     results: list[SourceAnalysisPayload] = []
     threshold_failed = False
