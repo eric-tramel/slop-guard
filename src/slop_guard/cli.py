@@ -64,6 +64,7 @@ _BAND_SYMBOLS: dict[str, str] = {
 }
 
 InputValue: TypeAlias = str | Path
+ConfigLoadError: TypeAlias = OSError | UnicodeDecodeError
 
 
 @dataclass(frozen=True)
@@ -250,6 +251,25 @@ def _resolve_inputs(args: argparse.Namespace) -> list[InputTarget]:
     return inputs
 
 
+def _format_config_load_error(path: Path, exc: ConfigLoadError) -> str:
+    """Render a stable user-facing config load error.
+
+    Args:
+        path: Config path passed to ``--config``.
+        exc: Read-time error raised while resolving or opening the config.
+
+    Returns:
+        Stable ``<path>: <detail>`` text for CLI stderr output.
+    """
+    if isinstance(exc, FileNotFoundError):
+        detail = "No such file"
+    elif isinstance(exc, UnicodeDecodeError):
+        detail = "Invalid UTF-8"
+    else:
+        detail = exc.strerror or str(exc)
+    return f"{path}: {detail}"
+
+
 def _load_pipeline(config_path: str | None) -> Pipeline:
     """Load the CLI rule pipeline with user-facing config path errors.
 
@@ -269,13 +289,8 @@ def _load_pipeline(config_path: str | None) -> Pipeline:
     path = Path(config_path)
     try:
         return Pipeline.from_jsonl(str(path))
-    except FileNotFoundError as exc:
-        raise ValueError(f"{path}: No such file") from exc
-    except IsADirectoryError as exc:
-        raise ValueError(f"{path}: Is a directory") from exc
-    except OSError as exc:
-        detail = exc.strerror or str(exc)
-        raise ValueError(f"{path}: {detail}") from exc
+    except (OSError, UnicodeDecodeError) as exc:
+        raise ValueError(_format_config_load_error(path, exc)) from exc
 
 
 def _emit_result(
