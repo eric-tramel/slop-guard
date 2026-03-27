@@ -39,6 +39,7 @@ from pathlib import Path
 from typing import Literal, TextIO, TypeAlias
 
 from .rules import Pipeline
+from .analysis import SourceAnalysisPayload
 from .server import HYPERPARAMETERS, Hyperparameters, _analyze
 from .version import PACKAGE_VERSION
 
@@ -71,7 +72,7 @@ class InputTarget:
 
     kind: Literal["file", "stdin", "text"]
     value: InputValue
-    label: str
+    display_label: str
 
 
 def _format_score_line(
@@ -117,13 +118,13 @@ def _print_advice(result: dict, file: TextIO = sys.stdout) -> None:
 
 def _analyze_text(
     text: str,
-    label: str,
+    source: str,
     hyperparameters: Hyperparameters,
     pipeline: Pipeline,
-) -> dict:
+) -> SourceAnalysisPayload:
     """Run analysis and attach the source label."""
     result = _analyze(text, hyperparameters, pipeline=pipeline)
-    result["source"] = label
+    result["source"] = source
     return result
 
 
@@ -131,7 +132,7 @@ def _analyze_file(
     path: Path,
     hyperparameters: Hyperparameters,
     pipeline: Pipeline,
-) -> dict:
+) -> SourceAnalysisPayload:
     """Read a file and analyze its contents."""
     text = path.read_text(encoding="utf-8")
     return _analyze_text(text, str(path), hyperparameters, pipeline)
@@ -222,22 +223,38 @@ def _resolve_inputs(args: argparse.Namespace) -> list[InputTarget]:
     inputs: list[InputTarget] = []
     for index, raw in enumerate(args.inputs, start=1):
         if raw == "-":
-            inputs.append(InputTarget(kind="stdin", value=raw, label="<stdin>"))
+            inputs.append(InputTarget(kind="stdin", value=raw, display_label="<stdin>"))
             continue
         candidate_path = Path(raw)
         if candidate_path.is_file():
             inputs.append(
-                InputTarget(kind="file", value=candidate_path, label=str(candidate_path))
+                InputTarget(
+                    kind="file",
+                    value=candidate_path,
+                    display_label=str(candidate_path),
+                )
             )
             continue
         if _is_inline_text_argument(raw):
-            inputs.append(InputTarget(kind="text", value=raw, label=f"<text:{index}>"))
+            inputs.append(
+                InputTarget(kind="text", value=raw, display_label=f"<text:{index}>")
+            )
             continue
-        inputs.append(InputTarget(kind="file", value=candidate_path, label=str(candidate_path)))
+        inputs.append(
+            InputTarget(
+                kind="file",
+                value=candidate_path,
+                display_label=str(candidate_path),
+            )
+        )
     return inputs
 
 
-def _emit_result(result: dict, args: argparse.Namespace) -> None:
+def _emit_result(
+    display_label: str,
+    result: SourceAnalysisPayload,
+    args: argparse.Namespace,
+) -> None:
     """Print one analyzed result immediately."""
     fails_threshold = args.threshold > 0 and result["score"] < args.threshold
     if args.quiet and not fails_threshold:
@@ -247,7 +264,7 @@ def _emit_result(result: dict, args: argparse.Namespace) -> None:
         return
 
     print(
-        _format_score_line(result["source"], result, show_counts=args.counts),
+        _format_score_line(display_label, result, show_counts=args.counts),
         flush=True,
     )
     if args.verbose:
@@ -271,7 +288,7 @@ def cli_main(argv: list[str] | None = None) -> int:
 
     inputs = _resolve_inputs(args)
 
-    results: list[dict] = []
+    results: list[SourceAnalysisPayload] = []
     threshold_failed = False
     hp = HYPERPARAMETERS
     pipeline = Pipeline.from_jsonl(args.config)
@@ -279,10 +296,10 @@ def cli_main(argv: list[str] | None = None) -> int:
     for target in inputs:
         if target.kind == "stdin":
             text = sys.stdin.read()
-            result = _analyze_text(text, target.label, hp, pipeline)
+            result = _analyze_text(text, text, hp, pipeline)
         elif target.kind == "text":
             assert isinstance(target.value, str)
-            result = _analyze_text(target.value, target.label, hp, pipeline)
+            result = _analyze_text(target.value, target.value, hp, pipeline)
         else:
             assert isinstance(target.value, Path)
             path = target.value
@@ -300,7 +317,7 @@ def cli_main(argv: list[str] | None = None) -> int:
             threshold_failed = True
 
         if not args.json:
-            _emit_result(result, args)
+            _emit_result(target.display_label, result, args)
 
     if not results:
         return EXIT_ERROR

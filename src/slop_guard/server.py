@@ -11,7 +11,6 @@ from .analysis import (
     AnalysisPayload,
     HYPERPARAMETERS,
     Hyperparameters,
-    SourceAnalysisPayload,
     band_for_score,
     compute_weighted_sum,
     deduplicate_advice,
@@ -27,7 +26,6 @@ MCP_SERVER_NAME = "slop-guard"
 mcp_server = FastMCP(MCP_SERVER_NAME)
 DEFAULT_PIPELINE = Pipeline.from_jsonl()
 ACTIVE_PIPELINE = DEFAULT_PIPELINE
-TEXT_SOURCE_LABEL = "<text>"
 
 
 def _analyze(
@@ -79,29 +77,15 @@ def _analyze(
         "advice": deduplicate_advice(list(state.advice)),
     }
 
-
-def _with_source(result: AnalysisPayload, label: str) -> SourceAnalysisPayload:
-    """Attach a stable source label to an analysis payload.
-
-    Args:
-        result: Core analyzer output without transport-specific metadata.
-        label: Input label exposed to CLI and MCP consumers.
-
-    Returns:
-        The original payload plus a stable ``source`` field.
-    """
-    return {**result, "source": label}
-
-
 @mcp_server.tool()
-def check_slop(text: str) -> SourceAnalysisPayload:
+def check_slop(text: str) -> AnalysisPayload:
     """Analyze text for AI slop patterns.
 
     Returns a JSON object with a score (0-100), band label, list of specific
     violations with context and character offsets, and actionable advice for
     each issue found.
     """
-    return _with_source(_analyze(text, HYPERPARAMETERS), TEXT_SOURCE_LABEL)
+    return _analyze(text, HYPERPARAMETERS)
 
 
 def _read_analysis_file(file_path: str) -> str:
@@ -129,7 +113,7 @@ def _read_analysis_file(file_path: str) -> str:
 
 
 @mcp_server.tool()
-def check_slop_file(file_path: str) -> SourceAnalysisPayload:
+def check_slop_file(file_path: str) -> AnalysisPayload:
     """Analyze a file for AI slop patterns.
 
     Reads the file at the given path and runs the same analysis as check_slop.
@@ -138,7 +122,7 @@ def check_slop_file(file_path: str) -> SourceAnalysisPayload:
     each issue found.
     """
     text = _read_analysis_file(file_path)
-    return _with_source(_analyze(text, HYPERPARAMETERS), file_path)
+    return _analyze(text, HYPERPARAMETERS)
 
 
 def _build_parser() -> argparse.ArgumentParser:

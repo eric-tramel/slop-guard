@@ -89,7 +89,7 @@ sg path/**/*.md
 
 | Flag | Description |
 |------|-------------|
-| `-j`, `--json` | Output results as JSON |
+| `-j`, `--json` | Output results as JSON, including `source` as the raw inline/stdin text or full file path |
 | `-v`, `--verbose` | Show individual violations and advice |
 | `-q`, `--quiet` | Only print sources that fail the threshold |
 | `-t SCORE`, `--threshold SCORE` | Minimum passing score (0-100). Exit 1 if any file scores below this |
@@ -115,6 +115,10 @@ sg -v draft.md
 
 # JSON for scripting
 sg -j report.md | jq '.score'
+
+# JSON preserves the true CLI input identity
+sg -j "The migration finished in 12 seconds." | jq '.source'
+# => "The migration finished in 12 seconds."
 
 # CI gate: fail if any file scores below 60
 sg -t 60 docs/*.md
@@ -216,9 +220,9 @@ uv run sg-fit data.jsonl rules.fitted.jsonl
 
 ## MCP Tools
 
-`check_slop(text)`: Analyze a string. Returns JSON with `source: "<text>"`.
+`check_slop(text)`: Analyze a string. Returns JSON diagnostics only; it does not repeat the input text.
 
-`check_slop_file(file_path)`: Read a file from disk and analyze it. Same output, with `source` set to the file path.
+`check_slop_file(file_path)`: Read a file from disk and analyze it. Same output, without repeating the file path in the payload.
 
 ## What it catches
 
