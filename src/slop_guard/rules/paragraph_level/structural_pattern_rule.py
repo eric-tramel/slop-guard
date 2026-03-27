@@ -36,6 +36,21 @@ _BOLD_HEADER_RE = re.compile(r"\*\*[^*]+[.:]\*\*\s+\S")
 _TRIADIC_RE = re.compile(r"\w+, \w+, and \w+", re.IGNORECASE)
 
 
+def _triadic_advice(snippet: str) -> str:
+    """Return rewrite guidance for a matched triadic list.
+
+    Args:
+        snippet: The matched ``X, Y, and Z`` fragment.
+
+    Returns:
+        A concrete rewrite direction for the matched triadic cadence.
+    """
+    return (
+        f"Rewrite '{snippet}' as prose or restructure the list so the sentence "
+        "does not hinge on a three-item cadence."
+    )
+
+
 @dataclass
 class StructuralPatternRuleConfig(RuleConfig):
     """Config for listicle-like structural pattern thresholds."""
@@ -131,6 +146,7 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
         triadic_matches = list(_TRIADIC_RE.finditer(document.text))
         triadic_count = len(triadic_matches)
         for match in triadic_matches[: self.config.triadic_record_cap]:
+            snippet = match.group(0)
             violations.append(
                 Violation(
                     rule=self.name,
@@ -144,6 +160,7 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
                     penalty=self.config.triadic_penalty,
                 )
             )
+            advice.append(_triadic_advice(snippet))
             count += 1
 
         if triadic_count >= self.config.triadic_advice_min:
