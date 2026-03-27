@@ -8,14 +8,15 @@ The default pipeline loads 23 configurable rules backed by 200+ literal and stru
 
 ## Add to Your Agent
 
+Both clients use the same MCP command: `uvx slop-guard`.
+If you want a custom rule JSONL, append `-c /path/to/config.jsonl`.
+
 ### Claude Code
 
 Add from the command line:
 
 ```bash
 claude mcp add slop-guard -- uvx slop-guard
-# Optional custom rule config:
-claude mcp add slop-guard -- uvx slop-guard -c /path/to/config.jsonl
 ```
 
 Add to your `.mcp.json`:
@@ -31,27 +32,12 @@ Add to your `.mcp.json`:
 }
 ```
 
-With a custom rule config:
-
-```json
-{
-  "mcpServers": {
-    "slop-guard": {
-      "command": "uvx",
-      "args": ["slop-guard", "-c", "/path/to/config.jsonl"]
-    }
-  }
-}
-```
-
 ### Codex
 
 Add from the command line:
 
 ```bash
 codex mcp add slop-guard -- uvx slop-guard
-# Optional custom rule config:
-codex mcp add slop-guard -- uvx slop-guard -c /path/to/config.jsonl
 ```
 
 Add to your `~/.codex/config.toml`:
@@ -60,14 +46,6 @@ Add to your `~/.codex/config.toml`:
 [mcp_servers.slop-guard]
 command = "uvx"
 args = ["slop-guard"]
-```
-
-With a custom rule config:
-
-```toml
-[mcp_servers.slop-guard]
-command = "uvx"
-args = ["slop-guard", "-c", "/path/to/config.jsonl"]
 ```
 
 If you want a fixed release, pin it in `args`, for example: `["slop-guard==0.3.1"]`.
@@ -174,10 +152,10 @@ sg-fit --output rules.fitted.jsonl **/*.txt **/*.md
 
 Optional arguments:
 
-- `--init JSONL` -- Start from a specific rule config JSONL instead of packaged defaults.
-- `--negative-dataset INPUT [INPUT ...]` -- Add negative dataset inputs. This flag can be repeated; all negative rows are normalized to label `0`.
-- `--no-calibration` -- Skip post-fit contrastive penalty calibration for faster fitting on large corpora.
-- `--output JSONL` -- Required when you pass more than one training input.
+- `--init JSONL`: Start from a specific rule config JSONL instead of packaged defaults.
+- `--negative-dataset INPUT [INPUT ...]`: Add negative dataset inputs. This flag can be repeated; all negative rows are normalized to label `0`.
+- `--no-calibration`: Skip post-fit contrastive penalty calibration for faster fitting on large corpora.
+- `--output JSONL`: Required when you pass more than one training input.
 
 Target corpus rows can be either:
 
@@ -238,9 +216,9 @@ uv run sg-fit data.jsonl rules.fitted.jsonl
 
 ## MCP Tools
 
-`check_slop(text)` -- Analyze a string. Returns JSON.
+`check_slop(text)`: Analyze a string. Returns JSON.
 
-`check_slop_file(file_path)` -- Read a file from disk and analyze it. Same output, plus a `file` field.
+`check_slop_file(file_path)`: Read a file from disk and analyze it. Same output, plus a `file` field.
 
 ## What it catches
 
@@ -304,4 +282,4 @@ MIT
 ## Acknowledgements
 
 - [@secemp9](https://x.com/secemp9) for his original [anti-slop rubric](https://github.com/secemp9/rubrics/blob/main/special_ones/anti_slop_rubric.xml) and inspiration.
-- [@myainotez](https://x.com/myainotez) for their valuable conversations, thoughts, and contributions on this project.
+- [@myainotez](https://x.com/myainotez) for their contributions and many helpful conversations about the project.
