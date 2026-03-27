@@ -144,6 +144,60 @@ _SLOP_PHRASES_RE_LIST: tuple[re.Pattern[str], ...] = tuple(
 _NOT_JUST_BUT_RE = re.compile(
     r"not (just|only) .{1,40}, but (also )?", re.IGNORECASE
 )
+_INTERACTIVE_SLOP_PHRASES: frozenset[str] = frozenset(
+    {
+        "as i mentioned",
+        "as mentioned earlier",
+        "feel free to",
+        "here are a few options",
+        "here are some options",
+        "i can adapt this",
+        "i can also",
+        "i can make this",
+        "i hope this helps",
+        "if you'd like, i can",
+        "if you want, i can",
+        "let me know if",
+        "shall i",
+        "would you like me to",
+        "would you prefer",
+    }
+)
+_ANNOUNCEMENT_SLOP_PHRASES: frozenset[str] = frozenset(
+    {
+        "everything changed",
+        "something shifted",
+        "the answer? it's simpler than you think",
+        "this is where things get interesting",
+    }
+)
+_TRANSITION_SLOP_PHRASES: frozenset[str] = frozenset(
+    {
+        "in addition",
+        "in conclusion",
+        "in other words",
+        "in summary",
+        "on the other hand",
+        "put differently",
+        "that is to say",
+        "to put it another way",
+        "to put it simply",
+    }
+)
+
+
+def _slop_phrase_advice(phrase: str) -> str:
+    """Return rewrite guidance tuned to the phrase's rhetorical role."""
+    if phrase in _INTERACTIVE_SLOP_PHRASES:
+        return f"Cut '{phrase}' — replace the invitation with the actual point."
+    if phrase in _ANNOUNCEMENT_SLOP_PHRASES:
+        return f"Cut '{phrase}' — replace the announcement with the actual point."
+    if phrase in _TRANSITION_SLOP_PHRASES:
+        return (
+            f"Cut '{phrase}' — start the sentence directly or show the relationship "
+            "with the content itself."
+        )
+    return f"Cut '{phrase}' — replace the setup with the actual point."
 
 
 @dataclass
@@ -213,9 +267,7 @@ class SlopPhraseRule(Rule[SlopPhraseRuleConfig]):
                             penalty=self.config.penalty,
                         )
                     )
-                    advice.append(
-                        f"Cut '{phrase}' \u2014 just state the point directly."
-                    )
+                    advice.append(_slop_phrase_advice(phrase))
                     count += 1
                     start = hit_end
         else:
@@ -235,9 +287,7 @@ class SlopPhraseRule(Rule[SlopPhraseRuleConfig]):
                             penalty=self.config.penalty,
                         )
                     )
-                    advice.append(
-                        f"Cut '{phrase}' \u2014 just state the point directly."
-                    )
+                    advice.append(_slop_phrase_advice(phrase))
                     count += 1
 
         if (
@@ -261,7 +311,7 @@ class SlopPhraseRule(Rule[SlopPhraseRuleConfig]):
                     )
                 )
                 advice.append(
-                    f"Cut '{phrase}' \u2014 just state the point directly."
+                    f"Cut '{phrase}' — replace the setup with the actual point."
                 )
                 count += 1
 

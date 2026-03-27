@@ -98,6 +98,8 @@ class RhythmRule(Rule[RhythmRuleConfig]):
         cv = std / mean
         if cv >= self.config.cv_threshold:
             return RuleResult()
+        shortest = min(lengths)
+        longest = max(lengths)
 
         return RuleResult(
             violations=[
@@ -112,7 +114,12 @@ class RhythmRule(Rule[RhythmRuleConfig]):
                 )
             ],
             advice=[
-                f"Sentence lengths are too uniform (CV={cv:.2f}) \u2014 vary short and long."
+                "Sentence lengths are too uniform "
+                f"(CV={cv:.2f} < {self.config.cv_threshold:.2f}; shortest {shortest} "
+                f"words, longest {longest}, mean {mean:.1f}). Add a much shorter "
+                "or much longer sentence so the passage is not clustered around the "
+                "same length; aim for roughly a 3x spread between the shortest and "
+                "longest sentence."
             ],
             count_deltas={self.count_key: 1},
         )

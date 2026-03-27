@@ -90,13 +90,15 @@ class ContrastPairRule(Rule[ContrastPairRuleConfig]):
                 )
             )
             advice.append(
-                f"'{snippet}' \u2014 'X, not Y' contrast \u2014 consider rephrasing to avoid the Claude pattern."
+                f"Rewrite '{snippet}' as a plain sentence with the actual claim "
+                "instead of an 'X, not Y' slogan."
             )
 
         if len(matches) >= self.config.advice_min:
             advice.append(
-                f"{len(matches)} 'X, not Y' contrasts \u2014 this is a Claude rhetorical tic. "
-                "Vary your phrasing."
+                f"{len(matches)} 'X, not Y' contrasts \u2014 stop stacking slogan-like "
+                "oppositions; rewrite at least one as a plain sentence with the actual "
+                "tradeoff."
             )
 
         return RuleResult(

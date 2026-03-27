@@ -62,6 +62,16 @@ _SENTENCE_OPENER_PATTERNS: tuple[re.Pattern[str], ...] = (
 )
 
 
+def _meta_comm_advice(phrase: str) -> str:
+    """Return a canonical rewrite for invitation-style assistant phrasing."""
+    return f"Cut '{phrase}' — replace the invitation with the actual point."
+
+
+def _false_narrativity_advice(phrase: str) -> str:
+    """Return a canonical rewrite for dramatic setup phrasing."""
+    return f"Cut '{phrase}' — replace the announcement with the actual point."
+
+
 @dataclass
 class ToneMarkerRuleConfig(RuleConfig):
     """Config for tone marker pattern matching."""
@@ -121,9 +131,7 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
                             penalty=self.config.tone_penalty,
                         )
                     )
-                    advice.append(
-                        f"Remove '{phrase}' \u2014 this is a direct AI tell."
-                    )
+                    advice.append(_meta_comm_advice(phrase))
                     count += 1
                     start = hit_end
 
@@ -148,9 +156,7 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
                             penalty=self.config.tone_penalty,
                         )
                     )
-                    advice.append(
-                        f"Cut '{phrase}' \u2014 announce less, show more."
-                    )
+                    advice.append(_false_narrativity_advice(phrase))
                     count += 1
                     start = hit_end
         else:
@@ -170,9 +176,7 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
                             penalty=self.config.tone_penalty,
                         )
                     )
-                    advice.append(
-                        f"Remove '{phrase}' \u2014 this is a direct AI tell."
-                    )
+                    advice.append(_meta_comm_advice(phrase))
                     count += 1
 
             for pattern in _FALSE_NARRATIVITY_PATTERNS:
@@ -191,9 +195,7 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
                             penalty=self.config.tone_penalty,
                         )
                     )
-                    advice.append(
-                        f"Cut '{phrase}' \u2014 announce less, show more."
-                    )
+                    advice.append(_false_narrativity_advice(phrase))
                     count += 1
 
         if "certainly" in document.lower_text or "absolutely" in document.lower_text:
@@ -214,7 +216,7 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
                         )
                     )
                     advice.append(
-                        f"'{word}' as a sentence opener is an AI tell \u2014 just make the point."
+                        f"Cut '{word}' as a sentence opener — just make the point."
                     )
                     count += 1
 

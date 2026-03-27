@@ -20,6 +20,7 @@ language and accumulate penalty quickly.
 """
 
 
+from collections import Counter
 import re
 from dataclasses import dataclass
 
@@ -135,10 +136,54 @@ _PLAIN_SLOP_WORDS: frozenset[str] = frozenset(
 _HYPHENATED_SLOP_WORDS: tuple[str, ...] = tuple(
     word for word in _ALL_SLOP_WORDS if "-" in word
 )
+_SLOP_ADJECTIVE_SET: frozenset[str] = frozenset(_SLOP_ADJECTIVES)
+_SLOP_VERB_SET: frozenset[str] = frozenset(_SLOP_VERBS)
+_SLOP_HEDGE_SET: frozenset[str] = frozenset(_SLOP_HEDGE)
+_SLOP_SYSTEM_NOUNS: frozenset[str] = frozenset(
+    {"ecosystem", "landscape", "nexus", "realm", "spectrum", "symphony", "tapestry"}
+)
+_SLOP_TIMELINE_NOUNS: frozenset[str] = frozenset(
+    {"journey", "narrative", "odyssey", "trajectory"}
+)
 _SLOP_WORD_RE = re.compile(
     r"\b(" + "|".join(re.escape(word) for word in _ALL_SLOP_WORDS) + r")\b",
     re.IGNORECASE,
 )
+
+
+def _occurrence_suffix(count: int) -> str:
+    """Return a stable occurrence suffix for grouped advice lines."""
+    if count <= 1:
+        return ""
+    return f" ({count} occurrences)"
+
+
+def _slop_word_advice(word: str, count: int) -> str:
+    """Return category-specific rewrite advice for a matched slop word."""
+    suffix = _occurrence_suffix(count)
+    if word in _SLOP_HEDGE_SET:
+        return (
+            f"Cut '{word}'{suffix} — start the sentence directly or show the "
+            "connection without announcing it."
+        )
+    if word in _SLOP_VERB_SET:
+        return (
+            f"Replace '{word}'{suffix} with the specific action, result, or evidence."
+        )
+    if word in _SLOP_SYSTEM_NOUNS:
+        return (
+            f"Replace '{word}'{suffix} with the concrete system, group, or thing you mean."
+        )
+    if word in _SLOP_TIMELINE_NOUNS:
+        return (
+            f"Replace '{word}'{suffix} with the actual period, step, or change you observed."
+        )
+    if word in _SLOP_ADJECTIVE_SET:
+        return (
+            f"Cut '{word}'{suffix} unless you can name the concrete property, metric, "
+            "or consequence."
+        )
+    return f"Replace '{word}'{suffix} with the concrete object, event, or claim."
 
 
 @dataclass
@@ -173,7 +218,8 @@ class SlopWordRule(Rule[SlopWordRuleConfig]):
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply the slop-word detector to the full text."""
         violations: list[Violation] = []
-        advice: list[str] = []
+        word_counts: Counter[str] = Counter()
+        advice_order: list[str] = []
         count = 0
 
         has_plain_slop_token = bool(document.word_token_set_lower & _PLAIN_SLOP_WORDS)
@@ -198,14 +244,14 @@ class SlopWordRule(Rule[SlopWordRuleConfig]):
                     penalty=self.config.penalty,
                 )
             )
-            advice.append(
-                f"Replace '{word}' \u2014 what specifically do you mean?"
-            )
+            if word_counts[word] == 0:
+                advice_order.append(word)
+            word_counts[word] += 1
             count += 1
 
         return RuleResult(
             violations=violations,
-            advice=advice,
+            advice=[_slop_word_advice(word, word_counts[word]) for word in advice_order],
             count_deltas={self.count_key: count} if count else {},
         )
 
