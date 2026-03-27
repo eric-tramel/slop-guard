@@ -250,6 +250,34 @@ def _resolve_inputs(args: argparse.Namespace) -> list[InputTarget]:
     return inputs
 
 
+def _load_pipeline(config_path: str | None) -> Pipeline:
+    """Load the CLI rule pipeline with user-facing config path errors.
+
+    Args:
+        config_path: Optional JSONL rule configuration path from ``--config``.
+
+    Returns:
+        Loaded rule pipeline.
+
+    Raises:
+        TypeError: The JSONL config schema is invalid.
+        ValueError: The config path or JSONL payload is invalid.
+    """
+    if config_path is None:
+        return Pipeline.from_jsonl()
+
+    path = Path(config_path)
+    try:
+        if path.is_dir():
+            raise ValueError(f"{path}: Is a directory")
+        if not path.is_file():
+            raise ValueError(f"{path}: No such file")
+        return Pipeline.from_jsonl(str(path))
+    except OSError as exc:
+        detail = exc.strerror or str(exc)
+        raise ValueError(f"{path}: {detail}") from exc
+
+
 def _emit_result(
     display_label: str,
     result: SourceAnalysisPayload,
@@ -291,7 +319,11 @@ def cli_main(argv: list[str] | None = None) -> int:
     results: list[SourceAnalysisPayload] = []
     threshold_failed = False
     hp = HYPERPARAMETERS
-    pipeline = Pipeline.from_jsonl(args.config)
+    try:
+        pipeline = _load_pipeline(args.config)
+    except (OSError, TypeError, ValueError) as exc:
+        print(f"sg: {exc}", file=sys.stderr)
+        return EXIT_ERROR
 
     for target in inputs:
         if target.kind == "stdin":

@@ -174,6 +174,21 @@ def test_config_option_loads_pipeline_from_path(
     assert cli_pipeline.loaded_paths == [str(config_file)]
 
 
+def test_missing_config_path_reports_clean_error(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Missing ``-c/--config`` should fail cleanly with exit code 2."""
+    missing_config = tmp_path / "missing.jsonl"
+
+    exit_code = cli.cli_main(["-c", str(missing_config), "This is some test text"])
+    captured = capsys.readouterr()
+
+    assert exit_code == cli.EXIT_ERROR
+    assert captured.out == ""
+    assert captured.err.strip() == f"sg: {missing_config}: No such file"
+
+
 def test_rejects_legacy_glob_flag(capsys: pytest.CaptureFixture[str]) -> None:
     """The removed ``--glob`` option should now fail argument parsing."""
     with pytest.raises(SystemExit) as raised:
