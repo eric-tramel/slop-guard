@@ -12,6 +12,7 @@ from .analysis import (
     FileAnalysisPayload,
     HYPERPARAMETERS,
     Hyperparameters,
+    SourceAnalysisPayload,
     band_for_score,
     compute_weighted_sum,
     deduplicate_advice,
@@ -27,6 +28,7 @@ MCP_SERVER_NAME = "slop-guard"
 mcp_server = FastMCP(MCP_SERVER_NAME)
 DEFAULT_PIPELINE = Pipeline.from_jsonl()
 ACTIVE_PIPELINE = DEFAULT_PIPELINE
+TEXT_SOURCE_LABEL = "<text>"
 
 
 def _analyze(
@@ -79,15 +81,28 @@ def _analyze(
     }
 
 
+def _with_source(result: AnalysisPayload, label: str) -> SourceAnalysisPayload:
+    """Attach a stable source label to an analysis payload.
+
+    Args:
+        result: Core analyzer output without transport-specific metadata.
+        label: Input label exposed to CLI and MCP consumers.
+
+    Returns:
+        The original payload plus a stable ``source`` field.
+    """
+    return {**result, "source": label}
+
+
 @mcp_server.tool()
-def check_slop(text: str) -> AnalysisPayload:
+def check_slop(text: str) -> SourceAnalysisPayload:
     """Analyze text for AI slop patterns.
 
     Returns a JSON object with a score (0-100), band label, list of specific
     violations with context and character offsets, and actionable advice for
     each issue found.
     """
-    return _analyze(text, HYPERPARAMETERS)
+    return _with_source(_analyze(text, HYPERPARAMETERS), TEXT_SOURCE_LABEL)
 
 
 def _read_analysis_file(file_path: str) -> str:
@@ -124,7 +139,7 @@ def check_slop_file(file_path: str) -> FileAnalysisPayload:
     each issue found.
     """
     text = _read_analysis_file(file_path)
-    result = _analyze(text, HYPERPARAMETERS)
+    result = _with_source(_analyze(text, HYPERPARAMETERS), file_path)
     return {**result, "file": file_path}
 
 

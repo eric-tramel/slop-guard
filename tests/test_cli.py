@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -71,6 +72,20 @@ def test_score_only_mode_prints_score_only(capsys: pytest.CaptureFixture[str]) -
     assert exit_code == cli.EXIT_OK
     assert captured.err == ""
     assert captured.out.strip().isdigit()
+
+
+def test_json_mode_includes_source_field(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """JSON mode should expose the same source label used by text output."""
+    exit_code = cli.cli_main(["--json", "This is some test text"])
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert exit_code == cli.EXIT_OK
+    assert captured.err == ""
+    assert payload["source"] == "<text:1>"
+    assert payload["score"] == 100
 
 
 def test_streams_file_results_as_each_file_finishes(

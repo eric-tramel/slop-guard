@@ -216,9 +216,9 @@ uv run sg-fit data.jsonl rules.fitted.jsonl
 
 ## MCP Tools
 
-`check_slop(text)`: Analyze a string. Returns JSON.
+`check_slop(text)`: Analyze a string. Returns JSON with `source: "<text>"`.
 
-`check_slop_file(file_path)`: Read a file from disk and analyze it. Same output, plus a `file` field.
+`check_slop_file(file_path)`: Read a file from disk and analyze it. Same output, with `source` set to the file path and a retained `file` alias for compatibility.
 
 ## What it catches
 

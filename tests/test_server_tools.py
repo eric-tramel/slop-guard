@@ -10,17 +10,20 @@ from mcp.server.fastmcp.exceptions import ToolError
 
 from slop_guard import server
 
+
 def test_check_slop_tool_returns_structured_output(mcp_tool, run_mcp_tool) -> None:
-    """``check_slop`` should expose structured MCP output without a wrapper key."""
+    """``check_slop`` should expose a stable source label in structured output."""
     content, structured = run_mcp_tool("check_slop", {"text": "Hello world"})
     tool = mcp_tool("check_slop")
 
     assert len(content) == 1
+    assert structured["source"] == "<text>"
     assert structured["score"] == 100
     assert structured["band"] == "clean"
     assert structured["word_count"] == 2
     assert "result" not in structured
     assert "score" in tool.output_schema["properties"]
+    assert "source" in tool.output_schema["properties"]
 
 
 def test_check_slop_tool_includes_violation_offsets(run_mcp_tool) -> None:
@@ -45,12 +48,13 @@ def test_check_slop_file_tool_returns_structured_output(
     write_text_file,
     run_mcp_tool,
 ) -> None:
-    """``check_slop_file`` should include the source path in structured output."""
+    """``check_slop_file`` should expose matching source and file path fields."""
     target = write_text_file("sample.txt", "Hello world")
 
     content, structured = run_mcp_tool("check_slop_file", {"file_path": str(target)})
 
     assert len(content) == 1
+    assert structured["source"] == str(target)
     assert structured["file"] == str(target)
     assert structured["score"] == 100
     assert "result" not in structured

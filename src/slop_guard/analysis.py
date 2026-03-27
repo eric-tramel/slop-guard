@@ -25,7 +25,7 @@ class ViolationPayload(TypedDict):
 
 
 class AnalysisPayload(TypedDict):
-    """Structured analyzer result returned by CLI and MCP surfaces."""
+    """Structured analyzer result produced by the core analyzer."""
 
     score: int
     band: BandLabel
@@ -38,8 +38,14 @@ class AnalysisPayload(TypedDict):
     advice: list[str]
 
 
-class FileAnalysisPayload(AnalysisPayload):
-    """Structured analyzer result augmented with the analyzed file path."""
+class SourceAnalysisPayload(AnalysisPayload):
+    """Structured analyzer result augmented with a source label."""
+
+    source: str
+
+
+class FileAnalysisPayload(SourceAnalysisPayload):
+    """Structured file-analysis result with a compatibility file alias."""
 
     file: str
 
