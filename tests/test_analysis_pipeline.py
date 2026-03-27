@@ -74,6 +74,7 @@ def test_analyze_ignores_slop_words_inside_fenced_code_blocks() -> None:
     ]
 
     assert matches == ["crucial"]
+    assert result["counts"]["slop_words"] == 1
     crucial_violation = next(
         violation
         for violation in result["violations"]
@@ -99,6 +100,7 @@ def test_analyze_ignores_slop_words_inside_inline_code_backticks() -> None:
     ]
 
     assert matches == ["crucial"]
+    assert result["counts"]["slop_words"] == 1
     crucial_violation = next(
         violation
         for violation in result["violations"]
@@ -149,6 +151,7 @@ def test_analyze_word_count_ignores_markdown_code() -> None:
     result = _analyze(text, HYPERPARAMETERS)
 
     assert result["word_count"] == 17
+    assert result["counts"]["slop_words"] == 0
 
 
 def test_analyze_aggregate_violations_fall_back_to_document_offsets() -> None:
