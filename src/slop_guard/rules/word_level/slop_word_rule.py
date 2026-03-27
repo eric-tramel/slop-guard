@@ -113,19 +113,13 @@ _SLOP_NOUNS = (
 )
 
 _SLOP_HEDGE = (
-    "notably",
-    "importantly",
-    "furthermore",
-    "additionally",
-    "particularly",
+    # Keep routine transitions like "however" and "furthermore" out of this
+    # list. They are standard connective prose, not AI-slop markers.
     "significantly",
     "interestingly",
     "remarkably",
     "surprisingly",
     "fascinatingly",
-    "moreover",
-    "however",
-    "overall",
     "subtly",
 )
 
@@ -213,6 +207,7 @@ class SlopWordRule(Rule[SlopWordRuleConfig]):
         return [
             "This patch removes an O(n^2) loop in parsing.",
             "P95 latency dropped from 180 ms to 95 ms after batching writes.",
+            "However, three reports still need one indexed join.",
         ]
 
     def forward(self, document: AnalysisDocument) -> RuleResult:
