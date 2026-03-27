@@ -15,6 +15,9 @@ from .version import PACKAGE_VERSION
 EXIT_OK = 0
 EXIT_ERROR = 2
 _TEXT_DATASET_SUFFIXES = frozenset({".txt", ".md"})
+_FLAG_OPTIONS = frozenset({"-h", "--help", "--version", "--no-calibration"})
+_VALUE_OPTIONS = frozenset({"--output", "--init"})
+_NEGATIVE_DATASET_OPTION = "--negative-dataset"
 FitSamplesAndLabels: TypeAlias = tuple[list[str], list[int]]
 
 
@@ -156,6 +159,83 @@ def _flatten_inputs(groups: list[list[str]] | None) -> list[str]:
     return [item for group in groups for item in group]
 
 
+def _matches_option_token(token: str, option: str) -> bool:
+    """Return whether ``token`` encodes ``option``.
+
+    Args:
+        token: One CLI token.
+        option: The long option name to compare against.
+
+    Returns:
+        ``True`` when ``token`` is either the exact option or the ``--name=value``
+        inline form accepted by ``argparse``.
+    """
+    return token == option or token.startswith(f"{option}=")
+
+
+def _normalize_negative_dataset_argv(argv: list[str] | None) -> list[str]:
+    """Insert ``--`` when needed to preserve positional inputs.
+
+    Args:
+        argv: Raw CLI arguments excluding the executable name. When ``None``,
+            ``sys.argv[1:]`` is used.
+
+    Returns:
+        A normalized argv sequence. If the final ``--negative-dataset`` group
+        would otherwise consume the required positional inputs, this inserts a
+        ``--`` separator before the positional suffix so ``argparse`` keeps the
+        training inputs attached to ``inputs``.
+    """
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    if "--" in raw_argv or not any(
+        _matches_option_token(token, _NEGATIVE_DATASET_OPTION) for token in raw_argv
+    ):
+        return raw_argv
+
+    required_inputs = (
+        1 if any(_matches_option_token(token, "--output") for token in raw_argv) else 2
+    )
+    outside_positionals = 0
+    final_group_start: int | None = None
+    final_group_size = 0
+    index = 0
+    while index < len(raw_argv):
+        token = raw_argv[index]
+        if token == "--":
+            break
+        if token == _NEGATIVE_DATASET_OPTION:
+            group_start = index + 1
+            group_end = group_start
+            while group_end < len(raw_argv):
+                candidate = raw_argv[group_end]
+                if candidate == "--" or candidate.startswith("-"):
+                    break
+                group_end += 1
+            if group_end == group_start:
+                return raw_argv
+            final_group_start = group_start
+            final_group_size = group_end - group_start
+            index = group_end
+            continue
+        if token in _VALUE_OPTIONS:
+            index += 2
+            continue
+        if token in _FLAG_OPTIONS or token.startswith("-"):
+            index += 1
+            continue
+        outside_positionals += 1
+        index += 1
+
+    missing_inputs = required_inputs - outside_positionals
+    if missing_inputs <= 0 or final_group_start is None:
+        return raw_argv
+    if final_group_size <= missing_inputs:
+        return raw_argv
+
+    separator_index = final_group_start + final_group_size - missing_inputs
+    return raw_argv[:separator_index] + ["--"] + raw_argv[separator_index:]
+
+
 def _resolve_train_inputs_and_output(args: argparse.Namespace) -> tuple[list[str], Path]:
     """Resolve train inputs/output while preserving legacy invocation.
 
@@ -263,7 +343,7 @@ def _load_examples_from_paths(
 def fit_main(argv: list[str] | None = None) -> int:
     """Run ``sg-fit`` and return a process exit code."""
     parser = _build_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args(_normalize_negative_dataset_argv(argv))
 
     try:
         train_inputs, output_path = _resolve_train_inputs_and_output(args)
