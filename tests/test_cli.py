@@ -42,6 +42,38 @@ def test_requires_at_least_one_input(capsys: pytest.CaptureFixture[str]) -> None
     assert "the following arguments are required: INPUT" in capsys.readouterr().err
 
 
+def test_rejects_empty_string_input(
+    capsys: pytest.CaptureFixture[str],
+    cli_pipeline,
+) -> None:
+    """An empty quoted input should fail with a direct validation error."""
+    exit_code = cli.cli_main([""])
+    captured = capsys.readouterr()
+
+    assert exit_code == cli.EXIT_ERROR
+    assert captured.out == ""
+    assert "sg: input 1 is empty" in captured.err
+    assert "No such file" not in captured.err
+    assert cli_pipeline.loaded_paths == []
+
+
+def test_rejects_empty_string_input_after_valid_argument(
+    capsys: pytest.CaptureFixture[str],
+    cli_pipeline,
+    write_text_file,
+) -> None:
+    """Any empty positional argument should fail before analysis begins."""
+    sample = write_text_file("sample.md", "alpha")
+
+    exit_code = cli.cli_main([str(sample), ""])
+    captured = capsys.readouterr()
+
+    assert exit_code == cli.EXIT_ERROR
+    assert captured.out == ""
+    assert "sg: input 2 is empty" in captured.err
+    assert cli_pipeline.loaded_paths == []
+
+
 def test_version_flag_prints_package_version(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -123,6 +155,20 @@ def test_json_mode_includes_source_field(
     assert captured.err == ""
     assert payload["source"] == "This is some test text"
     assert payload["score"] == 100
+
+
+def test_json_mode_rejects_empty_string_input(
+    capsys: pytest.CaptureFixture[str],
+    cli_pipeline,
+) -> None:
+    """JSON mode should still reject an empty quoted input."""
+    exit_code = cli.cli_main(["--json", ""])
+    captured = capsys.readouterr()
+
+    assert exit_code == cli.EXIT_ERROR
+    assert captured.out == ""
+    assert "sg: input 1 is empty" in captured.err
+    assert cli_pipeline.loaded_paths == []
 
 
 def test_json_mode_uses_stdin_text_as_source(
