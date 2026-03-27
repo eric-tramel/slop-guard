@@ -10,6 +10,7 @@ from typing import Literal, TypeAlias, TypedDict
 
 Counts: TypeAlias = dict[str, int]
 BandLabel: TypeAlias = Literal["clean", "light", "moderate", "heavy", "saturated"]
+Span: TypeAlias = tuple[int, int]
 
 
 class ViolationPayload(TypedDict):
@@ -154,6 +155,7 @@ _BULLET_LINE_RE = re.compile(r"^\s*[-*]\s|^\s*\d+[.)]\s")
 _BOLD_TERM_BULLET_LINE_RE = re.compile(r"^\s*[-*]\s+\*\*|^\s*\d+[.)]\s+\*\*")
 _FENCED_CODE_BLOCK_RE = re.compile(r"```.*?```", re.DOTALL)
 _MARKDOWN_TABLE_DELIMITER_CELL_RE = re.compile(r"^\s*:?-{3,}:?\s*$")
+_NON_NEWLINE_RE = re.compile(r"[^\n]")
 _WORD_TOKEN_RE = re.compile(r"\w+")
 _EDGE_WORD_STRIP_RE = re.compile(r"^[^\w]+|[^\w]+$")
 
@@ -210,6 +212,128 @@ def _replace_markdown_tables_with_sentence_breaks(text: str) -> str:
     return "\n".join(normalized_lines)
 
 
+def _line_start_index(text: str, index: int) -> int:
+    """Return the start index of the line containing ``index``."""
+    return text.rfind("\n", 0, index) + 1
+
+
+def _backtick_run_length(text: str, index: int) -> int:
+    """Return the number of consecutive backticks starting at ``index``."""
+    end = index
+    while end < len(text) and text[end] == "`":
+        end += 1
+    return end - index
+
+
+def _looks_like_fenced_code_opener(text: str, index: int, backtick_count: int) -> bool:
+    """Return whether a backtick run can open a Markdown fenced code block."""
+    if backtick_count < 3:
+        return False
+    line_start = _line_start_index(text, index)
+    indent = text[line_start:index]
+    return len(indent) <= 3 and indent.strip() == ""
+
+
+def _find_fenced_code_block_end(
+    text: str,
+    opener_start: int,
+    backtick_count: int,
+) -> int:
+    """Return the exclusive end index of a fenced code block."""
+    cursor = text.find("\n", opener_start)
+    if cursor < 0:
+        return len(text)
+    cursor += 1
+
+    while cursor < len(text):
+        line_end = text.find("\n", cursor)
+        if line_end < 0:
+            line_end = len(text)
+        line = text[cursor:line_end]
+        stripped = line.lstrip(" ")
+        indent = len(line) - len(stripped)
+        fence_width = _backtick_run_length(stripped, 0) if stripped else 0
+
+        if (
+            indent <= 3
+            and fence_width >= backtick_count
+            and stripped.startswith("`" * backtick_count)
+            and stripped[fence_width:].strip() == ""
+        ):
+            return line_end if line_end == len(text) else line_end + 1
+
+        cursor = line_end + 1
+
+    return len(text)
+
+
+def _find_inline_code_span_end(
+    text: str,
+    opener_start: int,
+    backtick_count: int,
+) -> int | None:
+    """Return the exclusive end index of an inline backtick code span."""
+    cursor = opener_start + backtick_count
+    line_end = text.find("\n", cursor)
+    limit = len(text) if line_end < 0 else line_end
+
+    while cursor < limit:
+        if text[cursor] != "`":
+            cursor += 1
+            continue
+
+        candidate_width = _backtick_run_length(text, cursor)
+        if candidate_width == backtick_count:
+            return cursor + backtick_count
+        cursor += candidate_width
+
+    return None
+
+
+def _markdown_code_spans(text: str) -> tuple[Span, ...]:
+    """Return fenced and inline Markdown code spans in ``text``."""
+    spans: list[Span] = []
+    cursor = 0
+
+    while cursor < len(text):
+        if text[cursor] != "`":
+            cursor += 1
+            continue
+
+        backtick_count = _backtick_run_length(text, cursor)
+        if _looks_like_fenced_code_opener(text, cursor, backtick_count):
+            block_end = _find_fenced_code_block_end(text, cursor, backtick_count)
+            spans.append((cursor, block_end))
+            cursor = block_end
+            continue
+
+        inline_end = _find_inline_code_span_end(text, cursor, backtick_count)
+        if inline_end is not None:
+            spans.append((cursor, inline_end))
+            cursor = inline_end
+            continue
+
+        cursor += backtick_count
+
+    return tuple(spans)
+
+
+def _mask_markdown_code(text: str) -> str:
+    """Return ``text`` with Markdown code spans replaced by whitespace."""
+    spans = _markdown_code_spans(text)
+    if not spans:
+        return text
+
+    pieces: list[str] = []
+    cursor = 0
+    for start, end in spans:
+        pieces.append(text[cursor:start])
+        pieces.append(_NON_NEWLINE_RE.sub(" ", text[start:end]))
+        cursor = end
+    pieces.append(text[cursor:])
+    return "".join(pieces)
+
+
 @dataclass(frozen=True)
 class AnalysisDocument:
     """Precomputed text views consumed by rules in forward passes."""
@@ -226,7 +350,7 @@ class AnalysisDocument:
             text=text,
             lines=tuple(text.split("\n")),
             sentences=_split_sentences(text),
-            word_count=word_count(text),
+            word_count=word_count(_mask_markdown_code(text)),
         )
 
     @cached_property
@@ -328,6 +452,26 @@ class AnalysisDocument:
     def word_count_without_code_blocks(self) -> int:
         """Return cached word count of ``text_without_code_blocks``."""
         return word_count(self.text_without_code_blocks)
+
+    @cached_property
+    def text_with_markdown_code_masked(self) -> str:
+        """Return cached text with Markdown code replaced by whitespace."""
+        return _mask_markdown_code(self.text)
+
+    @cached_property
+    def lower_text_with_markdown_code_masked(self) -> str:
+        """Return cached lowercase text with Markdown code masked out."""
+        return self.text_with_markdown_code_masked.lower()
+
+    @cached_property
+    def word_tokens_lower_with_markdown_code_masked(self) -> tuple[str, ...]:
+        """Return lowercase tokens from text with Markdown code masked out."""
+        return tuple(_WORD_TOKEN_RE.findall(self.lower_text_with_markdown_code_masked))
+
+    @cached_property
+    def word_token_set_lower_with_markdown_code_masked(self) -> frozenset[str]:
+        """Return cached token set from text with Markdown code masked out."""
+        return frozenset(self.word_tokens_lower_with_markdown_code_masked)
 
 
 @dataclass
