@@ -10,6 +10,13 @@ from slop_guard import cli
 from slop_guard.version import PACKAGE_VERSION
 
 
+@pytest.fixture
+def cli_pipeline(patch_pipeline, recording_pipeline_cls):
+    """Patch the CLI module to use the shared recording pipeline."""
+    patch_pipeline(cli)
+    return recording_pipeline_cls
+
+
 def _fake_result(source: str, score: int = 75) -> dict[str, object]:
     """Build a minimal analysis payload used in CLI tests."""
     return {
@@ -67,13 +74,13 @@ def test_score_only_mode_prints_score_only(capsys: pytest.CaptureFixture[str]) -
 
 
 def test_streams_file_results_as_each_file_finishes(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch,
+    write_text_file,
+    cli_pipeline,
 ) -> None:
     """Non-JSON output should emit per-file results in processing order."""
-    first = tmp_path / "first.md"
-    second = tmp_path / "second.md"
-    first.write_text("alpha", encoding="utf-8")
-    second.write_text("beta", encoding="utf-8")
+    first = write_text_file("first.md", "alpha")
+    second = write_text_file("second.md", "beta")
 
     events: list[str] = []
 
@@ -94,6 +101,7 @@ def test_streams_file_results_as_each_file_finishes(
     exit_code = cli.cli_main([str(first), str(second)])
 
     assert exit_code == cli.EXIT_OK
+    assert cli_pipeline.loaded_paths == [None]
     assert events == [
         f"analyze:{first.name}",
         f"emit:{first}",
@@ -103,21 +111,13 @@ def test_streams_file_results_as_each_file_finishes(
 
 
 def test_config_option_loads_pipeline_from_path(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch,
+    write_text_file,
+    cli_pipeline,
 ) -> None:
     """Passing ``-c/--config`` should load the requested JSONL pipeline."""
-    sample_file = tmp_path / "sample.md"
-    sample_file.write_text("alpha", encoding="utf-8")
-    config_file = tmp_path / "custom.jsonl"
-    config_file.write_text("{}", encoding="utf-8")
-
-    loaded_paths: list[str | None] = []
-
-    class _FakePipeline:
-        @classmethod
-        def from_jsonl(cls, path: str | None = None) -> "_FakePipeline":
-            loaded_paths.append(path)
-            return cls()
+    sample_file = write_text_file("sample.md", "alpha")
+    config_file = write_text_file("custom.jsonl", "{}")
 
     def fake_analyze_file(
         path: Path,
@@ -126,13 +126,12 @@ def test_config_option_loads_pipeline_from_path(
     ) -> dict[str, object]:
         return _fake_result(str(path))
 
-    monkeypatch.setattr(cli, "Pipeline", _FakePipeline)
     monkeypatch.setattr(cli, "_analyze_file", fake_analyze_file)
 
     exit_code = cli.cli_main(["-c", str(config_file), str(sample_file)])
 
     assert exit_code == cli.EXIT_OK
-    assert loaded_paths == [str(config_file)]
+    assert cli_pipeline.loaded_paths == [str(config_file)]
 
 
 def test_rejects_legacy_glob_flag(capsys: pytest.CaptureFixture[str]) -> None:

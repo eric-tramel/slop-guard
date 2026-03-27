@@ -8,6 +8,13 @@ from slop_guard import server
 from slop_guard.version import PACKAGE_VERSION
 
 
+@pytest.fixture
+def server_pipeline(patch_pipeline, recording_pipeline_cls):
+    """Patch the server module to use the shared recording pipeline."""
+    patch_pipeline(server)
+    return recording_pipeline_cls
+
+
 def test_main_version_flag_prints_package_version(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -22,45 +29,33 @@ def test_main_version_flag_prints_package_version(
 
 
 def test_main_loads_default_pipeline_when_config_not_provided(
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
+    server_pipeline,
 ) -> None:
     """Server launch should load packaged pipeline defaults by default."""
-    loaded_paths: list[str | None] = []
-    sentinel_pipeline = object()
     run_calls: list[bool] = []
 
-    def fake_from_jsonl(cls, path: str | None = None):  # noqa: ANN001
-        loaded_paths.append(path)
-        return sentinel_pipeline
-
-    monkeypatch.setattr(server.Pipeline, "from_jsonl", classmethod(fake_from_jsonl))
     monkeypatch.setattr(server.mcp_server, "run", lambda: run_calls.append(True))
 
     server.main([])
 
-    assert loaded_paths == [None]
+    assert server_pipeline.loaded_paths == [None]
     assert run_calls == [True]
-    assert server.ACTIVE_PIPELINE is sentinel_pipeline
+    assert server.ACTIVE_PIPELINE is server_pipeline.last_instance
 
 
 def test_main_loads_custom_pipeline_when_config_is_provided(
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
+    server_pipeline,
 ) -> None:
     """Server launch should load a custom pipeline when ``-c`` is passed."""
-    loaded_paths: list[str | None] = []
-    sentinel_pipeline = object()
     run_calls: list[bool] = []
     config_path = "/tmp/custom-settings.jsonl"
 
-    def fake_from_jsonl(cls, path: str | None = None):  # noqa: ANN001
-        loaded_paths.append(path)
-        return sentinel_pipeline
-
-    monkeypatch.setattr(server.Pipeline, "from_jsonl", classmethod(fake_from_jsonl))
     monkeypatch.setattr(server.mcp_server, "run", lambda: run_calls.append(True))
 
     server.main(["-c", config_path])
 
-    assert loaded_paths == [config_path]
+    assert server_pipeline.loaded_paths == [config_path]
     assert run_calls == [True]
-    assert server.ACTIVE_PIPELINE is sentinel_pipeline
+    assert server.ACTIVE_PIPELINE is server_pipeline.last_instance
