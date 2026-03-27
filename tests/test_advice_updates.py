@@ -58,6 +58,19 @@ def test_proper_name_surname_does_not_trigger_slop_word_violation() -> None:
     assert result["advice"] == []
 
 
+def test_title_cased_brand_name_does_not_trigger_slop_word_violation() -> None:
+    """A title-cased name phrase should not trip on its first token either."""
+    text = (
+        "Landscape Forms supplied the benches for the renovated plaza this year."
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+
+    assert result["score"] == HYPERPARAMETERS.score_max
+    assert result["violations"] == []
+    assert result["advice"] == []
+
+
 def test_capitalized_sentence_initial_foster_still_triggers_slop_word_advice() -> None:
     """Sentence-initial ``Foster`` should still match the verb form."""
     text = "Foster stronger review habits by naming the concrete change each week."
