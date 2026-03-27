@@ -109,6 +109,32 @@ def test_analyze_ignores_slop_words_inside_inline_code_backticks() -> None:
     )
 
 
+def test_analyze_slop_word_offsets_skip_matching_markdown_code_occurrences() -> None:
+    """Slop-word offsets should bind to prose hits, not earlier code spans."""
+    text = (
+        "Use `crucial` as a literal token.\n\n"
+        "```python\n"
+        "crucial = build()\n"
+        "```\n\n"
+        "A crucial fix shipped yesterday after two routine checks."
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+    crucial_violation = next(
+        violation
+        for violation in result["violations"]
+        if violation["rule"] == "slop_word"
+    )
+
+    assert (crucial_violation["start"], crucial_violation["end"]) == (
+        text.rindex("crucial"),
+        text.rindex("crucial") + len("crucial"),
+    )
+    assert text[crucial_violation["start"] : crucial_violation["end"]].lower() == (
+        "crucial"
+    )
+
+
 def test_analyze_word_count_ignores_markdown_code() -> None:
     """Overall word count should exclude fenced and inline Markdown code."""
     text = (
