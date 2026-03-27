@@ -64,6 +64,7 @@ _BAND_SYMBOLS: dict[str, str] = {
 }
 
 InputValue: TypeAlias = str | Path
+ConfigLoadError: TypeAlias = OSError | UnicodeDecodeError
 
 
 @dataclass(frozen=True)
@@ -279,6 +280,50 @@ def _resolve_inputs(args: argparse.Namespace) -> list[InputTarget]:
     return inputs
 
 
+def _format_config_load_error(path: Path, exc: ConfigLoadError) -> str:
+    """Render a stable user-facing config load error.
+
+    Args:
+        path: Config path passed to ``--config``.
+        exc: Read-time error raised while resolving or opening the config.
+
+    Returns:
+        Stable ``<path>: <detail>`` text for CLI stderr output.
+    """
+    if isinstance(exc, FileNotFoundError):
+        detail = "No such file"
+    elif isinstance(exc, IsADirectoryError):
+        detail = "Is a directory"
+    elif isinstance(exc, UnicodeDecodeError):
+        detail = "Invalid UTF-8"
+    else:
+        detail = exc.strerror or str(exc)
+    return f"{path}: {detail}"
+
+
+def _load_pipeline(config_path: str | None) -> Pipeline:
+    """Load the CLI rule pipeline with user-facing config path errors.
+
+    Args:
+        config_path: Optional JSONL rule configuration path from ``--config``.
+
+    Returns:
+        Loaded rule pipeline.
+
+    Raises:
+        TypeError: The JSONL config schema is invalid.
+        ValueError: The config path or JSONL payload is invalid.
+    """
+    if config_path is None:
+        return Pipeline.from_jsonl()
+
+    path = Path(config_path)
+    try:
+        return Pipeline.from_jsonl(str(path))
+    except (OSError, UnicodeDecodeError) as exc:
+        raise ValueError(_format_config_load_error(path, exc)) from exc
+
+
 def _emit_result(
     display_label: str,
     result: SourceAnalysisPayload,
@@ -324,7 +369,11 @@ def cli_main(argv: list[str] | None = None) -> int:
     results: list[SourceAnalysisPayload] = []
     threshold_failed = False
     hp = HYPERPARAMETERS
-    pipeline = Pipeline.from_jsonl(args.config)
+    try:
+        pipeline = _load_pipeline(args.config)
+    except (OSError, TypeError, ValueError) as exc:
+        print(f"sg: {exc}", file=sys.stderr)
+        return EXIT_ERROR
 
     for target in inputs:
         if target.kind == "stdin":
