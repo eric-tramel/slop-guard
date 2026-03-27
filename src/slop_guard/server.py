@@ -102,8 +102,8 @@ def _read_analysis_file(file_path: str) -> str:
 
     try:
         return path.read_text(encoding="utf-8")
-    except OSError as exc:
-        detail = exc.strerror or str(exc)
+    except (OSError, UnicodeDecodeError) as exc:
+        detail = getattr(exc, "strerror", None) or str(exc)
         raise ValueError(f"Could not read file: {detail}") from exc
 
 
