@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from slop_guard.analysis import word_count
 from slop_guard import cli
 from slop_guard.version import PACKAGE_VERSION
 
@@ -186,6 +187,45 @@ def test_json_mode_uses_stdin_text_as_source(
     assert captured.err == ""
     assert payload["source"] == "stdin payload"
     assert payload["score"] == 100
+
+
+def test_json_mode_ignores_markdown_code_for_slop_word_counts(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """JSON mode should exclude Markdown code from slop-word counts."""
+    text = (
+        "The snippet below is only an implementation example for the guide.\n\n"
+        "`navigate(\"landscape\")` and `robust journey` are code samples.\n\n"
+        "```python\n"
+        "result = navigate(\"landscape\")\n"
+        "return robust_framework.journey()\n"
+        "```\n\n"
+        "The actual rollout detail is crucial for operators today."
+    )
+    prose_only = (
+        "The snippet below is only an implementation example for the guide.\n\n"
+        "and are code samples.\n\n"
+        "The actual rollout detail is crucial for operators today."
+    )
+
+    monkeypatch.setattr(cli.sys, "stdin", io.StringIO(text))
+
+    exit_code = cli.cli_main(["--json", "-"])
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    matches = [
+        violation["match"]
+        for violation in payload["violations"]
+        if violation["rule"] == "slop_word"
+    ]
+
+    assert exit_code == cli.EXIT_OK
+    assert captured.err == ""
+    assert payload["source"] == text
+    assert payload["word_count"] == word_count(prose_only)
+    assert payload["counts"]["slop_words"] == 1
+    assert matches == ["crucial"]
 
 
 def test_streams_file_results_as_each_file_finishes(
