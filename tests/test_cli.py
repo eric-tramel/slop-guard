@@ -189,6 +189,22 @@ def test_missing_config_path_reports_clean_error(
     assert captured.err.strip() == f"sg: {missing_config}: No such file"
 
 
+def test_directory_config_path_reports_clean_error(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Directory ``-c/--config`` paths should fail cleanly with exit code 2."""
+    config_dir = tmp_path / "config-dir"
+    config_dir.mkdir()
+
+    exit_code = cli.cli_main(["-c", str(config_dir), "This is some test text"])
+    captured = capsys.readouterr()
+
+    assert exit_code == cli.EXIT_ERROR
+    assert captured.out == ""
+    assert captured.err.strip() == f"sg: {config_dir}: Is a directory"
+
+
 def test_rejects_legacy_glob_flag(capsys: pytest.CaptureFixture[str]) -> None:
     """The removed ``--glob`` option should now fail argument parsing."""
     with pytest.raises(SystemExit) as raised:

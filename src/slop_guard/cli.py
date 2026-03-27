@@ -268,11 +268,11 @@ def _load_pipeline(config_path: str | None) -> Pipeline:
 
     path = Path(config_path)
     try:
-        if path.is_dir():
-            raise ValueError(f"{path}: Is a directory")
-        if not path.is_file():
-            raise ValueError(f"{path}: No such file")
         return Pipeline.from_jsonl(str(path))
+    except FileNotFoundError as exc:
+        raise ValueError(f"{path}: No such file") from exc
+    except IsADirectoryError as exc:
+        raise ValueError(f"{path}: Is a directory") from exc
     except OSError as exc:
         detail = exc.strerror or str(exc)
         raise ValueError(f"{path}: {detail}") from exc
