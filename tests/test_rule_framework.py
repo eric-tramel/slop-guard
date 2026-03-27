@@ -86,7 +86,10 @@ def test_rule_examples_match_rule_forward_behavior(rule: Rule[RuleConfig]) -> No
 
     for text in violation_examples:
         result = rule.forward(AnalysisDocument.from_text(text))
-        assert any(violation.rule == rule.name for violation in result.violations), (
+        expected_rule_names = {rule.name, rule.count_key}
+        assert any(
+            violation.rule in expected_rule_names for violation in result.violations
+        ), (
             f"{rule.__class__.__name__} expected violation for: {text!r}"
         )
 

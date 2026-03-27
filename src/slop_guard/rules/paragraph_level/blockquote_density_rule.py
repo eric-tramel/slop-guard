@@ -87,7 +87,7 @@ class BlockquoteDensityRule(Rule[BlockquoteDensityRuleConfig]):
         return RuleResult(
             violations=[
                 Violation(
-                    rule=self.name,
+                    rule=self.count_key,
                     match="blockquote_density",
                     context=(
                         f"{blockquote_count} blockquote lines \u2014 Claude uses these "

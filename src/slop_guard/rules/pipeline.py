@@ -32,6 +32,11 @@ class Pipeline:
         """Initialize a pipeline from an ordered list of instantiated rules."""
         self.rules = list(rules)
 
+    @property
+    def count_keys(self) -> tuple[str, ...]:
+        """Return the ordered count keys used by this pipeline."""
+        return tuple(dict.fromkeys(rule.count_key for rule in self.rules))
+
     @classmethod
     def from_jsonl(cls, path: str | Path | None = None) -> "Pipeline":
         """Build a pipeline from a JSONL rule-settings file.
@@ -60,7 +65,7 @@ class Pipeline:
 
     def forward(self, document: AnalysisDocument) -> AnalysisState:
         """Apply all rules in order and merge their outputs."""
-        state = AnalysisState.initial()
+        state = AnalysisState.initial(self.count_keys)
         for rule in self.rules:
             state = state.merge(rule.forward(document))
         return state

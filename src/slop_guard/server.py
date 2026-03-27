@@ -35,15 +35,16 @@ def _analyze(
 ) -> AnalysisPayload:
     """Run all configured rules and return score, diagnostics, and advice."""
     document = AnalysisDocument.from_text(text)
+    active_pipeline = ACTIVE_PIPELINE if pipeline is None else pipeline
+    count_keys = getattr(active_pipeline, "count_keys", None)
 
     if document.word_count < hyperparameters.short_text_word_count:
         return short_text_result(
             document.word_count,
-            initial_counts(),
+            initial_counts(count_keys),
             hyperparameters,
         )
 
-    active_pipeline = ACTIVE_PIPELINE if pipeline is None else pipeline
     state = active_pipeline.forward(document)
 
     total_penalty = sum(violation.penalty for violation in state.violations)
