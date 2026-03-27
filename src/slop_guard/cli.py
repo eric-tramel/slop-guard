@@ -218,6 +218,23 @@ def _is_inline_text_argument(value: str) -> bool:
     return any(ch.isspace() for ch in value)
 
 
+def _path_points_to_existing_file(path: Path) -> bool:
+    """Return whether ``path`` exists as a regular file.
+
+    Args:
+        path: Candidate filesystem path supplied on the CLI.
+
+    Returns:
+        ``True`` when the path can be stat'ed and resolves to a regular file.
+        ``False`` when the path does not exist or the OS rejects the stat call,
+        such as ``ENAMETOOLONG`` for long inline prose strings.
+    """
+    try:
+        return path.is_file()
+    except OSError:
+        return False
+
+
 def _resolve_inputs(args: argparse.Namespace) -> list[InputTarget]:
     """Resolve positional args into typed input targets."""
     inputs: list[InputTarget] = []
@@ -226,7 +243,7 @@ def _resolve_inputs(args: argparse.Namespace) -> list[InputTarget]:
             inputs.append(InputTarget(kind="stdin", value=raw, display_label="<stdin>"))
             continue
         candidate_path = Path(raw)
-        if candidate_path.is_file():
+        if _path_points_to_existing_file(candidate_path):
             inputs.append(
                 InputTarget(
                     kind="file",

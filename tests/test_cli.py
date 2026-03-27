@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import io
 import json
 from pathlib import Path
@@ -63,6 +64,41 @@ def test_accepts_inline_text_input(capsys: pytest.CaptureFixture[str]) -> None:
     assert captured.err == ""
     assert captured.out.startswith("<text:1>: ")
     assert "/100 [" in captured.out
+
+
+def test_long_inline_text_falls_back_from_path_oserror(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Inline prose should stay inline when ``Path.is_file()`` raises ``OSError``."""
+    long_text = "This is a long inline prose sample. " * 16
+
+    def fake_is_file(self: Path) -> bool:
+        if self == Path(long_text):
+            raise OSError(63, "File name too long")
+        return False
+
+    monkeypatch.setattr(Path, "is_file", fake_is_file)
+
+    targets = cli._resolve_inputs(argparse.Namespace(inputs=[long_text]))
+
+    assert targets == [
+        cli.InputTarget(kind="text", value=long_text, display_label="<text:1>")
+    ]
+
+
+def test_existing_file_with_spaces_still_resolves_as_file(write_text_file) -> None:
+    """Existing file paths should outrank inline-text detection."""
+    spaced_file = write_text_file("notes with spaces.md", "alpha")
+
+    targets = cli._resolve_inputs(argparse.Namespace(inputs=[str(spaced_file)]))
+
+    assert targets == [
+        cli.InputTarget(
+            kind="file",
+            value=spaced_file,
+            display_label=str(spaced_file),
+        )
+    ]
 
 
 def test_score_only_mode_prints_score_only(capsys: pytest.CaptureFixture[str]) -> None:
