@@ -9,8 +9,19 @@ from functools import cached_property
 from typing import Literal, TypeAlias, TypedDict
 
 Counts: TypeAlias = dict[str, int]
-ViolationPayload: TypeAlias = dict[str, object]
 BandLabel: TypeAlias = Literal["clean", "light", "moderate", "heavy", "saturated"]
+
+
+class ViolationPayload(TypedDict):
+    """Structured violation payload returned to CLI and MCP consumers."""
+
+    type: Literal["Violation"]
+    rule: str
+    match: str
+    context: str
+    penalty: int
+    start: int
+    end: int
 
 
 class AnalysisPayload(TypedDict):
@@ -116,8 +127,16 @@ class Violation:
     match: str
     context: str
     penalty: int
+    start: int | None = None
+    end: int | None = None
 
-    def to_payload(self) -> ViolationPayload:
+    def explicit_span(self) -> tuple[int, int] | None:
+        """Return the exact rule-provided span when one exists."""
+        if self.start is None or self.end is None:
+            return None
+        return (self.start, self.end)
+
+    def to_payload(self, start: int, end: int) -> ViolationPayload:
         """Serialize a typed violation for tool output."""
         return {
             "type": "Violation",
@@ -125,6 +144,8 @@ class Violation:
             "match": self.match,
             "context": self.context,
             "penalty": self.penalty,
+            "start": start,
+            "end": end,
         }
 
 
@@ -393,6 +414,114 @@ def context_around(
     prefix = "..." if ctx_start > 0 else ""
     suffix = "..." if ctx_end < len(text) else ""
     return f"{prefix}{snippet}{suffix}"
+
+
+def _literal_span_candidates(text: str, match: str) -> tuple[tuple[int, int], ...]:
+    """Return case-insensitive exact-text match spans for ``match``."""
+    if not match:
+        return ()
+    return tuple(
+        (occurrence.start(), occurrence.end())
+        for occurrence in re.finditer(re.escape(match), text, flags=re.IGNORECASE)
+    )
+
+
+def _context_core(context: str) -> str:
+    """Return the searchable body of a context snippet without ellipses."""
+    start = 3 if context.startswith("...") else 0
+    end = len(context) - 3 if context.endswith("...") else len(context)
+    return context[start:end]
+
+
+def _context_span_candidates(
+    normalized_text: str,
+    context: str,
+) -> tuple[tuple[int, int], ...]:
+    """Return spans where the normalized context snippet occurs in ``text``."""
+    core = _context_core(context)
+    if not core:
+        return ()
+
+    spans: list[tuple[int, int]] = []
+    start = 0
+    while True:
+        index = normalized_text.find(core, start)
+        if index < 0:
+            return tuple(spans)
+        spans.append((index, index + len(core)))
+        start = index + 1
+
+
+def _select_unused_span(
+    candidates: tuple[tuple[int, int], ...],
+    used_spans: set[tuple[int, int]],
+) -> tuple[int, int] | None:
+    """Return the first candidate span not already used, else the first match."""
+    for span in candidates:
+        if span not in used_spans:
+            return span
+    return candidates[0] if candidates else None
+
+
+def _resolve_violation_span(
+    violation: Violation,
+    text: str,
+    normalized_text: str,
+    context_window_chars: int,
+    used_spans: set[tuple[int, int]],
+) -> tuple[int, int]:
+    """Resolve a best-effort character span for a violation payload."""
+    explicit_span = violation.explicit_span()
+    if explicit_span is not None:
+        return explicit_span
+
+    literal_candidates = _literal_span_candidates(text, violation.match)
+    context_matched_literal_candidates = tuple(
+        span
+        for span in literal_candidates
+        if context_around(text, span[0], span[1], context_window_chars) == violation.context
+    )
+    literal_span = _select_unused_span(context_matched_literal_candidates, used_spans)
+    if literal_span is not None:
+        return literal_span
+
+    if violation.match.casefold() in violation.context.casefold():
+        literal_span = _select_unused_span(literal_candidates, used_spans)
+        if literal_span is not None:
+            return literal_span
+
+    context_span = _select_unused_span(
+        _context_span_candidates(normalized_text, violation.context),
+        used_spans,
+    )
+    if context_span is not None:
+        return context_span
+
+    return (0, len(text))
+
+
+def serialize_violations(
+    violations: Iterable[Violation],
+    text: str,
+    context_window_chars: int,
+) -> list[ViolationPayload]:
+    """Serialize violations and attach resolved character offsets."""
+    normalized_text = text.replace("\n", " ")
+    used_spans: set[tuple[int, int]] = set()
+    payloads: list[ViolationPayload] = []
+
+    for violation in violations:
+        start, end = _resolve_violation_span(
+            violation,
+            text,
+            normalized_text,
+            context_window_chars,
+            used_spans,
+        )
+        used_spans.add((start, end))
+        payloads.append(violation.to_payload(start, end))
+
+    return payloads
 
 
 def word_count(text: str) -> int:

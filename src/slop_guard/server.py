@@ -16,6 +16,7 @@ from .analysis import (
     compute_weighted_sum,
     deduplicate_advice,
     initial_counts,
+    serialize_violations,
     score_from_density,
     short_text_result,
 )
@@ -65,7 +66,11 @@ def _analyze(
         "score": score,
         "band": band,
         "word_count": document.word_count,
-        "violations": [violation.to_payload() for violation in state.violations],
+        "violations": serialize_violations(
+            state.violations,
+            document.text,
+            hyperparameters.context_window_chars,
+        ),
         "counts": state.counts,
         "total_penalty": total_penalty,
         "weighted_sum": round(weighted_sum, 2),
@@ -79,7 +84,8 @@ def check_slop(text: str) -> AnalysisPayload:
     """Analyze text for AI slop patterns.
 
     Returns a JSON object with a score (0-100), band label, list of specific
-    violations with context, and actionable advice for each issue found.
+    violations with context and character offsets, and actionable advice for
+    each issue found.
     """
     return _analyze(text, HYPERPARAMETERS)
 
@@ -114,7 +120,8 @@ def check_slop_file(file_path: str) -> FileAnalysisPayload:
 
     Reads the file at the given path and runs the same analysis as check_slop.
     Returns a JSON object with a score (0-100), band label, list of specific
-    violations with context, and actionable advice for each issue found.
+    violations with context and character offsets, and actionable advice for
+    each issue found.
     """
     text = _read_analysis_file(file_path)
     result = _analyze(text, HYPERPARAMETERS)

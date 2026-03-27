@@ -29,6 +29,54 @@ def test_analyze_runs_instantiated_rule_pipeline() -> None:
     assert any(v["rule"] == "slop_word" for v in result["violations"])
 
 
+def test_analyze_repeated_literal_violations_get_distinct_offsets() -> None:
+    """Repeated literal matches should serialize distinct character spans."""
+    text = (
+        "Alpha crucial beta gamma delta epsilon zeta eta theta iota kappa "
+        "crucial lambda."
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+    crucial_violations = [
+        violation
+        for violation in result["violations"]
+        if violation["rule"] == "slop_word" and violation["match"] == "crucial"
+    ]
+
+    assert len(crucial_violations) == 2
+    spans = [
+        (int(violation["start"]), int(violation["end"]))
+        for violation in crucial_violations
+    ]
+    assert spans[0] != spans[1]
+    assert [text[start:end].lower() for start, end in spans] == [
+        "crucial",
+        "crucial",
+    ]
+
+
+def test_analyze_aggregate_violations_fall_back_to_document_offsets() -> None:
+    """Aggregate findings should still expose a deterministic edit span."""
+    text = (
+        "- alpha item\n"
+        "- beta item\n"
+        "- gamma item\n"
+        "Summary line with enough filler words to avoid a short-text bypass.\n"
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+    bullet_density_violation = next(
+        violation
+        for violation in result["violations"]
+        if violation["rule"] == "bullet_density"
+    )
+
+    assert (
+        bullet_density_violation["start"],
+        bullet_density_violation["end"],
+    ) == (0, len(text))
+
+
 def test_analyze_short_text_uses_clean_short_circuit() -> None:
     """Short text should preserve score and payload defaults."""
     result = _analyze("too short", HYPERPARAMETERS)

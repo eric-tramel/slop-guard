@@ -23,6 +23,24 @@ def test_check_slop_tool_returns_structured_output(mcp_tool, run_mcp_tool) -> No
     assert "score" in tool.output_schema["properties"]
 
 
+def test_check_slop_tool_includes_violation_offsets(run_mcp_tool) -> None:
+    """``check_slop`` violations should include direct character offsets."""
+    text = (
+        "Alpha crucial beta gamma delta epsilon zeta eta theta iota kappa "
+        "crucial lambda."
+    )
+
+    _content, structured = run_mcp_tool("check_slop", {"text": text})
+
+    violation = next(
+        item for item in structured["violations"] if item["rule"] == "slop_word"
+    )
+
+    assert isinstance(violation["start"], int)
+    assert isinstance(violation["end"], int)
+    assert text[violation["start"] : violation["end"]].lower() == violation["match"]
+
+
 def test_check_slop_file_tool_returns_structured_output(
     write_text_file,
     run_mcp_tool,
