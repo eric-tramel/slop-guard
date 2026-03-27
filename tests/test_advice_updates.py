@@ -1,6 +1,8 @@
 """Regression tests for agent-facing advice strings."""
 
 
+import pytest
+
 from slop_guard.analysis import HYPERPARAMETERS
 from slop_guard.server import _analyze
 
@@ -8,23 +10,19 @@ from slop_guard.server import _analyze
 def test_slop_word_advice_uses_category_specific_templates() -> None:
     """Slop-word advice should reflect the word's rhetorical role."""
     text = (
-        "Furthermore, the innovative team shipped an innovative feature. "
-        "However, the journey took months."
+        "Remarkably, the innovative team shipped an innovative feature. "
+        "The journey took months."
     )
 
     result = _analyze(text, HYPERPARAMETERS)
 
     assert (
-        "Cut 'furthermore' — start the sentence directly or show the connection "
+        "Cut 'remarkably' — start the sentence directly or show the connection "
         "without announcing it."
     ) in result["advice"]
     assert (
         "Cut 'innovative' (2 occurrences) unless you can name the concrete "
         "property, metric, or consequence."
-    ) in result["advice"]
-    assert (
-        "Cut 'however' — start the sentence directly or show the connection "
-        "without announcing it."
     ) in result["advice"]
     assert (
         "Replace 'journey' with the actual period, step, or change you observed."
@@ -44,6 +42,35 @@ def test_repeated_slop_words_report_occurrence_counts_in_advice() -> None:
         "Cut 'innovative' (6 occurrences) unless you can name the concrete "
         "property, metric, or consequence."
     ]
+
+
+@pytest.mark.parametrize(
+    "transition_word",
+    (
+        "however",
+        "overall",
+        "furthermore",
+        "additionally",
+        "moreover",
+        "particularly",
+        "notably",
+        "importantly",
+    ),
+)
+def test_standard_transition_words_do_not_trigger_slop_word_violations(
+    transition_word: str,
+) -> None:
+    """Common transition words should not be treated as slop words."""
+    text = (
+        "The migration completed on schedule. "
+        f"{transition_word.capitalize()}, three reports still need one indexed join."
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+
+    assert result["score"] == HYPERPARAMETERS.score_max
+    assert result["violations"] == []
+    assert result["advice"] == []
 
 
 def test_rhythm_advice_reports_threshold_and_sentence_range() -> None:
