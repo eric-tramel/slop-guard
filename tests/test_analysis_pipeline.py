@@ -1,8 +1,35 @@
 """Integration tests for rule-pipeline based analysis output."""
 
 
-from slop_guard.analysis import AnalysisDocument, HYPERPARAMETERS, word_count
+from slop_guard.analysis import (
+    AnalysisDocument,
+    HYPERPARAMETERS,
+    density_from_weighted_sum,
+    word_count,
+)
 from slop_guard.server import _analyze
+
+
+def _single_slop_word_text(sentence_lengths: tuple[int, ...]) -> str:
+    """Build synthetic prose with one slop word and otherwise neutral tokens.
+
+    Args:
+        sentence_lengths: Sentence word counts that sum to the full document size.
+
+    Returns:
+        Synthetic prose split into the requested sentence lengths.
+    """
+    total_words = sum(sentence_lengths)
+    tokens = [f"token{index}" for index in range(total_words)]
+    tokens[5] = "crucial"
+
+    sentences: list[str] = []
+    cursor = 0
+    for length in sentence_lengths:
+        sentence_tokens = tokens[cursor : cursor + length]
+        sentences.append(" ".join(sentence_tokens) + ".")
+        cursor += length
+    return " ".join(sentences)
 
 
 def test_analyze_runs_instantiated_rule_pipeline() -> None:
@@ -98,6 +125,34 @@ def test_analyze_short_text_exposes_full_count_schema() -> None:
     }.issubset(result["counts"])
     assert result["counts"]["closing_aphorism"] == 0
     assert result["counts"]["paragraph_cv"] == 0
+
+
+def test_density_normalization_uses_min_word_floor() -> None:
+    """Short documents should use the minimum effective word count."""
+    short_density = density_from_weighted_sum(2.0, 32, HYPERPARAMETERS)
+    long_density = density_from_weighted_sum(2.0, 244, HYPERPARAMETERS)
+
+    assert short_density == 10.0
+    assert round(long_density, 2) == 8.2
+
+
+def test_analyze_same_single_violation_stays_in_same_band_across_lengths() -> None:
+    """One slop word should not collapse a short document into saturation."""
+    short_text = _single_slop_word_text((14, 18))
+    long_text = _single_slop_word_text((60, 58, 62, 64))
+
+    short_result = _analyze(short_text, HYPERPARAMETERS)
+    long_result = _analyze(long_text, HYPERPARAMETERS)
+
+    assert len(short_result["violations"]) == 1
+    assert len(long_result["violations"]) == 1
+    assert short_result["counts"]["slop_words"] == 1
+    assert long_result["counts"]["slop_words"] == 1
+    assert short_result["weighted_sum"] == 2.0
+    assert long_result["weighted_sum"] == 2.0
+    assert short_result["band"] == "light"
+    assert long_result["band"] == "light"
+    assert abs(short_result["score"] - long_result["score"]) <= 6
 
 
 def test_structural_subcategory_violations_use_specific_count_keys() -> None:

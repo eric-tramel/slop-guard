@@ -228,7 +228,7 @@ They also flag contrast/setup-resolution tells, pithy fragments, repeated 4-8 wo
 
 Texts under 10 words are skipped and return a clean `100`.
 
-Otherwise scoring uses exponential decay: `score = 100 * exp(-lambda * density)`, where density is the weighted penalty sum normalized per 1000 words. Claude-specific categories (contrast pairs, setup-resolution, pithy fragments) get a concentration multiplier. Repeated use of the same tic costs more than diverse violations.
+Otherwise scoring uses exponential decay: `score = 100 * exp(-lambda * density)`, where density is the weighted penalty sum normalized per 1000 effective words with a 200-word minimum denominator floor. Claude-specific categories (contrast pairs, setup-resolution, pithy fragments) get a concentration multiplier. Repeated use of the same tic costs more than diverse violations.
 
 ## Scoring bands
 
@@ -252,7 +252,7 @@ violations     array of {type, rule, match, context, penalty}
 counts         per-category violation counts
 total_penalty  sum of all penalty values
 weighted_sum   after concentration multiplier
-density        weighted_sum per 1000 words
+density        weighted_sum per 1000 effective words (min 200-word floor)
 advice         array of advice strings, one per distinct issue
 ```
 

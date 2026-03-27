@@ -108,6 +108,7 @@ class Hyperparameters:
     phrase_reuse_penalty: int = -1
 
     density_words_basis: float = 1000.0
+    density_min_word_count: int = 200
     score_min: int = 0
     score_max: int = 100
     band_clean_min: int = 80
@@ -568,6 +569,28 @@ def compute_weighted_sum(
             weight = penalty
         weighted_sum += weight
     return weighted_sum
+
+
+def density_from_weighted_sum(
+    weighted_sum: float,
+    word_count_value: int,
+    hp: Hyperparameters,
+) -> float:
+    """Normalize weighted penalties into score density.
+
+    Args:
+        weighted_sum: Absolute penalty mass after concentration multipliers.
+        word_count_value: Observed document word count.
+        hp: Analyzer hyperparameters.
+
+    Returns:
+        Weighted density per ``hp.density_words_basis`` effective words.
+    """
+    if word_count_value <= 0:
+        return 0.0
+
+    effective_word_count = max(word_count_value, hp.density_min_word_count)
+    return weighted_sum / (effective_word_count / hp.density_words_basis)
 
 
 def band_for_score(score: int, hp: Hyperparameters) -> str:

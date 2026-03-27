@@ -14,6 +14,7 @@ from .analysis import (
     Hyperparameters,
     band_for_score,
     compute_weighted_sum,
+    density_from_weighted_sum,
     deduplicate_advice,
     initial_counts,
     serialize_violations,
@@ -54,10 +55,10 @@ def _analyze(
         state.counts,
         hyperparameters,
     )
-    density = (
-        weighted_sum / (document.word_count / hyperparameters.density_words_basis)
-        if document.word_count > 0
-        else 0.0
+    density = density_from_weighted_sum(
+        weighted_sum,
+        document.word_count,
+        hyperparameters,
     )
     score = score_from_density(density, hyperparameters)
     band = band_for_score(score, hyperparameters)
