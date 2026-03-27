@@ -49,6 +49,9 @@ args = ["slop-guard"]
 ```
 
 If you want a fixed release, pin it in `args`, for example: `["slop-guard==0.3.1"]`.
+For local development in this repo, there is also a project-scoped
+`.codex/config.toml` that points Codex at the source checkout. Codex only loads
+project config files for trusted projects.
 
 ## CLI
 
