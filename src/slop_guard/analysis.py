@@ -44,12 +44,6 @@ class SourceAnalysisPayload(AnalysisPayload):
     source: str
 
 
-class FileAnalysisPayload(SourceAnalysisPayload):
-    """Structured file-analysis result with a compatibility file alias."""
-
-    file: str
-
-
 @dataclass(frozen=True)
 class Hyperparameters:
     """Tunable thresholds, caps, and penalties used by the analyzer."""

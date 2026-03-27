@@ -48,15 +48,15 @@ def test_check_slop_file_tool_returns_structured_output(
     write_text_file,
     run_mcp_tool,
 ) -> None:
-    """``check_slop_file`` should expose matching source and file path fields."""
+    """``check_slop_file`` should expose the file path through ``source`` only."""
     target = write_text_file("sample.txt", "Hello world")
 
     content, structured = run_mcp_tool("check_slop_file", {"file_path": str(target)})
 
     assert len(content) == 1
     assert structured["source"] == str(target)
-    assert structured["file"] == str(target)
     assert structured["score"] == 100
+    assert "file" not in structured
     assert "result" not in structured
 
 

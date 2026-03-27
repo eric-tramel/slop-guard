@@ -9,7 +9,6 @@ from mcp.server.fastmcp import FastMCP
 from .analysis import (
     AnalysisDocument,
     AnalysisPayload,
-    FileAnalysisPayload,
     HYPERPARAMETERS,
     Hyperparameters,
     SourceAnalysisPayload,
@@ -130,7 +129,7 @@ def _read_analysis_file(file_path: str) -> str:
 
 
 @mcp_server.tool()
-def check_slop_file(file_path: str) -> FileAnalysisPayload:
+def check_slop_file(file_path: str) -> SourceAnalysisPayload:
     """Analyze a file for AI slop patterns.
 
     Reads the file at the given path and runs the same analysis as check_slop.
@@ -139,8 +138,7 @@ def check_slop_file(file_path: str) -> FileAnalysisPayload:
     each issue found.
     """
     text = _read_analysis_file(file_path)
-    result = _with_source(_analyze(text, HYPERPARAMETERS), file_path)
-    return {**result, "file": file_path}
+    return _with_source(_analyze(text, HYPERPARAMETERS), file_path)
 
 
 def _build_parser() -> argparse.ArgumentParser:

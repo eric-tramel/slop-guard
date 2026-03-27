@@ -218,7 +218,7 @@ uv run sg-fit data.jsonl rules.fitted.jsonl
 
 `check_slop(text)`: Analyze a string. Returns JSON with `source: "<text>"`.
 
-`check_slop_file(file_path)`: Read a file from disk and analyze it. Same output, with `source` set to the file path and a retained `file` alias for compatibility.
+`check_slop_file(file_path)`: Read a file from disk and analyze it. Same output, with `source` set to the file path.
 
 ## What it catches
 
