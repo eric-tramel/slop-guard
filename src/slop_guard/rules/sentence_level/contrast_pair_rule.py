@@ -1,13 +1,14 @@
-"""Detect repeated "X, not Y" contrast constructions.
+"""Detect repeated contrast constructions that stage a binary opposition.
 
-Objective: Identify overuse of a specific rhetorical pattern where contrast is
-presented as "A, not B"; repeated use can make prose feel formulaic.
+Objective: Identify overuse of rhetorical contrast patterns such as
+"A, not B" and "not only X but Y"; repeated use can make prose feel
+formulaic.
 
 Example Rule Violations:
     - "This is focus, not frenzy."
-      Uses the targeted contrast shape.
-    - "It is clarity, not complexity."
-      Repeats the same sentence skeleton as a style tic.
+      Uses the targeted "A, not B" shape.
+    - "The platform is not only fast but also reliable."
+      Uses the staged "not only X but Y" frame.
 
 Example Non-Violations:
     - "This approach prioritizes focus over speed."
@@ -22,6 +23,7 @@ Severity: Low per instance, medium when repeated frequently in one passage.
 import math
 import re
 from dataclasses import dataclass
+from typing import Literal, TypeAlias
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
 
@@ -34,7 +36,85 @@ from slop_guard.rules.helpers import (
     percentile_ceil,
 )
 
-_CONTRAST_PAIR_RE = re.compile(r"\b(\w+), not (\w+)\b")
+_X_NOT_Y_RE = re.compile(r"\b(\w+), not (\w+)\b")
+_STAGED_CONTRAST_RE = re.compile(
+    r"\bnot (?:only|just|merely)\b"
+    r"[^.!?\n]{1,80}?"
+    r"\bbut(?: also)?\b"
+    r"[^.!?\n,;:]{1,80}?"
+    r"(?=[,.;:!?]|\n|$)",
+    re.IGNORECASE,
+)
+ContrastMatchKind: TypeAlias = Literal["x_not_y", "staged_contrast"]
+ContrastMatch: TypeAlias = tuple[ContrastMatchKind, int, int, str]
+
+
+def _collect_contrast_matches(text: str) -> tuple[ContrastMatch, ...]:
+    """Return ordered contrast matches detected in ``text``.
+
+    Args:
+        text: Source text to scan.
+
+    Returns:
+        Ordered match tuples containing match kind, character offsets, and the
+        matched snippet.
+    """
+    matches: list[ContrastMatch] = []
+    for match in _X_NOT_Y_RE.finditer(text):
+        matches.append(("x_not_y", match.start(), match.end(), match.group(0)))
+    for match in _STAGED_CONTRAST_RE.finditer(text):
+        matches.append(
+            ("staged_contrast", match.start(), match.end(), match.group(0).strip())
+        )
+    matches.sort(key=lambda item: (item[1], item[2], item[0]))
+    return tuple(matches)
+
+
+def _contrast_pair_advice(kind: ContrastMatchKind, snippet: str) -> str:
+    """Return rewrite guidance for one contrast match.
+
+    Args:
+        kind: Match family used for the detection.
+        snippet: Exact matched contrast snippet.
+
+    Returns:
+        A rewrite instruction tuned to the matched contrast form.
+    """
+    if kind == "x_not_y":
+        return (
+            f"Rewrite '{snippet}' as a plain sentence with the actual claim "
+            "instead of an 'X, not Y' slogan."
+        )
+    return (
+        f"Rewrite '{snippet}' as a direct sentence instead of staging it as "
+        "a contrast."
+    )
+
+
+def _contrast_summary_advice(
+    match_count: int,
+    match_kinds: frozenset[ContrastMatchKind],
+) -> str:
+    """Return aggregate advice for repeated contrast matches.
+
+    Args:
+        match_count: Total number of detected contrast matches.
+        match_kinds: Unique match families present in the source text.
+
+    Returns:
+        A summary advice line describing the repeated contrast usage.
+    """
+    if match_kinds == frozenset({"x_not_y"}):
+        return (
+            f"{match_count} 'X, not Y' contrasts \u2014 stop stacking slogan-like "
+            "oppositions; rewrite at least one as a plain sentence with the actual "
+            "tradeoff."
+        )
+    return (
+        f"{match_count} contrast constructions \u2014 stop stacking staged "
+        "oppositions; rewrite at least one as a plain sentence with the actual "
+        "tradeoff."
+    )
 
 
 @dataclass
@@ -48,7 +128,7 @@ class ContrastPairRuleConfig(RuleConfig):
 
 
 class ContrastPairRule(Rule[ContrastPairRuleConfig]):
-    """Detect the Claude-style "X, not Y" rhetorical construction."""
+    """Detect repeated binary-opposition contrast constructions."""
 
     name = "contrast_pair"
     count_key = "contrast_pairs"
@@ -58,7 +138,7 @@ class ContrastPairRule(Rule[ContrastPairRuleConfig]):
         """Return samples that should trigger contrast-pair matches."""
         return [
             "This is focus, not frenzy.",
-            "It is clarity, not complexity.",
+            "The platform is not only fast but also reliable.",
         ]
 
     def example_non_violations(self) -> list[str]:
@@ -70,35 +150,32 @@ class ContrastPairRule(Rule[ContrastPairRuleConfig]):
 
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Apply contrast detection and aggregate advice."""
-        matches = list(_CONTRAST_PAIR_RE.finditer(document.text))
+        matches = _collect_contrast_matches(document.text)
         violations: list[Violation] = []
         advice: list[str] = []
 
-        for match in matches[: self.config.record_cap]:
-            snippet = match.group(0)
+        for kind, start, end, snippet in matches[: self.config.record_cap]:
             violations.append(
                 Violation(
                     rule=self.name,
                     match=snippet,
                     context=context_around(
                         document.text,
-                        match.start(),
-                        match.end(),
+                        start,
+                        end,
                         width=self.config.context_window_chars,
                     ),
                     penalty=self.config.penalty,
                 )
             )
-            advice.append(
-                f"Rewrite '{snippet}' as a plain sentence with the actual claim "
-                "instead of an 'X, not Y' slogan."
-            )
+            advice.append(_contrast_pair_advice(kind, snippet))
 
         if len(matches) >= self.config.advice_min:
             advice.append(
-                f"{len(matches)} 'X, not Y' contrasts \u2014 stop stacking slogan-like "
-                "oppositions; rewrite at least one as a plain sentence with the actual "
-                "tradeoff."
+                _contrast_summary_advice(
+                    len(matches),
+                    frozenset(kind for kind, *_rest in matches),
+                )
             )
 
         return RuleResult(
@@ -116,10 +193,10 @@ class ContrastPairRule(Rule[ContrastPairRuleConfig]):
             return self.config
 
         positive_counts = [
-            len(_CONTRAST_PAIR_RE.findall(sample)) for sample in positive_samples
+            len(_collect_contrast_matches(sample)) for sample in positive_samples
         ]
         negative_counts = [
-            len(_CONTRAST_PAIR_RE.findall(sample)) for sample in negative_samples
+            len(_collect_contrast_matches(sample)) for sample in negative_samples
         ]
         positive_matches = sum(1 for count in positive_counts if count > 0)
         negative_matches = sum(1 for count in negative_counts if count > 0)
