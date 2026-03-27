@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling>=1.27.0"]
+requires = ["hatch-vcs>=0.4.0", "hatchling>=1.27.0"]
 build-backend = "hatchling.build"
 
 [project]
 name = "slop-guard"
-version = "0.3.1"
+dynamic = ["version"]
 description = "Rule-based prose linter for formulaic AI writing patterns."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -72,6 +72,9 @@ exclude = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/slop_guard"]
+
+[tool.hatch.version]
+source = "vcs"
 
 [tool.pytest.ini_options]
 minversion = "8.0"
