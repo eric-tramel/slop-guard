@@ -43,7 +43,7 @@ class ExtremeSentenceRule(Rule[ExtremeSentenceRuleConfig]):
     def example_violations(self) -> list[str]:
         """Return samples that should trigger extreme-sentence matches."""
         return [
-            " ".join(["word"] * 85),
+            " ".join(["word"] * (self.config.min_words + 5)),
         ]
 
     def example_non_violations(self) -> list[str]:
