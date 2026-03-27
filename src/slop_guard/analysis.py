@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from functools import cached_property
 from typing import Literal, TypeAlias, TypedDict
 
+from .markdown import MarkdownCodeView
+
 Counts: TypeAlias = dict[str, int]
 BandLabel: TypeAlias = Literal["clean", "light", "moderate", "heavy", "saturated"]
 
@@ -152,7 +154,6 @@ class Violation:
 _SENTENCE_SPLIT_RE = re.compile(r"[.!?][\"'\u201D\u2019)\]]*(?:\s|$)")
 _BULLET_LINE_RE = re.compile(r"^\s*[-*]\s|^\s*\d+[.)]\s")
 _BOLD_TERM_BULLET_LINE_RE = re.compile(r"^\s*[-*]\s+\*\*|^\s*\d+[.)]\s+\*\*")
-_FENCED_CODE_BLOCK_RE = re.compile(r"```.*?```", re.DOTALL)
 _MARKDOWN_TABLE_DELIMITER_CELL_RE = re.compile(r"^\s*:?-{3,}:?\s*$")
 _WORD_TOKEN_RE = re.compile(r"\w+")
 _EDGE_WORD_STRIP_RE = re.compile(r"^[^\w]+|[^\w]+$")
@@ -218,15 +219,18 @@ class AnalysisDocument:
     lines: tuple[str, ...]
     sentences: tuple[str, ...]
     word_count: int
+    markdown_code_view: MarkdownCodeView
 
     @classmethod
     def from_text(cls, text: str) -> "AnalysisDocument":
         """Build a document with line/sentence/word projections."""
+        markdown_code_view = MarkdownCodeView.from_text(text)
         return cls(
             text=text,
             lines=tuple(text.split("\n")),
             sentences=_split_sentences(text),
-            word_count=word_count(text),
+            word_count=word_count(markdown_code_view.masked_text),
+            markdown_code_view=markdown_code_view,
         )
 
     @cached_property
@@ -237,8 +241,9 @@ class AnalysisDocument:
     @cached_property
     def sentence_analysis_text(self) -> str:
         """Return sentence-analysis text with Markdown blocks replaced."""
-        text_without_code_blocks = _FENCED_CODE_BLOCK_RE.sub("\n.\n", self.text)
-        return _replace_markdown_tables_with_sentence_breaks(text_without_code_blocks)
+        return _replace_markdown_tables_with_sentence_breaks(
+            self.markdown_code_view.fenced_text_for_sentence_breaks
+        )
 
     @cached_property
     def sentence_analysis_sentences(self) -> tuple[str, ...]:
@@ -322,12 +327,32 @@ class AnalysisDocument:
     @cached_property
     def text_without_code_blocks(self) -> str:
         """Return cached text with fenced code blocks removed."""
-        return _FENCED_CODE_BLOCK_RE.sub("", self.text)
+        return self.markdown_code_view.text_without_fenced_code
 
     @cached_property
     def word_count_without_code_blocks(self) -> int:
         """Return cached word count of ``text_without_code_blocks``."""
         return word_count(self.text_without_code_blocks)
+
+    @cached_property
+    def text_with_markdown_code_masked(self) -> str:
+        """Return cached text with Markdown code replaced by whitespace."""
+        return self.markdown_code_view.masked_text
+
+    @cached_property
+    def lower_text_with_markdown_code_masked(self) -> str:
+        """Return cached lowercase text with Markdown code masked out."""
+        return self.text_with_markdown_code_masked.lower()
+
+    @cached_property
+    def word_tokens_lower_with_markdown_code_masked(self) -> tuple[str, ...]:
+        """Return lowercase tokens from text with Markdown code masked out."""
+        return tuple(_WORD_TOKEN_RE.findall(self.lower_text_with_markdown_code_masked))
+
+    @cached_property
+    def word_token_set_lower_with_markdown_code_masked(self) -> frozenset[str]:
+        """Return cached token set from text with Markdown code masked out."""
+        return frozenset(self.word_tokens_lower_with_markdown_code_masked)
 
 
 @dataclass

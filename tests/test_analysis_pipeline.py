@@ -55,6 +55,105 @@ def test_analyze_repeated_literal_violations_get_distinct_offsets() -> None:
     ]
 
 
+def test_analyze_ignores_slop_words_inside_fenced_code_blocks() -> None:
+    """Slop-word matching should ignore fenced code blocks."""
+    text = (
+        "The snippet below is only an implementation example for the guide.\n\n"
+        "```python\n"
+        "# navigate the landscape with a robust journey\n"
+        "result = navigate(\"landscape\")\n"
+        "```\n\n"
+        "The actual rollout detail is crucial for operators today."
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+    matches = [
+        violation["match"]
+        for violation in result["violations"]
+        if violation["rule"] == "slop_word"
+    ]
+
+    assert matches == ["crucial"]
+    assert result["counts"]["slop_words"] == 1
+    crucial_violation = next(
+        violation
+        for violation in result["violations"]
+        if violation["rule"] == "slop_word"
+    )
+    assert text[crucial_violation["start"] : crucial_violation["end"]].lower() == (
+        "crucial"
+    )
+
+
+def test_analyze_ignores_slop_words_inside_inline_code_backticks() -> None:
+    """Slop-word matching should ignore inline Markdown code spans."""
+    text = (
+        "Use `navigate(\"landscape\")` and `robust journey` only as code examples. "
+        "The actual rollout detail is crucial for operators today."
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+    matches = [
+        violation["match"]
+        for violation in result["violations"]
+        if violation["rule"] == "slop_word"
+    ]
+
+    assert matches == ["crucial"]
+    assert result["counts"]["slop_words"] == 1
+    crucial_violation = next(
+        violation
+        for violation in result["violations"]
+        if violation["rule"] == "slop_word"
+    )
+    assert text[crucial_violation["start"] : crucial_violation["end"]].lower() == (
+        "crucial"
+    )
+
+
+def test_analyze_slop_word_offsets_skip_matching_markdown_code_occurrences() -> None:
+    """Slop-word offsets should bind to prose hits, not earlier code spans."""
+    text = (
+        "Use `crucial` as a literal token.\n\n"
+        "```python\n"
+        "crucial = build()\n"
+        "```\n\n"
+        "A crucial fix shipped yesterday after two routine checks."
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+    crucial_violation = next(
+        violation
+        for violation in result["violations"]
+        if violation["rule"] == "slop_word"
+    )
+
+    assert (crucial_violation["start"], crucial_violation["end"]) == (
+        text.rindex("crucial"),
+        text.rindex("crucial") + len("crucial"),
+    )
+    assert text[crucial_violation["start"] : crucial_violation["end"]].lower() == (
+        "crucial"
+    )
+
+
+def test_analyze_word_count_ignores_markdown_code() -> None:
+    """Overall word count should exclude fenced and inline Markdown code."""
+    text = (
+        "Here is clean prose before the example.\n\n"
+        "`navigate_landscape()` stays inline.\n\n"
+        "```python\n"
+        "return robust_framework.journey()\n"
+        "```\n\n"
+        "The function above works correctly in production today."
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+
+    assert result["word_count"] == 17
+    assert result["counts"]["slop_words"] == 0
+
+
 def test_analyze_aggregate_violations_fall_back_to_document_offsets() -> None:
     """Aggregate findings should still expose a deterministic edit span."""
     text = (
@@ -123,6 +222,7 @@ def test_analysis_document_cached_views() -> None:
         "Alpha beta. Gamma delta.\n"
         "- bullet one\n"
         "> quote line\n"
+        "Inline `robust journey` example.\n"
         "\n"
         "```python\n"
         "code: true\n"
@@ -146,6 +246,9 @@ def test_analysis_document_cached_views() -> None:
     assert document.word_count_without_code_blocks == word_count(
         document.text_without_code_blocks
     )
+    assert len(document.text_with_markdown_code_masked) == len(text)
+    assert "robust journey" not in document.text_with_markdown_code_masked
+    assert "code: true" not in document.text_with_markdown_code_masked
 
 
 def test_analysis_document_sentence_analysis_strips_markdown_blocks() -> None:

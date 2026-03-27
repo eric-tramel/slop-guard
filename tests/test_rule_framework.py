@@ -65,6 +65,24 @@ def test_rule_to_dict_from_dict_round_trip() -> None:
     assert rebuilt.config == rule.config
 
 
+def test_slop_word_fit_ignores_markdown_code() -> None:
+    """Slop-word fitting should ignore Markdown fenced and inline code."""
+    rule = SlopWordRule(
+        SlopWordRuleConfig(
+            penalty=HYPERPARAMETERS.slop_word_penalty,
+            context_window_chars=HYPERPARAMETERS.context_window_chars,
+        )
+    )
+    samples = [
+        "The deploy finished after two routine checks.",
+        "```python\nnavigate(\"landscape\")\n```\nUse `robust journey` in docs only.",
+    ]
+
+    fitted_rule = rule.fit(samples, [1, 0])
+
+    assert fitted_rule.config.penalty == 0
+
+
 _DEFAULT_RULES = Pipeline.from_jsonl().rules
 _RULE_EXAMPLE_IDS = [
     f"{index:02d}-{rule.__class__.__name__}" for index, rule in enumerate(_DEFAULT_RULES)

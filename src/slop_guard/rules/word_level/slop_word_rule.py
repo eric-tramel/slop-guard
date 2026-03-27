@@ -269,15 +269,20 @@ class SlopWordRule(Rule[SlopWordRuleConfig]):
         word_counts: Counter[str] = Counter()
         advice_order: list[str] = []
         count = 0
+        masked_text = document.text_with_markdown_code_masked
 
-        has_plain_slop_token = bool(document.word_token_set_lower & _PLAIN_SLOP_WORDS)
+        has_plain_slop_token = bool(
+            document.word_token_set_lower_with_markdown_code_masked
+            & _PLAIN_SLOP_WORDS
+        )
         has_hyphen_slop_fragment = any(
-            word in document.lower_text for word in _HYPHENATED_SLOP_WORDS
+            word in document.lower_text_with_markdown_code_masked
+            for word in _HYPHENATED_SLOP_WORDS
         )
         if not has_plain_slop_token and not has_hyphen_slop_fragment:
             return RuleResult()
 
-        for match in _SLOP_WORD_RE.finditer(document.text):
+        for match in _SLOP_WORD_RE.finditer(masked_text):
             if _is_probable_proper_noun_match(document.text, match):
                 continue
             word = match.group(0).lower()
@@ -292,6 +297,8 @@ class SlopWordRule(Rule[SlopWordRuleConfig]):
                         width=self.config.context_window_chars,
                     ),
                     penalty=self.config.penalty,
+                    start=match.start(),
+                    end=match.end(),
                 )
             )
             if word_counts[word] == 0:
@@ -314,10 +321,20 @@ class SlopWordRule(Rule[SlopWordRuleConfig]):
             return self.config
 
         positive_matches = sum(
-            1 for sample in positive_samples if _SLOP_WORD_RE.search(sample) is not None
+            1
+            for sample in positive_samples
+            if _SLOP_WORD_RE.search(
+                AnalysisDocument.from_text(sample).text_with_markdown_code_masked
+            )
+            is not None
         )
         negative_matches = sum(
-            1 for sample in negative_samples if _SLOP_WORD_RE.search(sample) is not None
+            1
+            for sample in negative_samples
+            if _SLOP_WORD_RE.search(
+                AnalysisDocument.from_text(sample).text_with_markdown_code_masked
+            )
+            is not None
         )
         return SlopWordRuleConfig(
             penalty=fit_penalty_contrastive(

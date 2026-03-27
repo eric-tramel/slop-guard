@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from mcp.server.fastmcp.exceptions import ToolError
 
+from slop_guard.analysis import word_count
 from slop_guard import server
 
 
@@ -42,6 +43,37 @@ def test_check_slop_tool_includes_violation_offsets(run_mcp_tool) -> None:
     assert isinstance(violation["start"], int)
     assert isinstance(violation["end"], int)
     assert text[violation["start"] : violation["end"]].lower() == violation["match"]
+
+
+def test_check_slop_tool_ignores_markdown_code_for_counts_and_word_count(
+    run_mcp_tool,
+) -> None:
+    """``check_slop`` should exclude Markdown code from counts and word totals."""
+    text = (
+        "The snippet below is only an implementation example for the guide.\n\n"
+        "`navigate(\"landscape\")` and `robust journey` are code samples.\n\n"
+        "```python\n"
+        "result = navigate(\"landscape\")\n"
+        "return robust_framework.journey()\n"
+        "```\n\n"
+        "The actual rollout detail is crucial for operators today."
+    )
+    prose_only = (
+        "The snippet below is only an implementation example for the guide.\n\n"
+        "and are code samples.\n\n"
+        "The actual rollout detail is crucial for operators today."
+    )
+
+    _content, structured = run_mcp_tool("check_slop", {"text": text})
+    matches = [
+        violation["match"]
+        for violation in structured["violations"]
+        if violation["rule"] == "slop_word"
+    ]
+
+    assert structured["word_count"] == word_count(prose_only)
+    assert structured["counts"]["slop_words"] == 1
+    assert matches == ["crucial"]
 
 
 def test_check_slop_tool_skips_proper_name_slop_word_matches(run_mcp_tool) -> None:
