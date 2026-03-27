@@ -93,6 +93,42 @@ def test_rhythm_advice_reports_threshold_and_sentence_range() -> None:
     ]
 
 
+def test_single_triadic_structural_violation_has_actionable_advice() -> None:
+    """A single triadic structural hit should still tell the user what to change."""
+    text = (
+        "We support three output formats: JSON, YAML, and TOML. "
+        "Each one is fully validated before writing. "
+        "The default format is JSON because it has the broadest tool support."
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+
+    assert any(
+        violation["rule"] == "structural" and violation["match"] == "triadic"
+        for violation in result["violations"]
+    )
+    assert result["advice"] == [
+        "Rewrite 'JSON, YAML, and TOML' as prose or restructure the list so "
+        "the sentence does not hinge on a three-item cadence."
+    ]
+
+
+def test_repeated_triadic_structures_keep_aggregate_cadence_advice() -> None:
+    """Repeated triads should still emit the aggregate cadence warning."""
+    text = (
+        "The platform is reliable, scalable, and maintainable in production. "
+        "The rollout stayed measured, observable, and reversible overnight. "
+        "The handoff remained clear, direct, and documented for operators."
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+
+    assert (
+        "3 triadic structures ('X, Y, and Z') — vary your list cadence."
+        in result["advice"]
+    )
+
+
 def test_overlapping_phrase_rules_share_one_canonical_edit_message() -> None:
     """Overlapping phrase and tone rules should deduplicate shared guidance."""
     text = (
