@@ -138,6 +138,61 @@ def test_fit_main_supports_init_and_negative_dataset_normalization(
     assert fit_pipeline.output_paths == [output]
 
 
+def test_fit_main_allows_negative_dataset_before_positional_input(
+    write_text_file,
+    fit_pipeline,
+) -> None:
+    """A leading negative dataset flag should not consume the train input."""
+    target = write_text_file("target.txt", "target body")
+    negative = write_text_file("negative.txt", "negative body")
+    output = write_text_file("rules.fitted.jsonl", "")
+
+    exit_code = fit_cli.fit_main(
+        [
+            "--output",
+            str(output),
+            "--negative-dataset",
+            str(negative),
+            str(target),
+        ]
+    )
+
+    assert exit_code == fit_cli.EXIT_OK
+    assert fit_pipeline.fit_calls[0].samples == (
+        "target body",
+        "negative body",
+    )
+    assert fit_pipeline.fit_calls[0].labels == (1, 0)
+    assert fit_pipeline.output_paths == [output]
+
+
+def test_fit_main_allows_negative_dataset_before_legacy_positionals(
+    write_text_file,
+    fit_pipeline,
+) -> None:
+    """Legacy target/output positionals should survive a leading negative flag."""
+    target = write_text_file("target.txt", "target body")
+    negative = write_text_file("negative.txt", "negative body")
+    output = write_text_file("rules.fitted.jsonl", "")
+
+    exit_code = fit_cli.fit_main(
+        [
+            "--negative-dataset",
+            str(negative),
+            str(target),
+            str(output),
+        ]
+    )
+
+    assert exit_code == fit_cli.EXIT_OK
+    assert fit_pipeline.fit_calls[0].samples == (
+        "target body",
+        "negative body",
+    )
+    assert fit_pipeline.fit_calls[0].labels == (1, 0)
+    assert fit_pipeline.output_paths == [output]
+
+
 def test_fit_main_expands_globs_for_train_and_negative_text_inputs(
     tmp_path,
     write_text_file,
