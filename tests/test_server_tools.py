@@ -45,7 +45,6 @@ def test_check_slop_tool_includes_violation_offsets(run_mcp_tool) -> None:
     assert text[violation["start"] : violation["end"]].lower() == violation["match"]
 
 
-<<<<<<< HEAD
 def test_check_slop_tool_ignores_markdown_code_for_counts_and_word_count(
     run_mcp_tool,
 ) -> None:
