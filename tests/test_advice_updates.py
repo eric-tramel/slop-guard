@@ -221,3 +221,38 @@ def test_contrast_and_pithy_fragment_advice_use_the_same_rewrite_direction() -> 
     ) in result["advice"]
     assert all("consider rephrasing" not in item for item in result["advice"])
     assert all("Expand or cut." not in item for item in result["advice"])
+
+
+def test_contrast_pair_rule_detects_staged_not_only_but_patterns() -> None:
+    """Contrast-pair counting should include staged ``not ... but ...`` forms."""
+    text = (
+        "The platform is not only fast but also reliable. "
+        "It is not just affordable but truly cost-effective. "
+        "The team achieved not only their goals but exceeded expectations. "
+        "This approach is not only innovative but practical. "
+        "The design is not merely functional but beautiful."
+    )
+
+    result = _analyze(text, HYPERPARAMETERS)
+    contrast_violations = [
+        violation
+        for violation in result["violations"]
+        if violation["rule"] == "contrast_pair"
+    ]
+
+    assert result["counts"]["contrast_pairs"] == 5
+    assert [violation["match"] for violation in contrast_violations] == [
+        "not only fast but also reliable",
+        "not just affordable but truly cost-effective",
+        "not only their goals but exceeded expectations",
+        "not only innovative but practical",
+        "not merely functional but beautiful",
+    ]
+    assert (
+        "Rewrite 'not only fast but also reliable' as a direct sentence instead "
+        "of staging it as a contrast."
+    ) in result["advice"]
+    assert (
+        "5 contrast constructions — stop stacking staged oppositions; rewrite "
+        "at least one as a plain sentence with the actual tradeoff."
+    ) in result["advice"]
