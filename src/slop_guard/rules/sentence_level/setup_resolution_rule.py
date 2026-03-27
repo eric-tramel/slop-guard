@@ -95,9 +95,14 @@ class SetupResolutionRule(Rule[SetupResolutionRuleConfig]):
         violations: list[Violation] = []
         advice: list[str] = []
         count = 0
+        seen_spans: set[tuple[int, int]] = set()
 
         for pattern in (_SETUP_RESOLUTION_A_RE, _SETUP_RESOLUTION_B_RE):
             for match in pattern.finditer(document.text):
+                span = match.span()
+                if span in seen_spans:
+                    continue
+                seen_spans.add(span)
                 if len(violations) < self.config.record_cap:
                     matched_text = match.group(0)
                     violations.append(
