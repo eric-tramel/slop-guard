@@ -187,6 +187,7 @@ def test_missing_config_path_reports_clean_error(
     assert exit_code == cli.EXIT_ERROR
     assert captured.out == ""
     assert captured.err.strip() == f"sg: {missing_config}: No such file"
+    assert "Traceback" not in captured.err
 
 
 def test_directory_config_path_reports_clean_error(
@@ -203,6 +204,23 @@ def test_directory_config_path_reports_clean_error(
     assert exit_code == cli.EXIT_ERROR
     assert captured.out == ""
     assert captured.err.strip() == f"sg: {config_dir}: Is a directory"
+    assert "Traceback" not in captured.err
+
+
+def test_invalid_utf8_config_path_reports_clean_error(
+    write_bytes_file,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Invalid UTF-8 ``-c/--config`` files should fail cleanly with exit code 2."""
+    config_file = write_bytes_file("invalid.jsonl", b"\x80broken-jsonl")
+
+    exit_code = cli.cli_main(["-c", str(config_file), "This is some test text"])
+    captured = capsys.readouterr()
+
+    assert exit_code == cli.EXIT_ERROR
+    assert captured.out == ""
+    assert captured.err.strip() == f"sg: {config_file}: Invalid UTF-8"
+    assert "Traceback" not in captured.err
 
 
 def test_rejects_legacy_glob_flag(capsys: pytest.CaptureFixture[str]) -> None:

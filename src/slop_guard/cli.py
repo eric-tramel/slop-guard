@@ -263,6 +263,8 @@ def _format_config_load_error(path: Path, exc: ConfigLoadError) -> str:
     """
     if isinstance(exc, FileNotFoundError):
         detail = "No such file"
+    elif isinstance(exc, IsADirectoryError):
+        detail = "Is a directory"
     elif isinstance(exc, UnicodeDecodeError):
         detail = "Invalid UTF-8"
     else:
