@@ -19,12 +19,10 @@ Example Non-Violations:
 Severity: Medium to high; often a strong signal of assistant-authored tone.
 """
 
-
 import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import fit_penalty_contrastive
 
@@ -238,24 +236,30 @@ class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):
         positive_opener_matches = 0
         for sample in positive_samples:
             lower_text = sample.lower()
-            has_tone_marker = any(phrase in lower_text for phrase in _META_COMM_LITERALS) or any(
-                phrase in lower_text for phrase in _FALSE_NARRATIVITY_LITERALS
-            )
+            has_tone_marker = any(
+                phrase in lower_text for phrase in _META_COMM_LITERALS
+            ) or any(phrase in lower_text for phrase in _FALSE_NARRATIVITY_LITERALS)
             if has_tone_marker:
                 positive_tone_matches += 1
-            if any(pattern.search(sample) is not None for pattern in _SENTENCE_OPENER_PATTERNS):
+            if any(
+                pattern.search(sample) is not None
+                for pattern in _SENTENCE_OPENER_PATTERNS
+            ):
                 positive_opener_matches += 1
 
         negative_tone_matches = 0
         negative_opener_matches = 0
         for sample in negative_samples:
             lower_text = sample.lower()
-            has_tone_marker = any(phrase in lower_text for phrase in _META_COMM_LITERALS) or any(
-                phrase in lower_text for phrase in _FALSE_NARRATIVITY_LITERALS
-            )
+            has_tone_marker = any(
+                phrase in lower_text for phrase in _META_COMM_LITERALS
+            ) or any(phrase in lower_text for phrase in _FALSE_NARRATIVITY_LITERALS)
             if has_tone_marker:
                 negative_tone_matches += 1
-            if any(pattern.search(sample) is not None for pattern in _SENTENCE_OPENER_PATTERNS):
+            if any(
+                pattern.search(sample) is not None
+                for pattern in _SENTENCE_OPENER_PATTERNS
+            ):
                 negative_opener_matches += 1
 
         return ToneMarkerRuleConfig(

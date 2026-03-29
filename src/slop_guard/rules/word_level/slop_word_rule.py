@@ -19,14 +19,12 @@ Severity: Low to medium per hit; repeated hits are stronger evidence of generic
 language and accumulate penalty quickly.
 """
 
-
-from collections import Counter
 import re
+from collections import Counter
 from dataclasses import dataclass
 from typing import TypeAlias
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import fit_penalty_contrastive
 
@@ -168,13 +166,9 @@ def _slop_word_advice(word: str, count: int) -> str:
             f"Replace '{word}'{suffix} with the specific action, result, or evidence."
         )
     if word in _SLOP_SYSTEM_NOUNS:
-        return (
-            f"Replace '{word}'{suffix} with the concrete system, group, or thing you mean."
-        )
+        return f"Replace '{word}'{suffix} with the concrete system, group, or thing you mean."
     if word in _SLOP_TIMELINE_NOUNS:
-        return (
-            f"Replace '{word}'{suffix} with the actual period, step, or change you observed."
-        )
+        return f"Replace '{word}'{suffix} with the actual period, step, or change you observed."
     if word in _SLOP_ADJECTIVE_SET:
         return (
             f"Cut '{word}'{suffix} unless you can name the concrete property, metric, "
@@ -272,8 +266,7 @@ class SlopWordRule(Rule[SlopWordRuleConfig]):
         masked_text = document.text_with_markdown_code_masked
 
         has_plain_slop_token = bool(
-            document.word_token_set_lower_with_markdown_code_masked
-            & _PLAIN_SLOP_WORDS
+            document.word_token_set_lower_with_markdown_code_masked & _PLAIN_SLOP_WORDS
         )
         has_hyphen_slop_fragment = any(
             word in document.lower_text_with_markdown_code_masked
@@ -308,7 +301,9 @@ class SlopWordRule(Rule[SlopWordRuleConfig]):
 
         return RuleResult(
             violations=violations,
-            advice=[_slop_word_advice(word, word_counts[word]) for word in advice_order],
+            advice=[
+                _slop_word_advice(word, word_counts[word]) for word in advice_order
+            ],
             count_deltas={self.count_key: count} if count else {},
         )
 

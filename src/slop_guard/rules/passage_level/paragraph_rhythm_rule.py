@@ -21,27 +21,20 @@ Example Non-Violations:
 Severity: Low to medium; stronger when combined with other rhythm signals.
 """
 
-
 import math
 import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import fit_penalty_contrastive
-
 
 _PARAGRAPH_SPLIT_RE = re.compile(r"\n\s*\n")
 
 
 def _paragraph_word_counts(text: str) -> list[int]:
     """Split text on blank lines and return word counts per paragraph."""
-    return [
-        len(p.split())
-        for p in _PARAGRAPH_SPLIT_RE.split(text)
-        if p.strip()
-    ]
+    return [len(p.split()) for p in _PARAGRAPH_SPLIT_RE.split(text) if p.strip()]
 
 
 # ---------------------------------------------------------------------------

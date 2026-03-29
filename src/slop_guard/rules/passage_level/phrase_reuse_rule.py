@@ -18,19 +18,17 @@ Example Non-Violations:
 Severity: Medium to high; repeated long phrases are strong formulaicity signals.
 """
 
-
 import math
 from dataclasses import dataclass
 
-from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, Hyperparameters
-
+from slop_guard.analysis import AnalysisDocument, Hyperparameters, RuleResult, Violation
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import (
     clamp_int,
+    find_repeated_ngrams_from_tokens,
     fit_count_cap_contrastive,
     fit_penalty_contrastive,
     fit_threshold_high_contrastive,
-    find_repeated_ngrams_from_tokens,
     has_repeated_ngram_prefix,
     percentile_ceil,
     percentile_floor,
@@ -58,10 +56,7 @@ class PhraseReuseRule(Rule[PhraseReuseRuleConfig]):
     def example_violations(self) -> list[str]:
         """Return samples that should trigger phrase-reuse matches."""
         return [
-            (
-                "red blue green yellow red blue green yellow "
-                "red blue green yellow"
-            ),
+            ("red blue green yellow red blue green yellow red blue green yellow"),
             (
                 "we deploy with canary rollout we deploy with canary rollout "
                 "we deploy with canary rollout"
@@ -97,7 +92,9 @@ class PhraseReuseRule(Rule[PhraseReuseRuleConfig]):
             repeated_ngram_max_n=self.config.repeated_ngram_max_n,
             repeated_ngram_min_count=self.config.repeated_ngram_min_count,
         )
-        repeated_ngrams = find_repeated_ngrams_from_tokens(tokens, ngram_hyperparameters)
+        repeated_ngrams = find_repeated_ngrams_from_tokens(
+            tokens, ngram_hyperparameters
+        )
         violations: list[Violation] = []
         advice: list[str] = []
         count = 0
@@ -236,8 +233,12 @@ class PhraseReuseRule(Rule[PhraseReuseRuleConfig]):
             )
             if positive_matches > 0
             else self.config.record_cap,
-            positive_values=[count for count in positive_per_document_hits if count > 0],
-            negative_values=[count for count in negative_per_document_hits if count > 0],
+            positive_values=[
+                count for count in positive_per_document_hits if count > 0
+            ],
+            negative_values=[
+                count for count in negative_per_document_hits if count > 0
+            ],
             lower=1,
             upper=128,
             positive_quantile=0.90,

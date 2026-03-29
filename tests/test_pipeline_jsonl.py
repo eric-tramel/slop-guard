@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from slop_guard.analysis import (
-    AnalysisDocument,
     HYPERPARAMETERS,
+    AnalysisDocument,
     RuleResult,
     Violation,
     compute_weighted_sum,

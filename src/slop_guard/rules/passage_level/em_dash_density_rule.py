@@ -18,12 +18,10 @@ Example Non-Violations:
 Severity: Low to medium; stylistic alone, but meaningful when persistent.
 """
 
-
 import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import (
     fit_penalty_contrastive,
@@ -69,7 +67,9 @@ class EmDashDensityRule(Rule[EmDashDensityRuleConfig]):
             return RuleResult()
 
         em_dash_count = len(_EM_DASH_RE.findall(document.text))
-        ratio_per_basis = (em_dash_count / document.word_count) * self.config.words_basis
+        ratio_per_basis = (
+            em_dash_count / document.word_count
+        ) * self.config.words_basis
         if ratio_per_basis <= self.config.density_threshold:
             return RuleResult()
 
@@ -133,8 +133,12 @@ class EmDashDensityRule(Rule[EmDashDensityRuleConfig]):
             negative_quantile=0.10,
             blend_pivot=18.0,
         )
-        positive_matches = sum(1 for ratio in positive_ratios if ratio > density_threshold)
-        negative_matches = sum(1 for ratio in negative_ratios if ratio > density_threshold)
+        positive_matches = sum(
+            1 for ratio in positive_ratios if ratio > density_threshold
+        )
+        negative_matches = sum(
+            1 for ratio in negative_ratios if ratio > density_threshold
+        )
 
         return EmDashDensityRuleConfig(
             words_basis=self.config.words_basis,

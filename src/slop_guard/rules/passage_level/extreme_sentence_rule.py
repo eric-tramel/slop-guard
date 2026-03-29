@@ -16,11 +16,9 @@ Example Non-Violations:
 Severity: Medium; each hit adds structural evidence of generated text.
 """
 
-
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import fit_penalty_contrastive
 
@@ -65,7 +63,9 @@ class ExtremeSentenceRule(Rule[ExtremeSentenceRuleConfig]):
             )
         ):
             if wc >= self.config.min_words:
-                preview = f'"{sentence[:80]}..."' if len(sentence) > 80 else f'"{sentence}"'
+                preview = (
+                    f'"{sentence[:80]}..."' if len(sentence) > 80 else f'"{sentence}"'
+                )
                 violations.append(
                     Violation(
                         rule=self.name,
@@ -100,8 +100,7 @@ class ExtremeSentenceRule(Rule[ExtremeSentenceRuleConfig]):
         def has_extreme(sample: str) -> bool:
             doc = AnalysisDocument.from_text(sample)
             return any(
-                wc >= self.config.min_words
-                for wc in doc.sentence_analysis_word_counts
+                wc >= self.config.min_words for wc in doc.sentence_analysis_word_counts
             )
 
         positive_matches = sum(1 for s in positive_samples if has_extreme(s))

@@ -19,14 +19,12 @@ Example Non-Violations:
 Severity: Low per instance, medium when repeated frequently in one passage.
 """
 
-
 import math
 import re
 from dataclasses import dataclass
 from typing import Literal, TypeAlias
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import (
     clamp_int,
@@ -86,8 +84,7 @@ def _contrast_pair_advice(kind: ContrastMatchKind, snippet: str) -> str:
             "instead of an 'X, not Y' slogan."
         )
     return (
-        f"Rewrite '{snippet}' as a direct sentence instead of staging it as "
-        "a contrast."
+        f"Rewrite '{snippet}' as a direct sentence instead of staging it as a contrast."
     )
 
 

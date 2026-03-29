@@ -1,12 +1,13 @@
 """Core analysis models and scoring helpers for slop-guard."""
 
-
 import math
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Literal, TypeAlias, TypedDict
+from typing import Literal, TypeAlias
+
+from typing_extensions import TypedDict
 
 from .markdown import MarkdownCodeView
 
@@ -504,7 +505,8 @@ def _resolve_violation_span(
     context_matched_literal_candidates = tuple(
         span
         for span in literal_candidates
-        if context_around(text, span[0], span[1], context_window_chars) == violation.context
+        if context_around(text, span[0], span[1], context_window_chars)
+        == violation.context
     )
     literal_span = _select_unused_span(context_matched_literal_candidates, used_spans)
     if literal_span is not None:
@@ -595,7 +597,7 @@ def compute_weighted_sum(
     return weighted_sum
 
 
-def band_for_score(score: int, hp: Hyperparameters) -> str:
+def band_for_score(score: int, hp: Hyperparameters) -> BandLabel:
     """Map a numeric score into the configured severity band."""
     if score >= hp.band_clean_min:
         return "clean"

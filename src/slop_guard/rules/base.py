@@ -1,10 +1,10 @@
 """Shared base types for rule definitions."""
 
-
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from enum import StrEnum
-from typing import Generic, Mapping, TypeAlias, TypeVar, cast, get_args, get_origin
+from typing import Any, Generic, TypeAlias, TypeVar, get_args, get_origin
 
 from slop_guard.analysis import AnalysisDocument, RuleResult
 
@@ -38,7 +38,7 @@ class RuleConfig:
 
 ConfigT = TypeVar("ConfigT", bound=RuleConfig)
 ConfigFromDictT = TypeVar("ConfigFromDictT", bound=RuleConfig)
-RuleFromDictT = TypeVar("RuleFromDictT", bound="Rule[RuleConfig]")
+RuleFromDictT = TypeVar("RuleFromDictT", bound="Rule[Any]")
 
 
 class Rule(ABC, Generic[ConfigT]):
@@ -77,7 +77,7 @@ class Rule(ABC, Generic[ConfigT]):
                 if isinstance(config_type, type) and issubclass(
                     config_type, RuleConfig
                 ):
-                    return cast(type[RuleConfig], config_type)
+                    return config_type
                 break
         raise TypeError(
             f"Could not infer config type for rule class {cls.__name__}. "

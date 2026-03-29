@@ -4,8 +4,6 @@ This module centralizes Markdown code handling so analysis paths can share one
 scan of the source text and derive consistent masked or stripped views.
 """
 
-from __future__ import annotations
-
 import re
 from dataclasses import dataclass
 from typing import TypeAlias
@@ -206,7 +204,7 @@ class MarkdownCodeView:
     fenced_text_for_sentence_breaks: str
 
     @classmethod
-    def from_text(cls, text: str) -> MarkdownCodeView:
+    def from_text(cls, text: str) -> "MarkdownCodeView":
         """Build Markdown code-span views for ``text``.
 
         Args:

@@ -1,9 +1,8 @@
 """Rule registry and class resolution helpers."""
 
+from typing import Any, TypeAlias
 
-from typing import TypeAlias
-
-from .base import Rule, RuleConfig
+from .base import Rule
 from .paragraph_level import (
     BlockquoteDensityRule,
     BoldTermBulletRunRule,
@@ -34,8 +33,8 @@ from .sentence_level import (
 )
 from .word_level import SlopWordRule
 
-RuleType: TypeAlias = type[Rule[RuleConfig]]
-RuleList: TypeAlias = list[Rule[RuleConfig]]
+RuleType: TypeAlias = type[Rule[Any]]
+RuleList: TypeAlias = list[Rule[Any]]
 
 DEFAULT_RULE_TYPES: tuple[RuleType, ...] = (
     SlopWordRule,
@@ -69,11 +68,16 @@ def rule_type_name(rule_type: RuleType) -> str:
     return f"{rule_type.__module__}.{rule_type.__name__}"
 
 
-_RULE_TYPES_BY_KEY: dict[str, RuleType] = {}
-for _rule_type in DEFAULT_RULE_TYPES:
-    _RULE_TYPES_BY_KEY[rule_type_name(_rule_type)] = _rule_type
-    _RULE_TYPES_BY_KEY[_rule_type.__name__] = _rule_type
-del _rule_type
+def _build_rule_types_by_key() -> dict[str, RuleType]:
+    """Build lookup keys for resolving packaged rule classes."""
+    keys_by_rule_type: dict[str, RuleType] = {}
+    for rule_type in DEFAULT_RULE_TYPES:
+        keys_by_rule_type[rule_type_name(rule_type)] = rule_type
+        keys_by_rule_type[rule_type.__name__] = rule_type
+    return keys_by_rule_type
+
+
+_RULE_TYPES_BY_KEY = _build_rule_types_by_key()
 
 
 def resolve_rule_type(rule_type: str) -> RuleType:

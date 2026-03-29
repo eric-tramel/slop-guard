@@ -18,12 +18,10 @@ Example Non-Violations:
 Severity: Low to medium; punctuation style signal that compounds with others.
 """
 
-
 import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import (
     fit_penalty_contrastive,
@@ -184,8 +182,12 @@ class ColonDensityRule(Rule[ColonDensityRuleConfig]):
             negative_quantile=0.10,
             blend_pivot=18.0,
         )
-        positive_matches = sum(1 for ratio in positive_ratios if ratio > density_threshold)
-        negative_matches = sum(1 for ratio in negative_ratios if ratio > density_threshold)
+        positive_matches = sum(
+            1 for ratio in positive_ratios if ratio > density_threshold
+        )
+        negative_matches = sum(
+            1 for ratio in negative_ratios if ratio > density_threshold
+        )
 
         return ColonDensityRuleConfig(
             words_basis=self.config.words_basis,

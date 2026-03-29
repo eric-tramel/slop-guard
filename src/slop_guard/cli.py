@@ -30,7 +30,6 @@ Usage examples::
     sg -q -t 60 docs/*.md
 """
 
-
 import argparse
 import json
 import sys
@@ -38,8 +37,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, TextIO, TypeAlias
 
+from .analysis import AnalysisPayload, SourceAnalysisPayload
 from .rules import Pipeline
-from .analysis import SourceAnalysisPayload
 from .server import HYPERPARAMETERS, Hyperparameters, _analyze
 from .version import PACKAGE_VERSION
 
@@ -82,7 +81,7 @@ class InputResolutionError(ValueError):
 
 def _format_score_line(
     label: str,
-    result: dict,
+    result: AnalysisPayload | SourceAnalysisPayload,
     *,
     show_counts: bool = False,
 ) -> str:
@@ -100,7 +99,10 @@ def _format_score_line(
     return line
 
 
-def _print_violations(result: dict, file: TextIO = sys.stdout) -> None:
+def _print_violations(
+    result: AnalysisPayload | SourceAnalysisPayload,
+    file: TextIO = sys.stdout,
+) -> None:
     """Print individual violations grouped under the result."""
     for v in result["violations"]:
         rule = v["rule"]
@@ -110,7 +112,10 @@ def _print_violations(result: dict, file: TextIO = sys.stdout) -> None:
         print(f"  {rule}: {match} ({penalty})  {ctx}", file=file)
 
 
-def _print_advice(result: dict, file: TextIO = sys.stdout) -> None:
+def _print_advice(
+    result: AnalysisPayload | SourceAnalysisPayload,
+    file: TextIO = sys.stdout,
+) -> None:
     """Print deduped advice list."""
     for item in result["advice"]:
         print(f"  - {item}", file=file)
@@ -129,8 +134,10 @@ def _analyze_text(
 ) -> SourceAnalysisPayload:
     """Run analysis and attach the source label."""
     result = _analyze(text, hyperparameters, pipeline=pipeline)
-    result["source"] = source
-    return result
+    return {
+        **result,
+        "source": source,
+    }
 
 
 def _analyze_file(
@@ -168,38 +175,44 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Inputs to lint: files, '-' for stdin, or quoted inline text.",
     )
     p.add_argument(
-        "-j", "--json",
+        "-j",
+        "--json",
         action="store_true",
         default=False,
         help="Output results as JSON.",
     )
     p.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         default=False,
         help="Show individual violations and advice.",
     )
     p.add_argument(
-        "-q", "--quiet",
+        "-q",
+        "--quiet",
         action="store_true",
         default=False,
         help="Only print sources that fail the threshold.",
     )
     p.add_argument(
-        "-t", "--threshold",
+        "-t",
+        "--threshold",
         type=int,
         default=0,
         metavar="SCORE",
         help="Minimum passing score (0-100). Exit 1 if any input scores below this.",
     )
     p.add_argument(
-        "-c", "--config",
+        "-c",
+        "--config",
         default=None,
         metavar="JSONL",
         help="Path to JSONL rule configuration. Defaults to packaged settings.",
     )
     p.add_argument(
-        "-s", "--score-only",
+        "-s",
+        "--score-only",
         action="store_true",
         default=False,
         help="Print score only.",

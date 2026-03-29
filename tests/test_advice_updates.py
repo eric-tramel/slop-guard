@@ -1,6 +1,5 @@
 """Regression tests for agent-facing advice strings."""
 
-
 import pytest
 
 from slop_guard.analysis import HYPERPARAMETERS
@@ -60,9 +59,7 @@ def test_proper_name_surname_does_not_trigger_slop_word_violation() -> None:
 
 def test_title_cased_brand_name_does_not_trigger_slop_word_violation() -> None:
     """A title-cased name phrase should not trip on its first token either."""
-    text = (
-        "Landscape Forms supplied the benches for the renovated plaza this year."
-    )
+    text = "Landscape Forms supplied the benches for the renovated plaza this year."
 
     result = _analyze(text, HYPERPARAMETERS)
 

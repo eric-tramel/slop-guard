@@ -1,25 +1,24 @@
 """Rule pipeline orchestration and JSONL serialization helpers."""
 
-
 import json
 import math
 from collections.abc import Iterable, Mapping
 from dataclasses import fields, is_dataclass
 from importlib.resources import files
 from pathlib import Path
-from typing import TypeAlias
+from typing import Any, TypeAlias
 
 from slop_guard.analysis import (
+    HYPERPARAMETERS,
     AnalysisDocument,
     AnalysisState,
-    HYPERPARAMETERS,
     compute_weighted_sum,
 )
 
 from .base import Label, Rule, RuleConfig
 from .registry import resolve_rule_type, rule_type_name
 
-RuleList: TypeAlias = list[Rule[RuleConfig]]
+RuleList: TypeAlias = list[Rule[Any]]
 
 _RULE_TYPE_FIELD = "rule_type"
 _CONFIG_FIELD = "config"
@@ -28,7 +27,7 @@ _CONFIG_FIELD = "config"
 class Pipeline:
     """Ordered rule pipeline with JSONL load/save and fit orchestration."""
 
-    def __init__(self, rules: list[Rule[RuleConfig]]) -> None:
+    def __init__(self, rules: list[Rule[Any]]) -> None:
         """Initialize a pipeline from an ordered list of instantiated rules."""
         self.rules = list(rules)
 
@@ -130,8 +129,12 @@ class Pipeline:
 
             positive_mean = _mean_at_indices(contributions, positive_indices)
             negative_mean = _mean_at_indices(contributions, negative_indices)
-            positive_fire_rate = _rate_nonzero_at_indices(contributions, positive_indices)
-            negative_fire_rate = _rate_nonzero_at_indices(contributions, negative_indices)
+            positive_fire_rate = _rate_nonzero_at_indices(
+                contributions, positive_indices
+            )
+            negative_fire_rate = _rate_nonzero_at_indices(
+                contributions, negative_indices
+            )
 
             scale = 1.0
             if negative_mean <= positive_mean:
@@ -152,7 +155,7 @@ def build_default_rules() -> RuleList:
 
 def run_rule_pipeline(
     document: AnalysisDocument,
-    rules: list[Rule[RuleConfig]],
+    rules: list[Rule[Any]],
 ) -> AnalysisState:
     """Apply an ordered list of instantiated rules and merge outputs."""
     return Pipeline(rules).forward(document)
@@ -235,7 +238,9 @@ def _scale_penalty_fields(
             continue
 
         scaled_magnitude = max(1, int(round(abs(value) * scale)))
-        setattr(config, field_name, -scaled_magnitude if value < 0 else scaled_magnitude)
+        setattr(
+            config, field_name, -scaled_magnitude if value < 0 else scaled_magnitude
+        )
 
 
 def _mean_at_indices(values: list[float], indices: list[int]) -> float:
