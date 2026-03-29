@@ -1,6 +1,5 @@
 """Shared helper functions used by multiple rule modules."""
 
-
 import math
 import re
 from typing import TypeAlias
@@ -301,7 +300,9 @@ def fit_threshold_high_contrastive(
     if negative_values:
         candidates.extend(
             (
-                clamp_float(percentile(negative_values, negative_quantile), lower, upper),
+                clamp_float(
+                    percentile(negative_values, negative_quantile), lower, upper
+                ),
                 clamp_float(percentile(negative_values, 0.01), lower, upper),
             )
         )
@@ -391,7 +392,9 @@ def fit_threshold_low_contrastive(
     if negative_values:
         candidates.extend(
             (
-                clamp_float(percentile(negative_values, negative_quantile), lower, upper),
+                clamp_float(
+                    percentile(negative_values, negative_quantile), lower, upper
+                ),
                 clamp_float(percentile(negative_values, 0.99), lower, upper),
             )
         )
@@ -458,8 +461,12 @@ def fit_count_cap_contrastive(
     elif combined:
         for index in range(21):
             quantile = index / 20.0
-            candidates.add(clamp_int(int(round(percentile(combined, quantile))), lower, upper))
-    candidates.add(clamp_int(percentile_ceil(positive_values, positive_quantile), lower, upper))
+            candidates.add(
+                clamp_int(int(round(percentile(combined, quantile))), lower, upper)
+            )
+    candidates.add(
+        clamp_int(percentile_ceil(positive_values, positive_quantile), lower, upper)
+    )
     if negative_values:
         candidates.add(
             clamp_int(percentile_ceil(negative_values, negative_quantile), lower, upper)
@@ -469,20 +476,18 @@ def fit_count_cap_contrastive(
     best_gap = float("-inf")
     best_key = (float("-inf"), float("-inf"), float("-inf"), float("-inf"))
     for candidate in sorted(candidates):
-        positive_clipped_mean = (
-            sum(min(float(value), candidate) for value in positive_values)
-            / len(positive_values)
-        )
+        positive_clipped_mean = sum(
+            min(float(value), candidate) for value in positive_values
+        ) / len(positive_values)
         negative_clipped_mean = (
             sum(min(float(value), candidate) for value in negative_values)
             / len(negative_values)
             if negative_values
             else 0.0
         )
-        positive_nonzero_rate = (
-            sum(1 for value in positive_values if min(float(value), candidate) > 0.0)
-            / len(positive_values)
-        )
+        positive_nonzero_rate = sum(
+            1 for value in positive_values if min(float(value), candidate) > 0.0
+        ) / len(positive_values)
         negative_nonzero_rate = (
             sum(1 for value in negative_values if min(float(value), candidate) > 0.0)
             / len(negative_values)
@@ -524,7 +529,9 @@ def normalize_ngram_tokens(text: str) -> list[str]:
     """Normalize text into lowercase tokens with edge punctuation stripped."""
     raw_tokens = text.split()
     return [
-        token for token in (_PUNCT_STRIP_RE.sub("", raw).lower() for raw in raw_tokens) if token
+        token
+        for token in (_PUNCT_STRIP_RE.sub("", raw).lower() for raw in raw_tokens)
+        if token
     ]
 
 
@@ -586,7 +593,9 @@ def has_repeated_ngram_prefix(
     return False
 
 
-def find_repeated_ngrams_from_tokens(tokens: TokenSeq, hp: Hyperparameters) -> list[NGramHit]:
+def find_repeated_ngrams_from_tokens(
+    tokens: TokenSeq, hp: Hyperparameters
+) -> list[NGramHit]:
     """Find repeated multi-word phrases and keep only maximal spans."""
     min_n = hp.repeated_ngram_min_n
     max_n = hp.repeated_ngram_max_n

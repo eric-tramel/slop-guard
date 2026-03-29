@@ -1,7 +1,5 @@
 """CLI entry point for fitting slop-guard rule configs from JSONL corpora."""
 
-from __future__ import annotations
-
 import argparse
 import glob
 import json
@@ -123,7 +121,9 @@ def _load_jsonl_dataset(
             try:
                 payload = json.loads(stripped)
             except json.JSONDecodeError as exc:
-                raise ValueError(f"{path}:{line_number}: invalid JSON: {exc.msg}") from exc
+                raise ValueError(
+                    f"{path}:{line_number}: invalid JSON: {exc.msg}"
+                ) from exc
 
             if not isinstance(payload, dict):
                 raise TypeError(f"{path}:{line_number}: row must be a JSON object")
@@ -236,7 +236,9 @@ def _normalize_negative_dataset_argv(argv: list[str] | None) -> list[str]:
     return raw_argv[:separator_index] + ["--"] + raw_argv[separator_index:]
 
 
-def _resolve_train_inputs_and_output(args: argparse.Namespace) -> tuple[list[str], Path]:
+def _resolve_train_inputs_and_output(
+    args: argparse.Namespace,
+) -> tuple[list[str], Path]:
     """Resolve train inputs/output while preserving legacy invocation.
 
     Supported forms:
@@ -313,8 +315,7 @@ def _load_path_examples(
             raise ValueError(f"{path}: no default label available for text file")
         return _load_text_file(path, label=label)
     raise ValueError(
-        f"{path}: unsupported dataset format '{suffix}'. "
-        "Expected .jsonl, .txt, or .md"
+        f"{path}: unsupported dataset format '{suffix}'. Expected .jsonl, .txt, or .md"
     )
 
 

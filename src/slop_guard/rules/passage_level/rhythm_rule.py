@@ -18,12 +18,10 @@ Example Non-Violations:
 Severity: Medium; a useful style signal that is stronger with other findings.
 """
 
-
 import math
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import (
     clamp_int,
@@ -175,7 +173,9 @@ class RhythmRule(Rule[RhythmRuleConfig]):
             math.ceil(
                 fit_threshold_high_contrastive(
                     default_value=float(
-                        clamp_int(percentile_floor(positive_sentence_counts, 0.25), 2, 200)
+                        clamp_int(
+                            percentile_floor(positive_sentence_counts, 0.25), 2, 200
+                        )
                     ),
                     positive_values=positive_sentence_counts,
                     negative_values=negative_sentence_counts,
@@ -201,8 +201,12 @@ class RhythmRule(Rule[RhythmRuleConfig]):
             blend_pivot=20.0,
             match_mode="lt",
         )
-        positive_matches = sum(1 for value in positive_cv_values if value < cv_threshold)
-        negative_matches = sum(1 for value in negative_cv_values if value < cv_threshold)
+        positive_matches = sum(
+            1 for value in positive_cv_values if value < cv_threshold
+        )
+        negative_matches = sum(
+            1 for value in negative_cv_values if value < cv_threshold
+        )
         penalty = fit_penalty_contrastive(
             base_penalty=self.config.penalty,
             positive_matches=positive_matches,

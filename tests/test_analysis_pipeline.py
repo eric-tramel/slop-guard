@@ -1,7 +1,6 @@
 """Integration tests for rule-pipeline based analysis output."""
 
-
-from slop_guard.analysis import AnalysisDocument, HYPERPARAMETERS, word_count
+from slop_guard.analysis import HYPERPARAMETERS, AnalysisDocument, word_count
 from slop_guard.server import _analyze
 
 
@@ -61,7 +60,7 @@ def test_analyze_ignores_slop_words_inside_fenced_code_blocks() -> None:
         "The snippet below is only an implementation example for the guide.\n\n"
         "```python\n"
         "# navigate the landscape with a robust journey\n"
-        "result = navigate(\"landscape\")\n"
+        'result = navigate("landscape")\n'
         "```\n\n"
         "The actual rollout detail is crucial for operators today."
     )
@@ -88,7 +87,7 @@ def test_analyze_ignores_slop_words_inside_fenced_code_blocks() -> None:
 def test_analyze_ignores_slop_words_inside_inline_code_backticks() -> None:
     """Slop-word matching should ignore inline Markdown code spans."""
     text = (
-        "Use `navigate(\"landscape\")` and `robust journey` only as code examples. "
+        'Use `navigate("landscape")` and `robust journey` only as code examples. '
         "The actual rollout detail is crucial for operators today."
     )
 
@@ -255,17 +254,11 @@ def test_analysis_document_sentence_analysis_strips_markdown_blocks() -> None:
     """Sentence analysis should ignore fenced code blocks and pipe tables."""
     text = (
         "Intro sentence.\n\n"
-        "```text\n"
-        + " ".join(["code"] * 100)
-        + "\n```\n\n"
+        "```text\n" + " ".join(["code"] * 100) + "\n```\n\n"
         "| name | details |\n"
         "| --- | --- |\n"
-        "| alpha | "
-        + " ".join(["cell"] * 40)
-        + " |\n"
-        "| beta | "
-        + " ".join(["cell"] * 40)
-        + " |\n\n"
+        "| alpha | " + " ".join(["cell"] * 40) + " |\n"
+        "| beta | " + " ".join(["cell"] * 40) + " |\n\n"
         "Closing sentence."
     )
     document = AnalysisDocument.from_text(text)

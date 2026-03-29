@@ -1,8 +1,10 @@
 """Tests for setup-resolution rule deduplication behavior."""
 
-
-from slop_guard.analysis import AnalysisDocument, HYPERPARAMETERS
-from slop_guard.rules.sentence_level import SetupResolutionRule, SetupResolutionRuleConfig
+from slop_guard.analysis import HYPERPARAMETERS, AnalysisDocument
+from slop_guard.rules.sentence_level import (
+    SetupResolutionRule,
+    SetupResolutionRuleConfig,
+)
 
 
 def _build_rule() -> SetupResolutionRule:

@@ -18,12 +18,10 @@ Example Non-Violations:
 Severity: Medium; each hit is a strong indicator of templated writing style.
 """
 
-
 import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import fit_penalty_contrastive
 
@@ -137,13 +135,10 @@ _SLOP_PHRASE_LENGTHS: tuple[int, ...] = tuple(
     len(phrase) for phrase in _SLOP_PHRASES_LITERAL
 )
 _SLOP_PHRASES_RE_LIST: tuple[re.Pattern[str], ...] = tuple(
-    re.compile(re.escape(phrase), re.IGNORECASE)
-    for phrase in _SLOP_PHRASES_LITERAL
+    re.compile(re.escape(phrase), re.IGNORECASE) for phrase in _SLOP_PHRASES_LITERAL
 )
 
-_NOT_JUST_BUT_RE = re.compile(
-    r"not (just|only) .{1,40}, but (also )?", re.IGNORECASE
-)
+_NOT_JUST_BUT_RE = re.compile(r"not (just|only) .{1,40}, but (also )?", re.IGNORECASE)
 _INTERACTIVE_SLOP_PHRASES: frozenset[str] = frozenset(
     {
         "as i mentioned",
@@ -333,7 +328,12 @@ class SlopPhraseRule(Rule[SlopPhraseRuleConfig]):
         for sample in positive_samples:
             lower_text = sample.lower()
             has_phrase = any(phrase in lower_text for phrase in _SLOP_PHRASES_LITERAL)
-            if not has_phrase and "not" in lower_text and "but" in lower_text and "," in sample:
+            if (
+                not has_phrase
+                and "not" in lower_text
+                and "but" in lower_text
+                and "," in sample
+            ):
                 has_phrase = _NOT_JUST_BUT_RE.search(sample) is not None
             if has_phrase:
                 positive_matches += 1
@@ -342,7 +342,12 @@ class SlopPhraseRule(Rule[SlopPhraseRuleConfig]):
         for sample in negative_samples:
             lower_text = sample.lower()
             has_phrase = any(phrase in lower_text for phrase in _SLOP_PHRASES_LITERAL)
-            if not has_phrase and "not" in lower_text and "but" in lower_text and "," in sample:
+            if (
+                not has_phrase
+                and "not" in lower_text
+                and "but" in lower_text
+                and "," in sample
+            ):
                 has_phrase = _NOT_JUST_BUT_RE.search(sample) is not None
             if has_phrase:
                 negative_matches += 1

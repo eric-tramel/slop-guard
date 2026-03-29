@@ -21,15 +21,12 @@ Example Non-Violations:
 Severity: Low; fires at most once per passage on the closing sentence only.
 """
 
-
 import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import fit_penalty_contrastive
-
 
 _CLOSING_APHORISM_PATTERNS: tuple[re.Pattern[str], ...] = (
     # "Sometimes the X isn't Y - it's Z"
@@ -42,9 +39,7 @@ _CLOSING_APHORISM_PATTERNS: tuple[re.Pattern[str], ...] = (
         r"^the (real|true|actual|biggest|greatest|most important)\b", re.IGNORECASE
     ),
     # "In the end" / "Ultimately"
-    re.compile(
-        r"^(in the end|ultimately|at the end of the day)\b", re.IGNORECASE
-    ),
+    re.compile(r"^(in the end|ultimately|at the end of the day)\b", re.IGNORECASE),
     # "we bring/carry" - collective moral
     re.compile(r"\bwe (bring|carry|create|make|build|choose)\b", re.IGNORECASE),
     # "That's the X" as a wrap-up

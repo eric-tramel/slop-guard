@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from slop_guard.analysis import word_count
 from slop_guard import cli
+from slop_guard.analysis import word_count
 from slop_guard.version import PACKAGE_VERSION
 
 
@@ -196,9 +196,9 @@ def test_json_mode_ignores_markdown_code_for_slop_word_counts(
     """JSON mode should exclude Markdown code from slop-word counts."""
     text = (
         "The snippet below is only an implementation example for the guide.\n\n"
-        "`navigate(\"landscape\")` and `robust journey` are code samples.\n\n"
+        '`navigate("landscape")` and `robust journey` are code samples.\n\n'
         "```python\n"
-        "result = navigate(\"landscape\")\n"
+        'result = navigate("landscape")\n'
         "return robust_framework.journey()\n"
         "```\n\n"
         "The actual rollout detail is crucial for operators today."

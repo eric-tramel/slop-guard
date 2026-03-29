@@ -1,22 +1,22 @@
 """MCP server for prose linting with modular rule execution."""
 
-
 import argparse
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.exceptions import ToolError
 
 from .analysis import (
+    HYPERPARAMETERS,
     AnalysisDocument,
     AnalysisPayload,
-    HYPERPARAMETERS,
     Hyperparameters,
     band_for_score,
     compute_weighted_sum,
     deduplicate_advice,
     initial_counts,
-    serialize_violations,
     score_from_density,
+    serialize_violations,
     short_text_result,
 )
 from .rules import Pipeline
@@ -77,6 +77,7 @@ def _analyze(
         "advice": deduplicate_advice(list(state.advice)),
     }
 
+
 @mcp_server.tool()
 def check_slop(text: str) -> AnalysisPayload:
     """Analyze text for AI slop patterns.
@@ -91,25 +92,23 @@ def check_slop(text: str) -> AnalysisPayload:
 def _read_analysis_file(file_path: str) -> str:
     """Read an analysis target file and raise MCP-safe path errors."""
     if not file_path:
-        raise ValueError("File path must not be empty.")
+        raise ToolError("File path must not be empty.")
 
     path = Path(file_path)
     try:
         if path.is_dir():
-            raise ValueError(f"Path is a directory, not a file: {file_path}")
+            raise ToolError(f"Path is a directory, not a file: {file_path}")
         if not path.is_file():
-            raise ValueError(f"File not found: {file_path}")
-    except ValueError:
-        raise
+            raise ToolError(f"File not found: {file_path}")
     except OSError as exc:
         detail = exc.strerror or str(exc)
-        raise ValueError(f"Invalid file path: {detail}") from exc
+        raise ToolError(f"Invalid file path: {detail}") from exc
 
     try:
         return path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
         detail = getattr(exc, "strerror", None) or str(exc)
-        raise ValueError(f"Could not read file: {detail}") from exc
+        raise ToolError(f"Could not read file: {detail}") from exc
 
 
 @mcp_server.tool()
@@ -138,7 +137,8 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Show package version and exit.",
     )
     parser.add_argument(
-        "-c", "--config",
+        "-c",
+        "--config",
         default=None,
         metavar="JSONL",
         help="Path to JSONL rule configuration. Defaults to packaged settings.",

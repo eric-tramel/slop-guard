@@ -1,9 +1,8 @@
 """Tests for the modular rule framework."""
 
-
 import pytest
 
-from slop_guard.analysis import AnalysisDocument, HYPERPARAMETERS
+from slop_guard.analysis import HYPERPARAMETERS, AnalysisDocument
 from slop_guard.rules import Pipeline, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.word_level import SlopWordRule, SlopWordRuleConfig
 
@@ -75,7 +74,7 @@ def test_slop_word_fit_ignores_markdown_code() -> None:
     )
     samples = [
         "The deploy finished after two routine checks.",
-        "```python\nnavigate(\"landscape\")\n```\nUse `robust journey` in docs only.",
+        '```python\nnavigate("landscape")\n```\nUse `robust journey` in docs only.',
     ]
 
     fitted_rule = rule.fit(samples, [1, 0])
@@ -85,7 +84,8 @@ def test_slop_word_fit_ignores_markdown_code() -> None:
 
 _DEFAULT_RULES = Pipeline.from_jsonl().rules
 _RULE_EXAMPLE_IDS = [
-    f"{index:02d}-{rule.__class__.__name__}" for index, rule in enumerate(_DEFAULT_RULES)
+    f"{index:02d}-{rule.__class__.__name__}"
+    for index, rule in enumerate(_DEFAULT_RULES)
 ]
 
 
@@ -107,9 +107,7 @@ def test_rule_examples_match_rule_forward_behavior(rule: Rule[RuleConfig]) -> No
         expected_rule_names = {rule.name, rule.count_key}
         assert any(
             violation.rule in expected_rule_names for violation in result.violations
-        ), (
-            f"{rule.__class__.__name__} expected violation for: {text!r}"
-        )
+        ), f"{rule.__class__.__name__} expected violation for: {text!r}"
 
     for text in non_violation_examples:
         result = rule.forward(AnalysisDocument.from_text(text))

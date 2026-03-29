@@ -92,7 +92,7 @@ sg path/**/*.md
 | `-j`, `--json` | Output results as JSON, including `source` as the raw inline/stdin text or full file path |
 | `-v`, `--verbose` | Show individual violations and advice |
 | `-q`, `--quiet` | Only print sources that fail the threshold |
-| `-t SCORE`, `--threshold SCORE` | Minimum passing score (0-100). Exit 1 if any file scores below this |
+| `-t SCORE`, `--threshold SCORE` | Minimum passing score (0-100). Exit 1 if any input scores below this |
 | `-c JSONL`, `--config JSONL` | Path to JSONL rule configuration. Defaults to packaged settings |
 | `-s`, `--score-only` | Print only numeric score output |
 | `--counts` | Show per-rule hit counts in the summary line |
@@ -218,6 +218,16 @@ uv run sg            # CLI linter
 uv run sg-fit data.jsonl rules.fitted.jsonl
 ```
 
+Core development workflows are also exposed through `make`:
+
+```bash
+make sync
+make check
+make fix
+make build
+make verify-wheel
+```
+
 ## MCP Tools
 
 `check_slop(text)`: Analyze a string. Returns JSON diagnostics only; it does not repeat the input text.
@@ -246,19 +256,23 @@ Otherwise scoring uses exponential decay: `score = 100 * exp(-lambda * density)`
 
 ## Output
 
-Both tools return JSON with this structure:
+CLI `--json` output and MCP tool responses share this structure:
 
 ```
+source         CLI JSON only; raw inline/stdin text or full file path
 score          0-100 integer
 band           "clean" / "light" / "moderate" / "heavy" / "saturated"
 word_count     integer
-violations     array of {type, rule, match, context, penalty}
+violations     array of {type, rule, match, context, penalty, start, end}
 counts         per-category violation counts
 total_penalty  sum of all penalty values
 weighted_sum   after concentration multiplier
 density        weighted_sum per 1000 words
 advice         array of advice strings, one per distinct issue
 ```
+
+MCP tool responses omit `source`, because the tool transport already carries the
+input parameter.
 
 `violations[].type` is always `"Violation"` for typed records.
 

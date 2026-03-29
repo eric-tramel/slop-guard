@@ -1,8 +1,10 @@
 """Tests for Markdown-aware extreme sentence detection."""
 
-
 from slop_guard.analysis import AnalysisDocument
-from slop_guard.rules.passage_level import ExtremeSentenceRule, ExtremeSentenceRuleConfig
+from slop_guard.rules.passage_level import (
+    ExtremeSentenceRule,
+    ExtremeSentenceRuleConfig,
+)
 
 
 def _build_rule(min_words: int = 20) -> ExtremeSentenceRule:
@@ -20,9 +22,7 @@ def test_extreme_sentence_ignores_fenced_code_blocks() -> None:
     rule = _build_rule()
     text = (
         "Intro sentence.\n\n"
-        "```text\n"
-        + " ".join(["code"] * 100)
-        + "\n```\n\n"
+        "```text\n" + " ".join(["code"] * 100) + "\n```\n\n"
         "Closing sentence."
     )
 

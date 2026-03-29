@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar, TypeAlias
 
@@ -37,7 +37,7 @@ class RecordingPipeline:
     loaded_paths: ClassVar[list[str | None]] = []
     fit_calls: ClassVar[list[FitCall]] = []
     output_paths: ClassVar[list[Path]] = []
-    last_instance: ClassVar["RecordingPipeline | None"] = None
+    last_instance: ClassVar[RecordingPipeline | None] = None
 
     @classmethod
     def reset(cls) -> None:
@@ -48,7 +48,7 @@ class RecordingPipeline:
         cls.last_instance = None
 
     @classmethod
-    def from_jsonl(cls, path: str | None = None) -> "RecordingPipeline":
+    def from_jsonl(cls, path: str | None = None) -> RecordingPipeline:
         """Record the requested config path and return a pipeline instance."""
         cls.loaded_paths.append(path)
         instance = cls()
@@ -61,7 +61,7 @@ class RecordingPipeline:
         labels: list[int] | None = None,
         *,
         calibrate_contrastive: bool = True,
-    ) -> "RecordingPipeline":
+    ) -> RecordingPipeline:
         """Record fit inputs and return self for fluent call sites."""
         self.__class__.fit_calls.append(
             FitCall(

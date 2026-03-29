@@ -18,15 +18,12 @@ Example Non-Violations:
 Severity: Medium; a single passage-level flag with concentrated penalty.
 """
 
-
 import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import fit_penalty_contrastive
-
 
 _COPULA_FIRST_WORDS_RE = re.compile(r"\b(is|are|was|were)\b", re.IGNORECASE)
 

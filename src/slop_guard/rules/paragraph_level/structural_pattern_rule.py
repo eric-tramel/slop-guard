@@ -18,13 +18,11 @@ Example Non-Violations:
 Severity: Medium to high when multiple structural signals co-occur.
 """
 
-
 import math
 import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import (
     fit_count_cap_contrastive,
@@ -263,7 +261,8 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
         bullet_run_min = math.ceil(
             fit_threshold_high_contrastive(
                 default_value=float(self.config.bullet_run_min),
-                positive_values=positive_bullet_run_lengths or [self.config.bullet_run_min],
+                positive_values=positive_bullet_run_lengths
+                or [self.config.bullet_run_min],
                 negative_values=negative_bullet_run_lengths,
                 lower=2.0,
                 upper=128.0,
@@ -274,11 +273,16 @@ class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):
             )
         )
 
-        positive_triadic_nonzero = [count for count in positive_triadic_counts if count > 0]
-        negative_triadic_nonzero = [count for count in negative_triadic_counts if count > 0]
+        positive_triadic_nonzero = [
+            count for count in positive_triadic_counts if count > 0
+        ]
+        negative_triadic_nonzero = [
+            count for count in negative_triadic_counts if count > 0
+        ]
         triadic_record_cap = fit_count_cap_contrastive(
             default_value=self.config.triadic_record_cap,
-            positive_values=positive_triadic_nonzero or [self.config.triadic_record_cap],
+            positive_values=positive_triadic_nonzero
+            or [self.config.triadic_record_cap],
             negative_values=negative_triadic_nonzero,
             lower=1,
             upper=128,

@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 from mcp.server.fastmcp.exceptions import ToolError
 
-from slop_guard.analysis import word_count
 from slop_guard import server
+from slop_guard.analysis import word_count
 
 
 def test_check_slop_tool_returns_structured_output(mcp_tool, run_mcp_tool) -> None:
@@ -51,9 +51,9 @@ def test_check_slop_tool_ignores_markdown_code_for_counts_and_word_count(
     """``check_slop`` should exclude Markdown code from counts and word totals."""
     text = (
         "The snippet below is only an implementation example for the guide.\n\n"
-        "`navigate(\"landscape\")` and `robust journey` are code samples.\n\n"
+        '`navigate("landscape")` and `robust journey` are code samples.\n\n'
         "```python\n"
-        "result = navigate(\"landscape\")\n"
+        'result = navigate("landscape")\n'
         "return robust_framework.journey()\n"
         "```\n\n"
         "The actual rollout detail is crucial for operators today."
@@ -111,7 +111,10 @@ def test_check_slop_file_tool_returns_structured_output(
     ("file_path", "message"),
     [
         ("", "File path must not be empty."),
-        ("/tmp/does-not-exist-slop-guard.txt", "File not found: /tmp/does-not-exist-slop-guard.txt"),
+        (
+            "/tmp/does-not-exist-slop-guard.txt",
+            "File not found: /tmp/does-not-exist-slop-guard.txt",
+        ),
     ],
 )
 def test_check_slop_file_tool_raises_mcp_errors_for_invalid_paths(
@@ -150,7 +153,7 @@ def test_read_analysis_file_normalizes_os_path_errors(
 
     monkeypatch.setattr(server.Path, "is_dir", raise_name_too_long)
 
-    with pytest.raises(ValueError, match="Invalid file path: File name too long"):
+    with pytest.raises(ToolError, match="Invalid file path: File name too long"):
         server._read_analysis_file("a" * 5000)
 
 

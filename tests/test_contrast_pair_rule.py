@@ -1,7 +1,6 @@
 """Regression tests for staged contrast-pair detection."""
 
-
-from slop_guard.analysis import AnalysisDocument, HYPERPARAMETERS
+from slop_guard.analysis import HYPERPARAMETERS, AnalysisDocument
 from slop_guard.rules.sentence_level import ContrastPairRule, ContrastPairRuleConfig
 
 

@@ -18,12 +18,10 @@ Example Non-Violations:
 Severity: Medium; repeated occurrences strongly suggest formulaic generation.
 """
 
-
 import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import (
     clamp_int,

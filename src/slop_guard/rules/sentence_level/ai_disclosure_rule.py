@@ -18,12 +18,10 @@ Example Non-Violations:
 Severity: High; disclosure phrases are strong and explicit AI-origin signals.
 """
 
-
 import re
 from dataclasses import dataclass
 
 from slop_guard.analysis import AnalysisDocument, RuleResult, Violation, context_around
-
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.helpers import fit_penalty_contrastive
 
@@ -38,8 +36,7 @@ _AI_DISCLOSURE_LITERAL_LENGTHS: tuple[int, ...] = tuple(
     len(phrase) for phrase in _AI_DISCLOSURE_LITERALS
 )
 _AI_DISCLOSURE_LITERAL_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
-    re.compile(re.escape(phrase), re.IGNORECASE)
-    for phrase in _AI_DISCLOSURE_LITERALS
+    re.compile(re.escape(phrase), re.IGNORECASE) for phrase in _AI_DISCLOSURE_LITERALS
 )
 _AI_DISCLOSURE_CUTOFF_RE = re.compile(
     r"\bas of my (last |knowledge )?cutoff\b", re.IGNORECASE
