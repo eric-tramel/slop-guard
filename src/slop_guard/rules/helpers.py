@@ -6,8 +6,9 @@ from typing import TypeAlias
 
 from slop_guard.analysis import Hyperparameters
 
+NGram: TypeAlias = tuple[str, ...]
 NGramHit: TypeAlias = dict[str, int | str]
-TokenSeq: TypeAlias = tuple[str, ...] | list[str]
+TokenSeq: TypeAlias = NGram | list[str]
 NumericSeq: TypeAlias = list[int] | list[float]
 
 _PUNCT_STRIP_RE = re.compile(r"^[^\w]+|[^\w]+$")
@@ -602,14 +603,14 @@ def find_repeated_ngrams_from_tokens(
     if len(tokens) < min_n:
         return []
 
-    ngram_counts: dict[tuple[str, ...], int] = {}
+    ngram_counts: dict[NGram, int] = {}
     for n in range(min_n, max_n + 1):
         end = len(tokens) - n + 1
         for index in range(end):
-            gram = tuple(tokens[index : index + n])
+            gram: NGram = tuple(tokens[index : index + n])
             ngram_counts[gram] = ngram_counts.get(gram, 0) + 1
 
-    repeated = {
+    repeated: dict[NGram, int] = {
         gram: count
         for gram, count in ngram_counts.items()
         if count >= hp.repeated_ngram_min_count
@@ -618,8 +619,10 @@ def find_repeated_ngrams_from_tokens(
     if not repeated:
         return []
 
-    to_remove: set[tuple[str, ...]] = set()
-    sorted_grams = sorted(repeated.keys(), key=len, reverse=True)
+    to_remove: set[NGram] = set()
+    sorted_grams: list[NGram] = sorted(
+        repeated, key=lambda gram: len(gram), reverse=True
+    )
     for index, longer in enumerate(sorted_grams):
         longer_str = " ".join(longer)
         for shorter in sorted_grams[index + 1 :]:

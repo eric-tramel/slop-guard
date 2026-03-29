@@ -134,10 +134,18 @@ def _analyze_text(
 ) -> SourceAnalysisPayload:
     """Run analysis and attach the source label."""
     result = _analyze(text, hyperparameters, pipeline=pipeline)
-    return {
-        **result,
-        "source": source,
-    }
+    return SourceAnalysisPayload(
+        score=result["score"],
+        band=result["band"],
+        word_count=result["word_count"],
+        violations=result["violations"],
+        counts=result["counts"],
+        total_penalty=result["total_penalty"],
+        weighted_sum=result["weighted_sum"],
+        density=result["density"],
+        advice=result["advice"],
+        source=source,
+    )
 
 
 def _analyze_file(
