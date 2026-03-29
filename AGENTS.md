@@ -13,6 +13,10 @@ uv run ...
 uv run --with dependency ...
 ```
 
+### Make
+
+Run `make` to see all available targets. Before pushing a PR, run `make check` to verify formatting, lint, type, and coverage all pass.
+
 ### Git Workflow
 
 * When asked for a new feature, bug fix, or other code-specific work, check out a new branch on a new git worktree.
