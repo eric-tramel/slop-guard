@@ -13,6 +13,7 @@ from slop_guard.analysis import (
     compute_weighted_sum,
 )
 from slop_guard.rules import Pipeline, Rule, RuleConfig, run_rule_pipeline
+from slop_guard.rules.base import Label
 
 
 def test_pipeline_jsonl_round_trip_preserves_rules_and_configs(
@@ -54,7 +55,7 @@ class _RecordingRule(Rule[_RecordingConfig]):
 
     name = "recording"
     count_key = "recording"
-    fit_calls: list[tuple[list[str], list[int]]] = []
+    fit_calls: list[tuple[list[str], list[Label]]] = []
 
     def forward(self, document: AnalysisDocument) -> RuleResult:
         """Return an empty result for fit-focused testing."""
@@ -69,8 +70,9 @@ class _RecordingRule(Rule[_RecordingConfig]):
         """Return one non-example to satisfy the abstract interface."""
         return ["non-violation example"]
 
-    def _fit(self, samples: list[str], labels: list[int]) -> _RecordingConfig:
+    def _fit(self, samples: list[str], labels: list[Label] | None) -> _RecordingConfig:
         """Record fit inputs and increment fit count."""
+        assert labels is not None
         self.fit_calls.append((list(samples), list(labels)))
         return _RecordingConfig(fit_count=self.config.fit_count + 1)
 

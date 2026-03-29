@@ -1,5 +1,7 @@
 """Tests for the modular rule framework."""
 
+from typing import Any, cast
+
 import pytest
 
 from slop_guard.analysis import HYPERPARAMETERS, AnalysisDocument
@@ -31,11 +33,13 @@ def test_rule_fit_validates_inputs_and_returns_self() -> None:
     with pytest.raises(ValueError):
         rule.fit(["sample"], [1, 0])
 
+    invalid_samples = cast(Any, ["sample", 1])
     with pytest.raises(TypeError):
-        rule.fit(["sample", 1], [1, 0])  # type: ignore[list-item]
+        rule.fit(invalid_samples, [1, 0])
 
+    invalid_labels = cast(Any, ["positive"])
     with pytest.raises(TypeError):
-        rule.fit(["sample"], ["positive"])  # type: ignore[list-item]
+        rule.fit(["sample"], invalid_labels)
 
     fitted_no_labels = rule.fit(["sample"])
     assert fitted_no_labels is rule

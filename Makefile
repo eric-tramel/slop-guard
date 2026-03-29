@@ -13,7 +13,7 @@ help:
 	@printf "  make format        Format tracked Python sources\n"
 	@printf "  make format-check  Check formatting without modifying files\n"
 	@printf "  make lint          Run Ruff lint checks\n"
-	@printf "  make typecheck     Run mypy over src/ and tests/\n"
+	@printf "  make typecheck     Run ty over src/ and tests/\n"
 	@printf "  make test          Run the pytest suite\n"
 	@printf "  make coverage      Run pytest with coverage enforcement\n"
 	@printf "  make check         Run formatting, lint, type, and coverage checks\n"
@@ -38,7 +38,7 @@ lint:
 	$(UV_RUN) ruff check src tests
 
 typecheck:
-	$(UV_RUN) mypy src
+	$(UV_RUN) ty check --error-on-warning
 
 test:
 	$(UV_RUN) pytest
@@ -55,4 +55,4 @@ verify-wheel: build
 	$(UV_RUN) python -c 'from pathlib import Path; import zipfile; wheels = sorted(Path("dist").glob("*.whl")); assert wheels, "No wheel found in dist/"; wheel = wheels[-1]; names = set(zipfile.ZipFile(wheel).namelist()); target = "slop_guard/py.typed"; assert target in names, f"{target} missing from {wheel.name}"; print(f"verified {target} in {wheel.name}")'
 
 clean:
-	rm -rf .coverage .mypy_cache .pytest_cache .ruff_cache build dist htmlcov
+	rm -rf .coverage .pytest_cache .ruff_cache build dist htmlcov
