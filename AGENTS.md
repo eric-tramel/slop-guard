@@ -53,6 +53,14 @@ Use `gh` for interactions with GitHub.
 * Optimized for time-efficient computation, even at the cost of legibility.
 * Favor composition over monoliths.
 
+## Code Invariants
+
+* **No dead code.** When a refactor makes something unused, delete it in the same commit. After any API move, grep for all callers — including `benchmark/`, tests, and imports — and update them.
+* **MCP return types.** Tools must return typed structured payloads (`dict[str, Any]`), not `str`. Error paths must raise `ToolError`, not return plain strings.
+* **`sg-fit` requires contrastive data.** Positive-only fitting drives all positive scores to zero. Always require both positives and negatives.
+* **Do not commit `uv.lock` changes** unless you explicitly added or removed a dependency — `uv run` dirties it as a side effect.
+* **Each agent works in its own isolated worktree.** If a worktree is shared, never revert or overwrite another agent's uncommitted changes.
+
 ## Writing and Documentation
 
 * Always run slop-guard MCP tools (or use `sg` CLI) to ensure your documentation is high-quality.
