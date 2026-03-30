@@ -26,8 +26,7 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from slop_guard.analysis import HYPERPARAMETERS  # noqa: E402
-from slop_guard.rules.registry import build_default_rules  # noqa: E402
+from slop_guard.rules import build_default_rules  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -254,7 +253,7 @@ def main() -> None:
     if not corpus:
         raise RuntimeError("No string samples available for fit().")
 
-    rules = build_default_rules(HYPERPARAMETERS)
+    rules = build_default_rules()
     print(f"Fitting {len(rules)} rules...", flush=True)
 
     changed_rule_count = 0

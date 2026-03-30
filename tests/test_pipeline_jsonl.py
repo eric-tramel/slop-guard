@@ -5,15 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from slop_guard.analysis import (
-    HYPERPARAMETERS,
-    AnalysisDocument,
-    RuleResult,
-    Violation,
-    compute_weighted_sum,
-)
+from slop_guard.config import DEFAULT_HYPERPARAMETERS
+from slop_guard.document import AnalysisDocument
+from slop_guard.models import RuleResult, Violation
 from slop_guard.rules import Pipeline, Rule, RuleConfig, run_rule_pipeline
 from slop_guard.rules.base import Label
+from slop_guard.rules.catalog import DEFAULT_RULE_PATHS
+from slop_guard.rules.registry import rule_type_name
+from slop_guard.scoring import compute_weighted_sum
 
 
 def test_pipeline_jsonl_round_trip_preserves_rules_and_configs(
@@ -31,6 +30,15 @@ def test_pipeline_jsonl_round_trip_preserves_rules_and_configs(
     assert [rule.to_dict() for rule in rebuilt.rules] == [
         rule.to_dict() for rule in pipeline.rules
     ]
+
+
+def test_pipeline_from_jsonl_matches_builtin_catalog_order() -> None:
+    """Packaged pipeline order should match the canonical builtin catalog."""
+    pipeline = Pipeline.from_jsonl()
+
+    assert [rule_type_name(type(rule)) for rule in pipeline.rules] == list(
+        DEFAULT_RULE_PATHS
+    )
 
 
 def test_pipeline_forward_matches_legacy_helper() -> None:
@@ -168,10 +176,14 @@ def test_pipeline_fit_calibrates_penalties_for_contrastive_labels() -> None:
     positive_state = pipeline.forward(positive_doc)
     negative_state = pipeline.forward(negative_doc)
     positive_weighted = compute_weighted_sum(
-        list(positive_state.violations), positive_state.counts, HYPERPARAMETERS
+        list(positive_state.violations),
+        positive_state.counts,
+        DEFAULT_HYPERPARAMETERS,
     )
     negative_weighted = compute_weighted_sum(
-        list(negative_state.violations), negative_state.counts, HYPERPARAMETERS
+        list(negative_state.violations),
+        negative_state.counts,
+        DEFAULT_HYPERPARAMETERS,
     )
     assert positive_weighted < negative_weighted
 

@@ -1,7 +1,8 @@
 """Integration tests for rule-pipeline based analysis output."""
 
-from slop_guard.analysis import HYPERPARAMETERS, AnalysisDocument, word_count
-from slop_guard.server import _analyze
+from slop_guard.config import DEFAULT_HYPERPARAMETERS
+from slop_guard.document import AnalysisDocument, word_count
+from slop_guard.engine import analyze_text
 
 
 def test_analyze_runs_instantiated_rule_pipeline() -> None:
@@ -11,7 +12,7 @@ def test_analyze_runs_instantiated_rule_pipeline() -> None:
         "innovative and comprehensive overall."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
     assert set(result) == {
         "score",
@@ -35,7 +36,7 @@ def test_analyze_repeated_literal_violations_get_distinct_offsets() -> None:
         "crucial lambda."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
     crucial_violations = [
         violation
         for violation in result["violations"]
@@ -65,7 +66,7 @@ def test_analyze_ignores_slop_words_inside_fenced_code_blocks() -> None:
         "The actual rollout detail is crucial for operators today."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
     matches = [
         violation["match"]
         for violation in result["violations"]
@@ -91,7 +92,7 @@ def test_analyze_ignores_slop_words_inside_inline_code_backticks() -> None:
         "The actual rollout detail is crucial for operators today."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
     matches = [
         violation["match"]
         for violation in result["violations"]
@@ -120,7 +121,7 @@ def test_analyze_slop_word_offsets_skip_matching_markdown_code_occurrences() -> 
         "A crucial fix shipped yesterday after two routine checks."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
     crucial_violation = next(
         violation
         for violation in result["violations"]
@@ -147,7 +148,7 @@ def test_analyze_word_count_ignores_markdown_code() -> None:
         "The function above works correctly in production today."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
     assert result["word_count"] == 17
     assert result["counts"]["slop_words"] == 0
@@ -162,7 +163,7 @@ def test_analyze_aggregate_violations_fall_back_to_document_offsets() -> None:
         "Summary line with enough filler words to avoid a short-text bypass.\n"
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
     bullet_density_violation = next(
         violation
         for violation in result["violations"]
@@ -177,15 +178,15 @@ def test_analyze_aggregate_violations_fall_back_to_document_offsets() -> None:
 
 def test_analyze_short_text_uses_clean_short_circuit() -> None:
     """Short text should preserve score and payload defaults."""
-    result = _analyze("too short", HYPERPARAMETERS)
-    assert result["score"] == HYPERPARAMETERS.score_max
+    result = analyze_text("too short", hyperparameters=DEFAULT_HYPERPARAMETERS)
+    assert result["score"] == DEFAULT_HYPERPARAMETERS.score_max
     assert result["violations"] == []
     assert result["advice"] == []
 
 
 def test_analyze_short_text_exposes_full_count_schema() -> None:
     """Short text should still expose the full active count schema."""
-    result = _analyze("Hi there.", HYPERPARAMETERS)
+    result = analyze_text("Hi there.", hyperparameters=DEFAULT_HYPERPARAMETERS)
 
     assert {
         "closing_aphorism",
@@ -207,7 +208,7 @@ def test_structural_subcategory_violations_use_specific_count_keys() -> None:
         "- **Security** improved\n"
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
     assert result["counts"]["bullet_density"] == 1
     assert result["counts"]["bold_bullet_list"] == 1

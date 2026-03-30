@@ -10,7 +10,7 @@ from typing import Any, ClassVar, TypeAlias
 
 import pytest
 
-from slop_guard import server
+from slop_guard.apps import mcp as server
 
 ToolGetter: TypeAlias = Callable[[str], Any]
 ToolRunner: TypeAlias = Callable[

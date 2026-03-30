@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 from mcp.server.fastmcp.exceptions import ToolError
 
-from slop_guard import server
-from slop_guard.analysis import word_count
+from slop_guard.apps import mcp as server
+from slop_guard.document import word_count
 
 
 def test_check_slop_tool_returns_structured_output(mcp_tool, run_mcp_tool) -> None:

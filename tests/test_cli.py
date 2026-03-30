@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from slop_guard import cli
-from slop_guard.analysis import word_count
+from slop_guard.apps import cli
+from slop_guard.document import word_count
 from slop_guard.version import PACKAGE_VERSION
 
 

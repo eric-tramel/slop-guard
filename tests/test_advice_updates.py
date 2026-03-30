@@ -2,8 +2,8 @@
 
 import pytest
 
-from slop_guard.analysis import HYPERPARAMETERS
-from slop_guard.server import _analyze
+from slop_guard.config import DEFAULT_HYPERPARAMETERS
+from slop_guard.engine import analyze_text
 
 
 def test_slop_word_advice_uses_category_specific_templates() -> None:
@@ -13,7 +13,7 @@ def test_slop_word_advice_uses_category_specific_templates() -> None:
         "The journey took months."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
     assert (
         "Cut 'remarkably' — start the sentence directly or show the connection "
@@ -35,7 +35,7 @@ def test_repeated_slop_words_report_occurrence_counts_in_advice() -> None:
         "Their innovative plan used innovative demos for innovative launches."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
     assert result["advice"] == [
         "Cut 'innovative' (6 occurrences) unless you can name the concrete "
@@ -50,9 +50,9 @@ def test_proper_name_surname_does_not_trigger_slop_word_violation() -> None:
         "architects in the world."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
-    assert result["score"] == HYPERPARAMETERS.score_max
+    assert result["score"] == DEFAULT_HYPERPARAMETERS.score_max
     assert result["violations"] == []
     assert result["advice"] == []
 
@@ -61,9 +61,9 @@ def test_title_cased_brand_name_does_not_trigger_slop_word_violation() -> None:
     """A title-cased name phrase should not trip on its first token either."""
     text = "Landscape Forms supplied the benches for the renovated plaza this year."
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
-    assert result["score"] == HYPERPARAMETERS.score_max
+    assert result["score"] == DEFAULT_HYPERPARAMETERS.score_max
     assert result["violations"] == []
     assert result["advice"] == []
 
@@ -72,7 +72,7 @@ def test_capitalized_sentence_initial_foster_still_triggers_slop_word_advice() -
     """Sentence-initial ``Foster`` should still match the verb form."""
     text = "Foster stronger review habits by naming the concrete change each week."
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
     assert any(
         violation["rule"] == "slop_word" and violation["match"] == "foster"
@@ -106,9 +106,9 @@ def test_standard_transition_words_do_not_trigger_slop_word_violations(
         f"{transition_word.capitalize()}, three reports still need one indexed join."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
-    assert result["score"] == HYPERPARAMETERS.score_max
+    assert result["score"] == DEFAULT_HYPERPARAMETERS.score_max
     assert result["violations"] == []
     assert result["advice"] == []
 
@@ -123,7 +123,7 @@ def test_rhythm_advice_reports_threshold_and_sentence_range() -> None:
         "Seventeen eighteen nineteen twenty."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
     assert result["advice"] == [
         "Sentence lengths are too uniform (CV=0.00 < 0.30; shortest 4 words, "
@@ -141,7 +141,7 @@ def test_single_triadic_structural_violation_has_actionable_advice() -> None:
         "The default format is JSON because it has the broadest tool support."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
     assert any(
         violation["rule"] == "structural" and violation["match"] == "triadic"
@@ -161,7 +161,7 @@ def test_repeated_triadic_structures_keep_aggregate_cadence_advice() -> None:
         "The handoff remained clear, direct, and documented for operators."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
     assert (
         "3 triadic structures ('X, Y, and Z') — vary your list cadence."
@@ -177,7 +177,7 @@ def test_overlapping_phrase_rules_share_one_canonical_edit_message() -> None:
         "Let me know if you want the rollback details after tomorrow morning."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
     assert (
         result["advice"].count(
@@ -202,7 +202,7 @@ def test_contrast_and_pithy_fragment_advice_use_the_same_rewrite_direction() -> 
         "The deploy finished yesterday after two routine checks."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
 
     assert (
         "Rewrite 'focus, not frenzy' as a plain sentence with the actual claim "
@@ -230,7 +230,7 @@ def test_contrast_pair_rule_detects_staged_not_only_but_patterns() -> None:
         "The design is not merely functional but beautiful."
     )
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
     contrast_violations = [
         violation
         for violation in result["violations"]
