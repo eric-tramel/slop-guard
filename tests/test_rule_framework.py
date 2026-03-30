@@ -4,9 +4,10 @@ from typing import Any, cast
 
 import pytest
 
-from slop_guard.analysis import HYPERPARAMETERS, AnalysisDocument
+from slop_guard.config import DEFAULT_HYPERPARAMETERS
+from slop_guard.document import AnalysisDocument
 from slop_guard.rules import Pipeline, Rule, RuleConfig, RuleLevel
-from slop_guard.rules.word_level import SlopWordRule, SlopWordRuleConfig
+from slop_guard.rules.word import SlopWordRule, SlopWordRuleConfig
 
 
 def test_default_pipeline_covers_all_levels() -> None:
@@ -25,8 +26,8 @@ def test_rule_fit_validates_inputs_and_returns_self() -> None:
     """Base fit path should validate shape/types and behave scikit-style."""
     rule = SlopWordRule(
         SlopWordRuleConfig(
-            penalty=HYPERPARAMETERS.slop_word_penalty,
-            context_window_chars=HYPERPARAMETERS.context_window_chars,
+            penalty=DEFAULT_HYPERPARAMETERS.slop_word_penalty,
+            context_window_chars=DEFAULT_HYPERPARAMETERS.context_window_chars,
         )
     )
 
@@ -52,15 +53,15 @@ def test_rule_to_dict_from_dict_round_trip() -> None:
     """Rules should round-trip config through base serialization helpers."""
     rule = SlopWordRule(
         SlopWordRuleConfig(
-            penalty=HYPERPARAMETERS.slop_word_penalty,
-            context_window_chars=HYPERPARAMETERS.context_window_chars,
+            penalty=DEFAULT_HYPERPARAMETERS.slop_word_penalty,
+            context_window_chars=DEFAULT_HYPERPARAMETERS.context_window_chars,
         )
     )
 
     raw = rule.to_dict()
     assert raw == {
-        "penalty": HYPERPARAMETERS.slop_word_penalty,
-        "context_window_chars": HYPERPARAMETERS.context_window_chars,
+        "penalty": DEFAULT_HYPERPARAMETERS.slop_word_penalty,
+        "context_window_chars": DEFAULT_HYPERPARAMETERS.context_window_chars,
     }
 
     rebuilt = SlopWordRule.from_dict(raw)
@@ -72,8 +73,8 @@ def test_slop_word_fit_ignores_markdown_code() -> None:
     """Slop-word fitting should ignore Markdown fenced and inline code."""
     rule = SlopWordRule(
         SlopWordRuleConfig(
-            penalty=HYPERPARAMETERS.slop_word_penalty,
-            context_window_chars=HYPERPARAMETERS.context_window_chars,
+            penalty=DEFAULT_HYPERPARAMETERS.slop_word_penalty,
+            context_window_chars=DEFAULT_HYPERPARAMETERS.context_window_chars,
         )
     )
     samples = [

@@ -1,0 +1,223 @@
+"""N-gram helpers shared by slop-guard rules."""
+
+import re
+from typing import TypeAlias
+
+from slop_guard.config import Hyperparameters
+
+NGram: TypeAlias = tuple[str, ...]
+NGramHit: TypeAlias = dict[str, int | str]
+TokenSeq: TypeAlias = NGram | list[str]
+
+_PUNCT_STRIP_RE = re.compile(r"^[^\w]+|[^\w]+$")
+_STOPWORDS = frozenset(
+    {
+        "the",
+        "a",
+        "an",
+        "and",
+        "or",
+        "but",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "of",
+        "is",
+        "it",
+        "that",
+        "this",
+        "with",
+        "as",
+        "by",
+        "from",
+        "was",
+        "were",
+        "are",
+        "be",
+        "been",
+        "has",
+        "have",
+        "had",
+        "not",
+        "no",
+        "do",
+        "does",
+        "did",
+        "will",
+        "would",
+        "could",
+        "should",
+        "can",
+        "may",
+        "might",
+        "if",
+        "then",
+        "than",
+        "so",
+        "up",
+        "out",
+        "about",
+        "into",
+        "over",
+        "after",
+        "before",
+        "between",
+        "through",
+        "just",
+        "also",
+        "very",
+        "more",
+        "most",
+        "some",
+        "any",
+        "each",
+        "every",
+        "all",
+        "both",
+        "few",
+        "other",
+        "such",
+        "only",
+        "own",
+        "same",
+        "too",
+        "how",
+        "what",
+        "which",
+        "who",
+        "when",
+        "where",
+        "why",
+    }
+)
+
+
+def normalize_ngram_tokens(text: str) -> list[str]:
+    """Normalize text into lowercase tokens with edge punctuation stripped."""
+    raw_tokens = text.split()
+    return [
+        token
+        for token in (_PUNCT_STRIP_RE.sub("", raw).lower() for raw in raw_tokens)
+        if token
+    ]
+
+
+def has_repeated_ngram_prefix(
+    *,
+    token_ids: tuple[int, ...],
+    base: int,
+    n: int,
+    min_count: int,
+) -> bool:
+    """Return true when any n-gram id sequence appears at least ``min_count`` times."""
+    if n < 1:
+        raise ValueError("n must be >= 1")
+    if min_count < 2:
+        return len(token_ids) >= n
+    if len(token_ids) < n:
+        return False
+
+    end = len(token_ids) - n + 1
+    counts: dict[int, int] = {}
+    counts_get = counts.get
+    if n == 1:
+        for start in range(end):
+            key = token_ids[start]
+            next_count = counts_get(key, 0) + 1
+            if next_count >= min_count:
+                return True
+            counts[key] = next_count
+        return False
+    if n == 2:
+        for start in range(end):
+            key = (token_ids[start] * base) + token_ids[start + 1]
+            next_count = counts_get(key, 0) + 1
+            if next_count >= min_count:
+                return True
+            counts[key] = next_count
+        return False
+    if n == 3:
+        base_squared = base * base
+        for start in range(end):
+            key = (
+                (token_ids[start] * base_squared)
+                + (token_ids[start + 1] * base)
+                + token_ids[start + 2]
+            )
+            next_count = counts_get(key, 0) + 1
+            if next_count >= min_count:
+                return True
+            counts[key] = next_count
+        return False
+    for start in range(end):
+        key = 0
+        for offset in range(n):
+            key = (key * base) + token_ids[start + offset]
+        next_count = counts_get(key, 0) + 1
+        if next_count >= min_count:
+            return True
+        counts[key] = next_count
+    return False
+
+
+def find_repeated_ngrams_from_tokens(
+    tokens: TokenSeq,
+    hyperparameters: Hyperparameters,
+) -> list[NGramHit]:
+    """Find repeated multi-word phrases and keep only maximal spans."""
+    min_n = hyperparameters.repeated_ngram_min_n
+    max_n = hyperparameters.repeated_ngram_max_n
+    if len(tokens) < min_n:
+        return []
+
+    ngram_counts: dict[NGram, int] = {}
+    for n in range(min_n, max_n + 1):
+        end = len(tokens) - n + 1
+        for index in range(end):
+            gram: NGram = tuple(tokens[index : index + n])
+            ngram_counts[gram] = ngram_counts.get(gram, 0) + 1
+
+    repeated: dict[NGram, int] = {
+        gram: count
+        for gram, count in ngram_counts.items()
+        if count >= hyperparameters.repeated_ngram_min_count
+        and not all(word in _STOPWORDS for word in gram)
+    }
+    if not repeated:
+        return []
+
+    to_remove: set[NGram] = set()
+    sorted_grams: list[NGram] = sorted(
+        repeated, key=lambda gram: len(gram), reverse=True
+    )
+    for index, longer in enumerate(sorted_grams):
+        longer_str = " ".join(longer)
+        for shorter in sorted_grams[index + 1 :]:
+            if shorter in to_remove:
+                continue
+            shorter_str = " ".join(shorter)
+            if shorter_str in longer_str and repeated[longer] >= repeated[shorter]:
+                to_remove.add(shorter)
+
+    results: list[NGramHit] = []
+    for gram in sorted(repeated.keys(), key=lambda item: (-len(item), -repeated[item])):
+        if gram in to_remove:
+            continue
+        results.append(
+            {
+                "phrase": " ".join(gram),
+                "count": repeated[gram],
+                "n": len(gram),
+            }
+        )
+    return results
+
+
+def find_repeated_ngrams(text: str, hyperparameters: Hyperparameters) -> list[NGramHit]:
+    """Find repeated multi-word phrases and keep only maximal spans."""
+    return find_repeated_ngrams_from_tokens(
+        normalize_ngram_tokens(text),
+        hyperparameters,
+    )

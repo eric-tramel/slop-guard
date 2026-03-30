@@ -22,10 +22,10 @@ from pathlib import Path
 from typing import Any
 
 import datasets as hf_datasets
-from datasets import load_dataset
-from huggingface_hub import hf_hub_download
 import matplotlib
 import seaborn as sns
+from datasets import load_dataset
+from huggingface_hub import hf_hub_download
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -36,7 +36,7 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from slop_guard import HYPERPARAMETERS, _analyze  # noqa: E402
+from slop_guard import DEFAULT_HYPERPARAMETERS, analyze_text  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -405,7 +405,7 @@ def score_text_value(text: Any) -> dict[str, Any]:
     if not isinstance(text, str):
         return {"score": None, "length": None, "band": None}
 
-    result = _analyze(text, HYPERPARAMETERS)
+    result = analyze_text(text, hyperparameters=DEFAULT_HYPERPARAMETERS)
     return {
         "score": int(result["score"]),
         "length": int(result["word_count"]),

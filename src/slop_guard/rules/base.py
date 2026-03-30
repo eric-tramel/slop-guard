@@ -6,7 +6,8 @@ from dataclasses import asdict, dataclass
 from enum import StrEnum
 from typing import Any, Generic, TypeAlias, TypeVar, get_args, get_origin
 
-from slop_guard.analysis import AnalysisDocument, RuleResult
+from slop_guard.document import AnalysisDocument
+from slop_guard.models import RuleResult
 
 Label: TypeAlias = int
 

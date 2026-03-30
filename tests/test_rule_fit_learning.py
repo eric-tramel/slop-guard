@@ -5,22 +5,22 @@ from typing import TypeAlias
 
 import pytest
 
-from slop_guard.analysis import AnalysisDocument
+from slop_guard.document import AnalysisDocument
 from slop_guard.rules import Rule, build_default_rules
-from slop_guard.rules.paragraph_level import (
+from slop_guard.rules.paragraph import (
     BlockquoteDensityRule,
     BoldTermBulletRunRule,
     BulletDensityRule,
     HorizontalRuleOveruseRule,
     StructuralPatternRule,
 )
-from slop_guard.rules.passage_level import (
+from slop_guard.rules.passage import (
     ColonDensityRule,
     EmDashDensityRule,
     PhraseReuseRule,
     RhythmRule,
 )
-from slop_guard.rules.sentence_level import (
+from slop_guard.rules.sentence import (
     AIDisclosureRule,
     ContrastPairRule,
     PithyFragmentRule,
@@ -30,7 +30,7 @@ from slop_guard.rules.sentence_level import (
     ToneMarkerRule,
     WeaselPhraseRule,
 )
-from slop_guard.rules.word_level import SlopWordRule
+from slop_guard.rules.word import SlopWordRule
 
 RuleType: TypeAlias = type[Rule]
 FitCase: TypeAlias = tuple[RuleType, str, list[str]]

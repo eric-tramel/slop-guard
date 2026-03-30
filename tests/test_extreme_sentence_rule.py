@@ -1,7 +1,7 @@
 """Tests for Markdown-aware extreme sentence detection."""
 
-from slop_guard.analysis import AnalysisDocument
-from slop_guard.rules.passage_level import (
+from slop_guard.document import AnalysisDocument
+from slop_guard.rules.passage import (
     ExtremeSentenceRule,
     ExtremeSentenceRuleConfig,
 )

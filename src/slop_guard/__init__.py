@@ -1,13 +1,15 @@
 """Public package interface for slop-guard."""
 
-from .cli import cli_main
-from .server import HYPERPARAMETERS, _analyze, check_slop, check_slop_file, main
+from .config import DEFAULT_HYPERPARAMETERS, Hyperparameters
+from .engine import analyze_document, analyze_text
+from .models import AnalysisPayload
+from .version import PACKAGE_VERSION as __version__
 
 __all__ = [
-    "HYPERPARAMETERS",
-    "_analyze",
-    "check_slop",
-    "check_slop_file",
-    "cli_main",
-    "main",
+    "AnalysisPayload",
+    "DEFAULT_HYPERPARAMETERS",
+    "Hyperparameters",
+    "__version__",
+    "analyze_document",
+    "analyze_text",
 ]

@@ -8,12 +8,10 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any, TypeAlias
 
-from slop_guard.analysis import (
-    HYPERPARAMETERS,
-    AnalysisDocument,
-    AnalysisState,
-    compute_weighted_sum,
-)
+from slop_guard.config import DEFAULT_HYPERPARAMETERS
+from slop_guard.document import AnalysisDocument
+from slop_guard.models import AnalysisState
+from slop_guard.scoring import compute_weighted_sum
 
 from .base import Label, Rule, RuleConfig
 from .registry import resolve_rule_type, rule_type_name
@@ -123,7 +121,7 @@ class Pipeline:
                 contribution = compute_weighted_sum(
                     list(result.violations),
                     result.count_deltas,
-                    HYPERPARAMETERS,
+                    DEFAULT_HYPERPARAMETERS,
                 )
                 contributions.append(contribution)
 

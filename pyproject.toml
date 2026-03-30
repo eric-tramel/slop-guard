@@ -35,9 +35,9 @@ Repository = "https://github.com/eric-tramel/slop-guard"
 Issues = "https://github.com/eric-tramel/slop-guard/issues"
 
 [project.scripts]
-slop-guard = "slop_guard:main"
-sg = "slop_guard.cli:main"
-sg-fit = "slop_guard.fit_cli:main"
+slop-guard = "slop_guard.apps.mcp:main"
+sg = "slop_guard.apps.cli:main"
+sg-fit = "slop_guard.apps.fit:main"
 
 [dependency-groups]
 dev = [

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from slop_guard import server
+from slop_guard.apps import mcp as server
 from slop_guard.version import PACKAGE_VERSION
 
 

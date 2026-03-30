@@ -1,17 +1,18 @@
 """Regression tests for staged contrast-pair detection."""
 
-from slop_guard.analysis import HYPERPARAMETERS, AnalysisDocument
-from slop_guard.rules.sentence_level import ContrastPairRule, ContrastPairRuleConfig
+from slop_guard.config import DEFAULT_HYPERPARAMETERS
+from slop_guard.document import AnalysisDocument
+from slop_guard.rules.sentence import ContrastPairRule, ContrastPairRuleConfig
 
 
 def _build_rule() -> ContrastPairRule:
     """Construct the default contrast-pair rule used in the pipeline."""
     return ContrastPairRule(
         ContrastPairRuleConfig(
-            penalty=HYPERPARAMETERS.contrast_penalty,
-            record_cap=HYPERPARAMETERS.contrast_record_cap,
-            advice_min=HYPERPARAMETERS.contrast_advice_min,
-            context_window_chars=HYPERPARAMETERS.context_window_chars,
+            penalty=DEFAULT_HYPERPARAMETERS.contrast_penalty,
+            record_cap=DEFAULT_HYPERPARAMETERS.contrast_record_cap,
+            advice_min=DEFAULT_HYPERPARAMETERS.contrast_advice_min,
+            context_window_chars=DEFAULT_HYPERPARAMETERS.context_window_chars,
         )
     )
 

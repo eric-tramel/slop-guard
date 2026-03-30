@@ -25,9 +25,9 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from slop_guard.analysis import AnalysisDocument  # noqa: E402
-from slop_guard.rules.base import Rule, RuleConfig  # noqa: E402
+from slop_guard.document import AnalysisDocument  # noqa: E402
 from slop_guard.rules import build_default_rules  # noqa: E402
+from slop_guard.rules.base import Rule, RuleConfig  # noqa: E402
 
 RuleList: TypeAlias = list[Rule[RuleConfig]]
 BenchmarkRecord: TypeAlias = dict[str, str | int | float]
