@@ -820,16 +820,16 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mcp" },
-    { name = "typing-extensions", marker = "python_full_version < '3.12'", specifier = ">=4.15.0" },
+    { name = "mcp", specifier = "==1.26.0" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'", specifier = "==4.15.0" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pytest", specifier = ">=8.4.0" },
-    { name = "pytest-cov", specifier = ">=7.0.0" },
-    { name = "ruff", specifier = ">=0.14.0" },
-    { name = "ty", specifier = ">=0.0.26" },
+    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest-cov", specifier = "==7.1.0" },
+    { name = "ruff", specifier = "==0.15.8" },
+    { name = "ty", specifier = "==0.0.26" },
 ]
 
 [[package]]
