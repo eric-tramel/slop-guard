@@ -46,6 +46,10 @@ dev = [
   "ruff>=0.14.0",
   "ty>=0.0.26",
 ]
+docs = [
+  "zensical==0.0.30",
+  "mike @ git+https://github.com/squidfunk/mike.git@0f62791256ebeba60d20d2f1d8fe6ec3b7d1e2b3",
+]
 
 [tool.hatch.build.targets.sdist]
 exclude = [

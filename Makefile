@@ -2,9 +2,10 @@
 
 UV ?= uv
 UV_RUN ?= $(UV) run --group dev
+UV_DOCS_RUN ?= $(UV) run --group docs
 PACKAGE ?= slop_guard
 
-.PHONY: help sync fix format format-check lint typecheck test coverage check build verify-wheel clean
+.PHONY: help sync fix format format-check lint typecheck test coverage check docs-serve docs-build docs-check build verify-wheel clean
 
 help:
 	@printf "Available targets:\n"
@@ -17,6 +18,9 @@ help:
 	@printf "  make test          Run the pytest suite\n"
 	@printf "  make coverage      Run pytest with coverage enforcement\n"
 	@printf "  make check         Run formatting, lint, type, and coverage checks\n"
+	@printf "  make docs-serve    Preview the Zensical docs locally\n"
+	@printf "  make docs-build    Build the Zensical docs site\n"
+	@printf "  make docs-check    Build docs and lint README/docs prose with slop-guard\n"
 	@printf "  make build         Build source and wheel distributions\n"
 	@printf "  make verify-wheel  Assert the built wheel ships slop_guard/py.typed\n"
 	@printf "  make clean         Remove local build and tool caches\n"
@@ -48,6 +52,15 @@ coverage:
 
 check: format-check lint typecheck coverage
 
+docs-serve:
+	$(UV_DOCS_RUN) zensical serve
+
+docs-build:
+	$(UV_DOCS_RUN) zensical build --clean
+
+docs-check: docs-build
+	$(UV_DOCS_RUN) sg -t 60 README.md $$(find docs -type f -name '*.md' | sort)
+
 build:
 	$(UV) build
 
@@ -55,4 +68,4 @@ verify-wheel: build
 	$(UV_RUN) python -c 'from pathlib import Path; import zipfile; wheels = sorted(Path("dist").glob("*.whl")); assert wheels, "No wheel found in dist/"; wheel = wheels[-1]; names = set(zipfile.ZipFile(wheel).namelist()); target = "slop_guard/py.typed"; assert target in names, f"{target} missing from {wheel.name}"; print(f"verified {target} in {wheel.name}")'
 
 clean:
-	rm -rf .coverage .pytest_cache .ruff_cache build dist htmlcov
+	rm -rf .coverage .pytest_cache .ruff_cache build dist htmlcov site
