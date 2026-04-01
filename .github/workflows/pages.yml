@@ -85,16 +85,7 @@ jobs:
               return 1
             fi
 
-            if uv run --group docs python - "${versions_json}" <<'PY'
-            import json
-            import pathlib
-            import sys
-
-            entries = json.loads(pathlib.Path(sys.argv[1]).read_text())
-            has_release = any(entry["version"] != "dev" for entry in entries)
-            raise SystemExit(0 if has_release else 1)
-            PY
-            then
+            if uv run --group docs python -c 'import json, pathlib, sys; entries = json.loads(pathlib.Path(sys.argv[1]).read_text()); raise SystemExit(0 if any(entry["version"] != "dev" for entry in entries) else 1)' "${versions_json}"; then
               rm -f "${versions_json}"
               return 0
             fi
