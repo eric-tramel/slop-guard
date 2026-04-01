@@ -16,6 +16,8 @@ nav = [
 ]
 
 [project.theme]
+logo = "images/icon_transparent_2.png"
+favicon = "images/icon_transparent_2.png"
 features = [
   "content.action.edit",
   "content.action.view",
