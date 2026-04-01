@@ -1,6 +1,6 @@
 # slop-guard
 
-[![Site](https://img.shields.io/badge/site-GitHub%20Pages-0f706f?style=flat-square)](https://eric-tramel.github.io/slop-guard/)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-0f706f?style=flat-square&logo=githubpages&logoColor=white)](https://eric-tramel.github.io/slop-guard/docs/)
 
 A rule-based prose linter that scores text 0--100 for formulaic AI writing patterns. No LLM judge, no API calls. Purely programmatic.
 
