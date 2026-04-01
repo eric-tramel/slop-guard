@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -24,6 +26,125 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate ref
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF_TYPE}" == "branch" && "${GITHUB_REF_NAME}" != "main" ]]; then
+            echo "Pages deployments only support main and v* tags."
+            exit 1
+          fi
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Configure git author
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+
+      - name: Prepare gh-pages branch
+        run: |
+          set -euo pipefail
+
+          git fetch --force --tags origin
+
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch --force origin gh-pages:gh-pages
+            exit 0
+          fi
+
+          git switch --orphan gh-pages
+          git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdx
+          git commit --allow-empty -m "Initialize gh-pages"
+          git push origin HEAD:gh-pages
+          git switch --detach "${GITHUB_SHA}"
+          git fetch --force origin gh-pages:gh-pages
+
+      - name: Install docs dependencies
+        run: uv sync --group docs --locked
+
+      - name: Update docs state
+        run: |
+          set -euo pipefail
+
+          has_stable_release_docs() {
+            local versions_json
+            versions_json="$(mktemp)"
+
+            if ! git show gh-pages:docs/versions.json >"${versions_json}" 2>/dev/null; then
+              rm -f "${versions_json}"
+              return 1
+            fi
+
+            if uv run --group docs python - "${versions_json}" <<'PY'
+            import json
+            import pathlib
+            import sys
+
+            entries = json.loads(pathlib.Path(sys.argv[1]).read_text())
+            has_release = any(entry["version"] != "dev" for entry in entries)
+            raise SystemExit(0 if has_release else 1)
+            PY
+            then
+              rm -f "${versions_json}"
+              return 0
+            fi
+
+            rm -f "${versions_json}"
+            return 1
+          }
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            release_version="${GITHUB_REF_NAME#v}"
+            uv run --group docs mike deploy \
+              --branch gh-pages \
+              --deploy-prefix docs \
+              --push \
+              --update-aliases \
+              --title "v${release_version}" \
+              "${release_version}" \
+              latest
+            uv run --group docs mike set-default \
+              --branch gh-pages \
+              --deploy-prefix docs \
+              --push \
+              latest
+          else
+            uv run --group docs mike deploy \
+              --branch gh-pages \
+              --deploy-prefix docs \
+              --push \
+              --title "dev (main)" \
+              dev
+
+            if ! has_stable_release_docs; then
+              uv run --group docs mike set-default \
+                --branch gh-pages \
+                --deploy-prefix docs \
+                --push \
+                dev
+            fi
+          fi
+
+          git fetch --force origin gh-pages:gh-pages
+
+      - name: Compose Pages artifact
+        run: |
+          set -euo pipefail
+
+          rm -rf .pages-artifact
+          mkdir -p .pages-artifact
+          cp -R landing/. .pages-artifact/
+          git archive gh-pages .nojekyll docs | tar -x -C .pages-artifact
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -31,7 +152,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: docs
+          path: .pages-artifact
 
       - name: Deploy to GitHub Pages
         id: deployment

@@ -35,10 +35,31 @@ jobs:
       - name: Run checks
         run: make check
 
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --group dev --group docs --locked
+
+      - name: Run docs checks
+        run: make docs-check
+
   build:
     name: Build distributions
     runs-on: ubuntu-latest
-    needs: checks
+    needs: [checks, docs]
     steps:
       - name: Checkout
         uses: actions/checkout@v6
