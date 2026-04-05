@@ -109,13 +109,17 @@ def test_load_docs_layout_reads_paths_from_mike_config(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Docs layout loading should resolve docs and site directories from Mike."""
-    fake_utils = types.SimpleNamespace(
+    fake_utils_module = types.SimpleNamespace(
         load_config=lambda _: {
             "docs_dir": "docs",
             "site_dir": str(tmp_path / "site"),
         }
     )
-    monkeypatch.setitem(sys.modules, "mike", types.SimpleNamespace(utils=fake_utils))
+    monkeypatch.setattr(
+        docs_site.importlib,
+        "import_module",
+        lambda name: fake_utils_module if name == "mike.utils" else None,
+    )
     config_path = tmp_path / "zensical.toml"
     config_path.write_text("", encoding="utf-8")
 
@@ -131,13 +135,17 @@ def test_load_docs_layout_requires_string_paths(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Docs layout loading should reject non-string config paths."""
-    fake_utils = types.SimpleNamespace(
+    fake_utils_module = types.SimpleNamespace(
         load_config=lambda _: {
             "docs_dir": object(),
             "site_dir": str(tmp_path / "site"),
         }
     )
-    monkeypatch.setitem(sys.modules, "mike", types.SimpleNamespace(utils=fake_utils))
+    monkeypatch.setattr(
+        docs_site.importlib,
+        "import_module",
+        lambda name: fake_utils_module if name == "mike.utils" else None,
+    )
     config_path = tmp_path / "zensical.toml"
     config_path.write_text("", encoding="utf-8")
 
@@ -241,10 +249,13 @@ def test_deploy_site_wraps_build_with_mike_deploy(
         ),
         push_branch=lambda remote, branch: push_calls.append((remote, branch)),
     )
-    monkeypatch.setitem(
-        sys.modules,
-        "mike",
-        types.SimpleNamespace(commands=fake_commands, git_utils=fake_git_utils),
+    monkeypatch.setattr(
+        docs_site.importlib,
+        "import_module",
+        lambda name: {
+            "mike.commands": fake_commands,
+            "mike.git_utils": fake_git_utils,
+        }[name],
     )
     monkeypatch.setattr(docs_site, "resolve_config_file", lambda _: config_path)
     monkeypatch.setattr(

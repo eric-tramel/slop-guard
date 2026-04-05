@@ -7,6 +7,7 @@ versioned ``mike`` deployments produce the same crawlable assets.
 from __future__ import annotations
 
 import argparse
+import importlib
 import os
 import subprocess
 from collections.abc import Sequence
@@ -91,8 +92,7 @@ def publish_markdown_mirrors(docs_dir: Path, site_dir: Path) -> tuple[Path, ...]
 
 def _load_docs_layout(config_file: Path) -> tuple[Path, Path, ConfigMap]:
     """Load the docs and site directories from the active Zensical config."""
-    from mike import utils as mike_utils
-
+    mike_utils = cast(Any, importlib.import_module("mike.utils"))
     config = cast(ConfigMap, mike_utils.load_config(str(config_file)))
     docs_dir_value = config["docs_dir"]
     if not isinstance(docs_dir_value, str):
@@ -169,19 +169,19 @@ def deploy_site(
         push: Whether to push after committing the deployment.
         deploy_prefix: Subdirectory inside the docs branch for the site.
     """
-    from mike import commands, git_utils
-
+    mike_commands = cast(Any, importlib.import_module("mike.commands"))
+    mike_git_utils = cast(Any, importlib.import_module("mike.git_utils"))
     resolved_config = resolve_config_file(config_file)
     _, _, config = _load_docs_layout(resolved_config)
-    git_utils.update_from_upstream(remote, branch)
+    mike_git_utils.update_from_upstream(remote, branch)
 
-    with commands.deploy(
+    with mike_commands.deploy(
         config,
         version,
         title,
         list(aliases),
         update_aliases,
-        commands.AliasType.symlink,
+        mike_commands.AliasType.symlink,
         None,
         branch=branch,
         deploy_prefix=deploy_prefix,
@@ -189,7 +189,7 @@ def deploy_site(
         build_site(str(resolved_config), docs_version=version)
 
     if push:
-        git_utils.push_branch(remote, branch)
+        mike_git_utils.push_branch(remote, branch)
 
 
 def _build_parser() -> argparse.ArgumentParser:
