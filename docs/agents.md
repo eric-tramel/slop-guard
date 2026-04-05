@@ -49,4 +49,6 @@ uvx slop-guard==0.4.1
 
 Use the release selector in this documentation site when you want the matching docs for that pinned version.
 
+Every published docs page also exposes a raw Markdown sibling at the same slug. For example, the rendered `get-started` page lives alongside `/docs/get-started.md`, which makes scripted crawling easier for agents and automation.
+
 If you are deciding between a release and `dev (main)`, use a release for stable automation and use `dev (main)` when you are testing current repository behavior before the next tag ships.
