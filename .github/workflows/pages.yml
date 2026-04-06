@@ -96,7 +96,7 @@ jobs:
 
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
             release_version="${GITHUB_REF_NAME#v}"
-            uv run --group docs mike deploy \
+            uv run --group docs python -m tools.docs_site deploy \
               --branch gh-pages \
               --deploy-prefix docs \
               --push \
@@ -110,7 +110,7 @@ jobs:
               --push \
               latest
           else
-            uv run --group docs mike deploy \
+            uv run --group docs python -m tools.docs_site deploy \
               --branch gh-pages \
               --deploy-prefix docs \
               --push \

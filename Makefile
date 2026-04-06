@@ -56,7 +56,7 @@ docs-serve:
 	$(UV_DOCS_RUN) zensical serve
 
 docs-build:
-	$(UV_DOCS_RUN) zensical build --clean
+	$(UV_DOCS_RUN) python -m tools.docs_site build
 
 docs-check: docs-build
 	$(UV_DOCS_RUN) sg -t 60 README.md $$(find docs -type f -name '*.md' | sort)
