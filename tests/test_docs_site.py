@@ -3,14 +3,32 @@
 from __future__ import annotations
 
 import contextlib
+import importlib.util
 import sys
 import types
 from pathlib import Path
+from typing import Any
 
 import pytest
 
-import slop_guard.docs_site as docs_site
-from slop_guard.docs_site import markdown_mirror_targets, publish_markdown_mirrors
+_DOCS_SITE_PATH = Path(__file__).resolve().parents[1] / "tools" / "docs_site.py"
+
+
+def _load_docs_site_module() -> Any:
+    """Load the repo-local docs helper module directly from disk."""
+    spec = importlib.util.spec_from_file_location("tools.docs_site", _DOCS_SITE_PATH)
+    if spec is None or spec.loader is None:
+        raise AssertionError(
+            f"Unable to load docs helper module from {_DOCS_SITE_PATH}"
+        )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+docs_site = _load_docs_site_module()
+markdown_mirror_targets = docs_site.markdown_mirror_targets
+publish_markdown_mirrors = docs_site.publish_markdown_mirrors
 
 
 def test_markdown_mirror_targets_preserve_standard_markdown_paths() -> None:

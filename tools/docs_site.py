@@ -1,7 +1,7 @@
 """Build and deploy the documentation site with raw Markdown mirrors.
 
-This module keeps the Markdown mirror export in one place so local builds and
-versioned ``mike`` deployments produce the same crawlable assets.
+This helper is intentionally repo-local so the published library does not ship
+documentation-only build logic.
 """
 
 from __future__ import annotations
