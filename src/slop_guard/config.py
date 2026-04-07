@@ -45,6 +45,10 @@ class Hyperparameters:
     contrast_record_cap: int = 5
     contrast_penalty: int = -1
     contrast_advice_min: int = 2
+    intrasentence_keyword_bold_penalty: int = -2
+    intrasentence_keyword_bold_record_cap: int = 5
+    intrasentence_keyword_bold_advice_min: int = 3
+    intrasentence_keyword_bold_max_words: int = 5
     setup_resolution_record_cap: int = 5
     setup_resolution_penalty: int = -3
     colon_words_basis: float = 150.0

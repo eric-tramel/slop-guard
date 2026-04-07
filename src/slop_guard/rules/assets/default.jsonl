@@ -8,6 +8,7 @@
 {"config": {"cv_threshold": 0.3, "min_sentences": 5, "penalty": -5}, "rule_type": "slop_guard.rules.passage.rhythm.RhythmRule"}
 {"config": {"density_threshold": 1.0, "penalty": -3, "words_basis": 150.0}, "rule_type": "slop_guard.rules.passage.em_dash_density.EmDashDensityRule"}
 {"config": {"advice_min": 2, "context_window_chars": 60, "penalty": -1, "record_cap": 5}, "rule_type": "slop_guard.rules.sentence.contrast_pair.ContrastPairRule"}
+{"config": {"advice_min": 3, "context_window_chars": 60, "max_words": 5, "penalty": -2, "record_cap": 5}, "rule_type": "slop_guard.rules.sentence.intrasentence_keyword_bold.IntrasentenceKeywordBoldRule"}
 {"config": {"context_window_chars": 60, "penalty": -3, "record_cap": 5}, "rule_type": "slop_guard.rules.sentence.setup_resolution.SetupResolutionRule"}
 {"config": {"density_threshold": 1.5, "penalty": -3, "words_basis": 150.0}, "rule_type": "slop_guard.rules.passage.colon_density.ColonDensityRule"}
 {"config": {"max_sentence_words": 6, "penalty": -2, "record_cap": 3}, "rule_type": "slop_guard.rules.sentence.pithy_fragment.PithyFragmentRule"}

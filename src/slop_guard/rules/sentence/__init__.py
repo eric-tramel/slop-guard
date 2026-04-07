@@ -2,6 +2,10 @@
 
 from .ai_disclosure import AIDisclosureRule, AIDisclosureRuleConfig
 from .contrast_pair import ContrastPairRule, ContrastPairRuleConfig
+from .intrasentence_keyword_bold import (
+    IntrasentenceKeywordBoldRule,
+    IntrasentenceKeywordBoldRuleConfig,
+)
 from .pithy_fragment import PithyFragmentRule, PithyFragmentRuleConfig
 from .placeholder import PlaceholderRule, PlaceholderRuleConfig
 from .setup_resolution import SetupResolutionRule, SetupResolutionRuleConfig
@@ -14,6 +18,8 @@ __all__ = [
     "AIDisclosureRuleConfig",
     "ContrastPairRule",
     "ContrastPairRuleConfig",
+    "IntrasentenceKeywordBoldRule",
+    "IntrasentenceKeywordBoldRuleConfig",
     "PithyFragmentRule",
     "PithyFragmentRuleConfig",
     "PlaceholderRule",

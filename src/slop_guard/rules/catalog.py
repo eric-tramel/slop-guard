@@ -11,6 +11,7 @@ DEFAULT_RULE_PATHS: tuple[str, ...] = (
     "slop_guard.rules.passage.rhythm.RhythmRule",
     "slop_guard.rules.passage.em_dash_density.EmDashDensityRule",
     "slop_guard.rules.sentence.contrast_pair.ContrastPairRule",
+    "slop_guard.rules.sentence.intrasentence_keyword_bold.IntrasentenceKeywordBoldRule",
     "slop_guard.rules.sentence.setup_resolution.SetupResolutionRule",
     "slop_guard.rules.passage.colon_density.ColonDensityRule",
     "slop_guard.rules.sentence.pithy_fragment.PithyFragmentRule",
