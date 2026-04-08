@@ -19,6 +19,7 @@ _COUNT_KEYS: tuple[str, ...] = (
     "rhythm",
     "em_dash",
     "contrast_pairs",
+    "intrasentence_keyword_bold",
     "setup_resolution",
     "colon_density",
     "pithy_fragment",
