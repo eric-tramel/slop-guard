@@ -51,7 +51,7 @@ def test_flags_multiple_keyword_bolds_and_emits_summary() -> None:
 
 
 def test_record_cap_limits_emitted_violations() -> None:
-    """Violations are capped at record_cap even when more matches exist."""
+    """Violations cap at record_cap but count_deltas reports true prevalence."""
     rule = IntrasentenceKeywordBoldRule(
         IntrasentenceKeywordBoldRuleConfig(
             penalty=-2,
@@ -68,7 +68,9 @@ def test_record_cap_limits_emitted_violations() -> None:
 
     result = rule.forward(AnalysisDocument.from_text(text))
 
-    assert result.count_deltas == {"intrasentence_keyword_bold": 2}
+    # All five mid-sentence bolds count toward the document's prevalence so
+    # concentration amplification sees the true frequency, not the sample cap.
+    assert result.count_deltas == {"intrasentence_keyword_bold": 5}
     assert len(result.violations) == 2
 
 
@@ -214,6 +216,122 @@ def test_advice_min_threshold_emits_summary_only_when_met() -> None:
 
     assert not any("mid-sentence keyword bolds" in line for line in one_result.advice)
     assert any("mid-sentence keyword bolds" in line for line in two_result.advice)
+
+
+def test_soft_break_within_paragraph_is_flagged() -> None:
+    """Soft-wrapped Markdown prose should still flag mid-sentence bolds."""
+    rule = _build_rule()
+    text = (
+        "We must carefully review every change before\n"
+        "**carefully shipping** to production users."
+    )
+
+    result = rule.forward(AnalysisDocument.from_text(text))
+
+    assert result.count_deltas == {"intrasentence_keyword_bold": 1}
+    assert len(result.violations) == 1
+    assert result.violations[0].match == "**carefully shipping**"
+
+
+def test_sentence_final_keyword_bold_is_flagged() -> None:
+    """Sentence-final ``**phrase.**`` is not covered by the structural rule."""
+    rule = _build_rule()
+    text = "We acted with **careful planning.**"
+
+    result = rule.forward(AnalysisDocument.from_text(text))
+
+    assert result.count_deltas == {"intrasentence_keyword_bold": 1}
+    assert len(result.violations) == 1
+    assert result.violations[0].match == "**careful planning.**"
+
+
+def test_label_form_with_continuation_is_ignored() -> None:
+    """``**Term:**`` followed by continuation belongs to the structural rule."""
+    rule = _build_rule()
+    text = "Earlier we noted **Important:** for the migration plan."
+
+    result = rule.forward(AnalysisDocument.from_text(text))
+
+    assert result.violations == []
+
+
+def test_paragraph_break_resets_mid_sentence_check() -> None:
+    """A bold span at the start of a new paragraph is not mid-sentence."""
+    rule = _build_rule()
+    text = (
+        "Some prior context that ends a paragraph cleanly here.\n"
+        "\n"
+        "**Background** matters for scoping the upcoming change."
+    )
+
+    result = rule.forward(AnalysisDocument.from_text(text))
+
+    assert result.violations == []
+
+
+def test_soft_break_after_sentence_terminator_is_ignored() -> None:
+    """A soft break after ``.``/``!``/``?`` starts a new sentence, not mid one."""
+    rule = _build_rule()
+    text = "We made the changes to the deploy.\n**Carefully reviewed** them later."
+
+    result = rule.forward(AnalysisDocument.from_text(text))
+
+    assert result.violations == []
+
+
+def test_inline_terminator_without_newline_is_ignored() -> None:
+    """``Foo. **Bar**`` (no newline) is a new sentence, not mid-sentence."""
+    rule = _build_rule()
+    text = "We shipped the change. **Carefully reviewed** later that day."
+
+    result = rule.forward(AnalysisDocument.from_text(text))
+
+    assert result.violations == []
+
+
+def test_trailing_spaces_before_soft_break_are_skipped() -> None:
+    """Trailing spaces before a soft break should not defeat the walk-back."""
+    rule = _build_rule()
+    # Two spaces precede the newline (a Markdown hard-break in some flavors)
+    # but we still want to detect that the prior line continues into the bold.
+    text = "We must carefully review every change before  \n**carefully shipping** to prod."
+
+    result = rule.forward(AnalysisDocument.from_text(text))
+
+    assert result.count_deltas == {"intrasentence_keyword_bold": 1}
+    assert len(result.violations) == 1
+
+
+def test_soft_break_with_leading_whitespace_at_doc_start_is_ignored() -> None:
+    """Whitespace + a soft break at the very top of a doc is paragraph start."""
+    rule = _build_rule()
+    text = "  \n**Background** matters when scoping the upcoming change."
+
+    result = rule.forward(AnalysisDocument.from_text(text))
+
+    assert result.violations == []
+
+
+def test_period_inside_inline_code_does_not_terminate_sentence() -> None:
+    """A ``.`` inside inline code must not be mistaken for a sentence end."""
+    rule = _build_rule()
+    text = "Run `script.py.` **quickly** before midnight."
+
+    result = rule.forward(AnalysisDocument.from_text(text))
+
+    assert result.count_deltas == {"intrasentence_keyword_bold": 1}
+    assert len(result.violations) == 1
+    assert result.violations[0].match == "**quickly**"
+
+
+def test_crlf_soft_break_after_sentence_terminator_is_ignored() -> None:
+    """Windows-style ``\\r\\n`` line endings should still detect sentence ends."""
+    rule = _build_rule()
+    text = "We made the changes to the deploy.\r\n**Carefully reviewed** them later."
+
+    result = rule.forward(AnalysisDocument.from_text(text))
+
+    assert result.violations == []
 
 
 def test_fit_returns_self_with_contrastive_samples() -> None:

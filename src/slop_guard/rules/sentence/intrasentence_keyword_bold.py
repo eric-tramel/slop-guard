@@ -43,6 +43,11 @@ _BLOCKQUOTE_LINE_RE = re.compile(r"^\s*>")
 _BULLET_LIKE_LINE_RE = re.compile(r"^\s*[-*]\s|^\s*\d+[.)]\s")
 _NUMERIC_BOLD_RE = re.compile(r"^[\s$%€£¥+\-.,]*\d[\s\d.,$%€£¥+\-]*[%a-zA-Z]{0,4}$")
 _WORD_TOKEN_RE = re.compile(r"\w+")
+# Mirror StructuralPatternRule._BOLD_HEADER_RE: ``**Term[.:]**`` is a label form
+# only when followed by ``\s+\S`` continuation. Standalone or sentence-final
+# variants are NOT covered by the structural rule, so this rule must catch them.
+_LABEL_CONTINUATION_RE = re.compile(r"\s+\S")
+_SENTENCE_TERMINATORS = frozenset(".!?")
 
 KeywordBoldMatch: TypeAlias = tuple[int, int, str]
 
@@ -70,14 +75,49 @@ def _is_excluded_line(line: str) -> bool:
     )
 
 
-def _is_label_form(inner_text: str) -> bool:
-    """Return whether the bold inner text ends in label punctuation.
+def _is_label_form_with_continuation(
+    masked_text: str, match_end: int, inner_text: str
+) -> bool:
+    """Return whether the bold span is a structural-rule label form.
 
-    The ``**Term:**`` and ``**Term.**`` shapes are already covered by
-    :class:`StructuralPatternRule`'s bold-header detection, so this rule must
-    not double-count them.
+    :class:`StructuralPatternRule`'s ``_BOLD_HEADER_RE`` only catches
+    ``**Term[.:]**`` when followed by ``\\s+\\S`` (whitespace + continuation),
+    so this exclusion must mirror that shape exactly. A sentence-final
+    ``**careful planning.**`` with no trailing content is NOT covered by the
+    structural rule, so it should still be flagged here as keyword emphasis.
     """
-    return inner_text.endswith(":") or inner_text.endswith(".")
+    if not (inner_text.endswith(":") or inner_text.endswith(".")):
+        return False
+    return _LABEL_CONTINUATION_RE.match(masked_text, match_end) is not None
+
+
+def _begins_paragraph_or_sentence(masked_text: str, start: int) -> bool:
+    """Return whether the bold span at ``start`` opens a paragraph or sentence.
+
+    The span is considered to begin (rather than be embedded in) a sentence
+    when, looking backward over the code-masked projection, the preceding
+    non-whitespace is a sentence terminator, a paragraph break, or the
+    document start. A bold span that survives this check is genuinely
+    mid-sentence keyword emphasis.
+
+    The masked projection is walked so ``.`` characters inside inline code or
+    fenced blocks aren't mistaken for sentence ends. ``\\r`` is included in the
+    inline-whitespace set so CRLF line endings behave the same as LF.
+    """
+    head = masked_text[:start].rstrip(" \t\r")
+    if not head:
+        return True
+    if head[-1] in _SENTENCE_TERMINATORS:
+        return True
+    if head[-1] != "\n":
+        return False
+    # Crossed one soft newline; strip it and re-inspect what precedes.
+    head = head[:-1].rstrip(" \t\r")
+    if not head:
+        return True
+    if head[-1] == "\n":
+        return True  # paragraph break (``\n[ \t\r]*\n``)
+    return head[-1] in _SENTENCE_TERMINATORS
 
 
 def _is_numeric_only(inner_text: str) -> bool:
@@ -110,15 +150,15 @@ def _collect_keyword_bold_matches(
 
     for match in _BOLD_SPAN_RE.finditer(masked):
         inner = match.group(1)
-        if _is_label_form(inner):
+        start = match.start()
+        end = match.end()
+        if _is_label_form_with_continuation(masked, end, inner):
             continue
         if _is_numeric_only(inner):
             continue
         if _word_count(inner) > max_words:
             continue
 
-        start = match.start()
-        end = match.end()
         line_index = _line_index_for_offset(line_starts, start)
         line_start_offset = line_starts[line_index]
         line_end_offset = (
@@ -130,8 +170,7 @@ def _collect_keyword_bold_matches(
         if _is_excluded_line(line_text):
             continue
 
-        prefix_on_line = text[line_start_offset:start]
-        if not prefix_on_line.strip():
+        if _begins_paragraph_or_sentence(masked, start):
             continue
 
         survivors.append((start, end, text[start:end]))
@@ -208,7 +247,9 @@ class IntrasentenceKeywordBoldRule(Rule[IntrasentenceKeywordBoldRuleConfig]):
         return RuleResult(
             violations=violations,
             advice=advice,
-            count_deltas={self.count_key: len(violations)} if violations else {},
+            # Report the true prevalence (not the capped sample) so concentration
+            # amplification and user-facing counts reflect what's in the document.
+            count_deltas={self.count_key: len(matches)} if matches else {},
         )
 
     def _fit(

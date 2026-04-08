@@ -192,10 +192,12 @@ def test_analyze_short_text_exposes_full_count_schema() -> None:
         "closing_aphorism",
         "copula_chain",
         "extreme_sentence",
+        "intrasentence_keyword_bold",
         "paragraph_balance",
         "paragraph_cv",
     }.issubset(result["counts"])
     assert result["counts"]["closing_aphorism"] == 0
+    assert result["counts"]["intrasentence_keyword_bold"] == 0
     assert result["counts"]["paragraph_cv"] == 0
 
 
