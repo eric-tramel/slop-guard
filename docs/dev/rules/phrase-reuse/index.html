@@ -6,42 +6,42 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Versioned documentation for slop-guard, a rule-based prose linter for formulaic AI writing.">
+        <meta name="description" content="Detect repeated long n-gram phrase reuse.">
       
       
         <meta name="author" content="Eric Tramel">
       
       
-        <link rel="canonical" href="https://eric-tramel.github.io/slop-guard/docs/dev/agents/">
+        <link rel="canonical" href="https://eric-tramel.github.io/slop-guard/docs/dev/rules/phrase-reuse/">
       
       
-        <link rel="prev" href="../get-started/">
+        <link rel="prev" href="../colon-density/">
       
       
-        <link rel="next" href="../rules/">
+        <link rel="next" href="../copula-chain/">
       
       
         
       
       
-      <link rel="icon" href="../images/icon_transparent_2.png">
+      <link rel="icon" href="../../images/icon_transparent_2.png">
       <meta name="generator" content="zensical-0.0.30">
     
     
       
-        <title>Agents - slop-guard Docs</title>
+        <title>Phrase Reuse - slop-guard Docs</title>
       
     
     
       
         
       
-      <link rel="stylesheet" href="../assets/stylesheets/modern/main.3b031116.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.3b031116.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.dfe2e883.min.css">
       
       
 
@@ -60,9 +60,9 @@
       
     
     
-      <link rel="stylesheet" href="../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,a=__md_scope)=>JSON.parse(t.getItem(a.pathname+"."+e)),__md_set=(e,t,a=localStorage,_=__md_scope)=>{try{a.setItem(_.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,a=__md_scope)=>JSON.parse(t.getItem(a.pathname+"."+e)),__md_set=(e,t,a=localStorage,_=__md_scope)=>{try{a.setItem(_.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
     
       
 
@@ -87,7 +87,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#agents" class="md-skip">
+        <a href="#behavior" class="md-skip">
           Skip to content
         </a>
       
@@ -107,9 +107,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="./.." title="slop-guard Docs" class="md-header__button md-logo" aria-label="slop-guard Docs" data-md-component="logo">
+    <a href="../.." title="slop-guard Docs" class="md-header__button md-logo" aria-label="slop-guard Docs" data-md-component="logo">
       
-  <img src="../images/icon_transparent_2.png" alt="slop-guard Docs">
+  <img src="../../images/icon_transparent_2.png" alt="slop-guard Docs">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
@@ -126,7 +126,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Agents
+              Phrase Reuse
             
           </span>
         </div>
@@ -215,9 +215,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="./.." title="slop-guard Docs" class="md-nav__button md-logo" aria-label="slop-guard Docs" data-md-component="logo">
+    <a href="../.." title="slop-guard Docs" class="md-nav__button md-logo" aria-label="slop-guard Docs" data-md-component="logo">
       
-  <img src="../images/icon_transparent_2.png" alt="slop-guard Docs">
+  <img src="../../images/icon_transparent_2.png" alt="slop-guard Docs">
 
     </a>
     slop-guard Docs
@@ -244,7 +244,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -273,7 +273,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../get-started/" class="md-nav__link">
+      <a href="../../get-started/" class="md-nav__link">
         
   
   
@@ -299,13 +299,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <a href="././" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../agents/" class="md-nav__link">
         
   
   
@@ -323,7 +320,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -332,18 +328,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
           <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
@@ -364,7 +362,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -382,7 +380,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -459,7 +457,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/slop-word/" class="md-nav__link">
+      <a href="../slop-word/" class="md-nav__link">
         
   
   
@@ -544,7 +542,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/slop-phrase/" class="md-nav__link">
+      <a href="../slop-phrase/" class="md-nav__link">
         
   
   
@@ -574,7 +572,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/tone-marker/" class="md-nav__link">
+      <a href="../tone-marker/" class="md-nav__link">
         
   
   
@@ -604,7 +602,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/weasel-phrase/" class="md-nav__link">
+      <a href="../weasel-phrase/" class="md-nav__link">
         
   
   
@@ -634,7 +632,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/ai-disclosure/" class="md-nav__link">
+      <a href="../ai-disclosure/" class="md-nav__link">
         
   
   
@@ -664,7 +662,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/placeholder/" class="md-nav__link">
+      <a href="../placeholder/" class="md-nav__link">
         
   
   
@@ -694,7 +692,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/contrast-pair/" class="md-nav__link">
+      <a href="../contrast-pair/" class="md-nav__link">
         
   
   
@@ -724,7 +722,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/intrasentence-keyword-bold/" class="md-nav__link">
+      <a href="../intrasentence-keyword-bold/" class="md-nav__link">
         
   
   
@@ -754,7 +752,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/setup-resolution/" class="md-nav__link">
+      <a href="../setup-resolution/" class="md-nav__link">
         
   
   
@@ -784,7 +782,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/pithy-fragment/" class="md-nav__link">
+      <a href="../pithy-fragment/" class="md-nav__link">
         
   
   
@@ -869,7 +867,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/structural-pattern/" class="md-nav__link">
+      <a href="../structural-pattern/" class="md-nav__link">
         
   
   
@@ -899,7 +897,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/bullet-density/" class="md-nav__link">
+      <a href="../bullet-density/" class="md-nav__link">
         
   
   
@@ -929,7 +927,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/blockquote-density/" class="md-nav__link">
+      <a href="../blockquote-density/" class="md-nav__link">
         
   
   
@@ -959,7 +957,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/bold-term-bullet-run/" class="md-nav__link">
+      <a href="../bold-term-bullet-run/" class="md-nav__link">
         
   
   
@@ -989,7 +987,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/horizontal-rule-overuse/" class="md-nav__link">
+      <a href="../horizontal-rule-overuse/" class="md-nav__link">
         
   
   
@@ -1024,18 +1022,20 @@
                 
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" checked>
         
           
           <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="0">
@@ -1056,7 +1056,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_4_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1074,7 +1074,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/rhythm/" class="md-nav__link">
+      <a href="../rhythm/" class="md-nav__link">
         
   
   
@@ -1104,7 +1104,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/em-dash-density/" class="md-nav__link">
+      <a href="../em-dash-density/" class="md-nav__link">
         
   
   
@@ -1134,7 +1134,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/colon-density/" class="md-nav__link">
+      <a href="../colon-density/" class="md-nav__link">
         
   
   
@@ -1161,10 +1161,13 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../rules/phrase-reuse/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1182,6 +1185,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -1194,7 +1198,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/copula-chain/" class="md-nav__link">
+      <a href="../copula-chain/" class="md-nav__link">
         
   
   
@@ -1224,7 +1228,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/extreme-sentence/" class="md-nav__link">
+      <a href="../extreme-sentence/" class="md-nav__link">
         
   
   
@@ -1254,7 +1258,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/closing-aphorism/" class="md-nav__link">
+      <a href="../closing-aphorism/" class="md-nav__link">
         
   
   
@@ -1284,7 +1288,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/paragraph-balance/" class="md-nav__link">
+      <a href="../paragraph-balance/" class="md-nav__link">
         
   
   
@@ -1314,7 +1318,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rules/paragraph-cv/" class="md-nav__link">
+      <a href="../paragraph-cv/" class="md-nav__link">
         
   
   
@@ -1376,8 +1380,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1386,10 +1388,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#codex" class="md-nav__link">
+  <a href="#behavior" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Codex
+        Behavior
       
     </span>
   </a>
@@ -1397,10 +1399,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#claude-code" class="md-nav__link">
+  <a href="#severity" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Claude Code
+        Severity
       
     </span>
   </a>
@@ -1408,10 +1410,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pin-a-release" class="md-nav__link">
+  <a href="#default-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Pin a release
+        Default configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contributors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contributors
       
     </span>
   </a>
@@ -1436,6 +1449,64 @@
   
 
 
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Overview
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Rules
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../rhythm/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Passage rules
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
               
               <article class="md-content__inner md-typeset">
                 
@@ -1444,36 +1515,56 @@
   
 
 
-<h1 id="agents">Agents<a class="headerlink" href="#agents" title="Permanent link">&para;</a></h1>
-<p>Both supported clients use the same MCP command:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uvx<span class="w"> </span>slop-guard
-</span></code></pre></div>
-<p>That starts the local MCP server without any API calls or model-side judging. The tools return structured diagnostics that agents can use while they draft docs, release notes, or status updates.</p>
-<p>The MCP surface is small on purpose. Agents can call <code>check_slop</code> when they already have text in memory, or <code>check_slop_file</code> when they need to inspect a file on disk. Both tools return structured JSON, so the client can point at exact spans and feed the advice back into the rewrite loop.</p>
-<h2 id="codex">Codex<a class="headerlink" href="#codex" title="Permanent link">&para;</a></h2>
-<p>Register the server with Codex by pointing <code>mcp add</code> at <code>uvx slop-guard</code>, or add it to <code>~/.codex/config.toml</code>:</p>
-<div class="language-toml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[mcp_servers.slop-guard]</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;uvx&quot;</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;slop-guard&quot;</span><span class="p">]</span>
-</span></code></pre></div>
-<h2 id="claude-code">Claude Code<a class="headerlink" href="#claude-code" title="Permanent link">&para;</a></h2>
-<p>Register the server with Claude Code by pointing <code>mcp add</code> at <code>uvx slop-guard</code>, or add it to <code>.mcp.json</code>:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">&quot;slop-guard&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uvx&quot;</span><span class="p">,</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;slop-guard&quot;</span><span class="p">]</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">}</span>
-</span></code></pre></div>
-<h2 id="pin-a-release">Pin a release<a class="headerlink" href="#pin-a-release" title="Permanent link">&para;</a></h2>
-<p>If an automation or team workflow needs a fixed package version, pin it in the command arguments:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>uvx<span class="w"> </span>slop-guard<span class="o">==</span><span class="m">0</span>.4.1
-</span></code></pre></div>
-<p>Use the release selector in this documentation site when you want the matching docs for that pinned version.</p>
-<p>Every published docs page also exposes a raw Markdown sibling at the same slug. For example, the rendered <code>get-started</code> page lives alongside <code>/docs/get-started.md</code>, which makes scripted crawling easier for agents and automation.</p>
-<p>If you are deciding between a release and <code>dev (main)</code>, use a release for stable automation and use <code>dev (main)</code> when you are testing current repository behavior before the next tag ships.</p>
+<div class="sg-rule-page">
+<header class="sg-rule-page__header sg-rule-page__header--passage">
+<div class="sg-rule-page__eyebrow">PASSAGE</div>
+<div class="sg-rule-page__titlebar">
+    <h1 class="sg-rule-page__title">Phrase Reuse</h1>
+    <a class="sg-source-chip" href="https://github.com/eric-tramel/slop-guard/blob/main/src/slop_guard/rules/passage/phrase_reuse.py"><svg class="sg-source-chip__icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2.02c-3.2.7-3.87-1.54-3.87-1.54-.52-1.32-1.28-1.67-1.28-1.67-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18.92-.26 1.9-.39 2.88-.4.98.01 1.96.14 2.88.4 2.2-1.49 3.17-1.18 3.17-1.18.64 1.59.24 2.77.12 3.06.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.26 5.68.41.36.78 1.06.78 2.15v3.19c0 .31.21.68.8.56 4.57-1.52 7.85-5.83 7.85-10.91C23.5 5.73 18.27.5 12 .5Z"/></svg><span>source</span></a>
+  </div>
+<p class="sg-rule-page__lede">Detect repeated long n-gram phrase reuse.</p>
+</header>
+<dl class="sg-rule-meta">
+<div class="sg-rule-meta__item">
+<dt>Class</dt>
+<dd><code>PhraseReuseRule</code></dd>
+</div>
+<div class="sg-rule-meta__item">
+<dt>Rule name</dt>
+<dd><code>phrase_reuse</code></dd>
+</div>
+<div class="sg-rule-meta__item">
+<dt>Count key</dt>
+<dd><code>phrase_reuse</code></dd>
+</div>
+</dl>
+<h2 id="behavior">Behavior<a class="headerlink" href="#behavior" title="Permanent link">&para;</a></h2>
+<table class="sg-behavior">
+<thead>
+    <tr><th class="sg-behavior__th-result">Result</th><th>Input text</th><th>Why</th></tr>
+  </thead>
+<tbody>
+    <tr class="sg-behavior__row sg-behavior__row--flag"><td class="sg-behavior__result"><span class="sg-status sg-status--flag"><span class="sg-status__dot" aria-hidden="true"></span>Flag</span></td><td><code class="sg-behavior__input">Repeating "at the end of the day" many times in one document.</code></td><td class="sg-behavior__why">Same phrase recurs instead of varied expression.</td></tr>
+    <tr class="sg-behavior__row sg-behavior__row--flag"><td class="sg-behavior__result"><span class="sg-status sg-status--flag"><span class="sg-status__dot" aria-hidden="true"></span>Flag</span></td><td><code class="sg-behavior__input">Reusing a 4-8 word clause across multiple paragraphs.</code></td><td class="sg-behavior__why">Long repeated n-grams suggest copy-pattern generation.</td></tr>
+    <tr class="sg-behavior__row sg-behavior__row--pass"><td class="sg-behavior__result"><span class="sg-status sg-status--pass"><span class="sg-status__dot" aria-hidden="true"></span>Pass</span></td><td><code class="sg-behavior__input">Repeating short stopword-heavy fragments like "in the end".</code></td><td class="sg-behavior__why">Common function phrases are filtered or suppressed.</td></tr>
+    <tr class="sg-behavior__row sg-behavior__row--pass"><td class="sg-behavior__result"><span class="sg-status sg-status--pass"><span class="sg-status__dot" aria-hidden="true"></span>Pass</span></td><td><code class="sg-behavior__input">Using related ideas with different wording across sections.</code></td><td class="sg-behavior__why">Semantic repetition without lexical cloning is acceptable.</td></tr>
+  </tbody>
+</table>
+<h2 id="severity">Severity<a class="headerlink" href="#severity" title="Permanent link">&para;</a></h2>
+<p>Medium to high; repeated long phrases are strong formulaicity signals.</p>
+<h2 id="default-configuration">Default configuration<a class="headerlink" href="#default-configuration" title="Permanent link">&para;</a></h2>
+<div class="sg-defaults">
+<div class="sg-defaults__item"><span class="sg-defaults__label">penalty</span><span class="sg-defaults__value">-1</span></div>
+<div class="sg-defaults__item"><span class="sg-defaults__label">record_cap</span><span class="sg-defaults__value">5</span></div>
+<div class="sg-defaults__item"><span class="sg-defaults__label">repeated_ngram_max_n</span><span class="sg-defaults__value">8</span></div>
+<div class="sg-defaults__item"><span class="sg-defaults__label">repeated_ngram_min_count</span><span class="sg-defaults__value">3</span></div>
+<div class="sg-defaults__item"><span class="sg-defaults__label">repeated_ngram_min_n</span><span class="sg-defaults__value">4</span></div>
+</div>
+<h2 id="contributors">Contributors<a class="headerlink" href="#contributors" title="Permanent link">&para;</a></h2>
+<div class="sg-contributors">
+  <a class="sg-contrib" href="https://github.com/eric-tramel"><img class="sg-contrib__avatar" src="https://github.com/eric-tramel.png?size=72" alt="" loading="lazy" width="24" height="24" /><span class="sg-contrib__name">@eric-tramel</span></a>
+</div>
+</div>
 
 
 
@@ -1508,7 +1599,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../get-started/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Get Started">
+          <a href="../colon-density/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Colon Density">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -1518,20 +1609,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Get Started
+                Colon Density
               </div>
             </div>
           </a>
         
         
           
-          <a href="../rules/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview">
+          <a href="../copula-chain/" class="md-footer__link md-footer__link--next" aria-label="Next: Copula Chain">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Overview
+                Copula Chain
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1573,10 +1664,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["content.code.copy","navigation.footer","navigation.path"],"search":"../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":{"default":["latest","dev"],"provider":"mike"}}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy","navigation.footer","navigation.path"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":{"default":["latest","dev"],"provider":"mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.66be65ca.min.js"></script>
+      <script src="../../assets/javascripts/bundle.66be65ca.min.js"></script>
       
     
   </body>
