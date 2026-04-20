@@ -533,7 +533,7 @@ def _render_index_card(doc: RuleDoc) -> str:
     return "\n".join(
         [
             '<div class="sg-rule-card">',
-            f'  <a class="sg-rule-card__link" href="{doc.slug}.md">',
+            f'  <a class="sg-rule-card__link" href="./{doc.slug}/">',
             f'    <div class="sg-rule-card__head">'
             f'<span class="sg-rule-card__title">{doc.title}</span></div>',
             f'    <p class="sg-rule-card__summary">{summary}</p>',
