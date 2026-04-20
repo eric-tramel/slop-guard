@@ -23,7 +23,7 @@ Severity: Low to medium; stronger when combined with other rhythm signals.
 
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument
 from slop_guard.models import RuleResult, Violation
@@ -47,9 +47,32 @@ def _paragraph_word_counts(text: str) -> list[int]:
 class ParagraphBalanceRuleConfig(RuleConfig):
     """Config for paragraph balance ratio detection."""
 
-    min_body_paragraphs: int
-    balance_threshold: float
-    penalty: int
+    min_body_paragraphs: int = field(
+        metadata={
+            "description": (
+                "Minimum number of body paragraphs (paragraphs after the "
+                "first) required before the balance ratio is evaluated."
+            )
+        }
+    )
+    balance_threshold: float = field(
+        metadata={
+            "description": (
+                "Maximum allowed min/max word-count ratio across body "
+                "paragraphs; a ratio strictly greater than this value "
+                "indicates suspiciously uniform paragraph sizes and "
+                "triggers the violation (value between 0.0 and 1.0)."
+            )
+        }
+    )
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once when the body paragraph balance ratio "
+                "exceeds balance_threshold."
+            )
+        }
+    )
 
 
 class ParagraphBalanceRule(Rule[ParagraphBalanceRuleConfig]):
@@ -151,9 +174,32 @@ class ParagraphBalanceRule(Rule[ParagraphBalanceRuleConfig]):
 class ParagraphCVRuleConfig(RuleConfig):
     """Config for paragraph length coefficient-of-variation detection."""
 
-    min_paragraphs: int
-    cv_threshold: float
-    penalty: int
+    min_paragraphs: int = field(
+        metadata={
+            "description": (
+                "Minimum number of paragraphs required before the "
+                "paragraph-length CV is evaluated."
+            )
+        }
+    )
+    cv_threshold: float = field(
+        metadata={
+            "description": (
+                "Lower bound on the paragraph-length coefficient of "
+                "variation (std/mean). A CV strictly below this value "
+                "indicates overly uniform paragraph rhythm and triggers "
+                "the violation."
+            )
+        }
+    )
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once when the paragraph-length CV falls "
+                "below cv_threshold."
+            )
+        }
+    )
 
 
 class ParagraphCVRule(Rule[ParagraphCVRuleConfig]):

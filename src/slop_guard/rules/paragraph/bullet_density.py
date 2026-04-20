@@ -18,7 +18,7 @@ Example Non-Violations:
 Severity: Medium to high depending on how much of the passage is list-form.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument
 from slop_guard.models import RuleResult, Violation
@@ -33,8 +33,23 @@ from slop_guard.rules.fitting import (
 class BulletDensityRuleConfig(RuleConfig):
     """Config for bullet density thresholds."""
 
-    ratio_threshold: float
-    penalty: int
+    ratio_threshold: float = field(
+        metadata={
+            "description": (
+                "Maximum allowed fraction of non-empty lines that may be "
+                "bullets before the violation fires (value between 0.0 and "
+                "1.0; a bullet ratio strictly greater than this triggers)."
+            )
+        }
+    )
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once when the bullet line ratio exceeds "
+                "ratio_threshold."
+            )
+        }
+    )
 
 
 class BulletDensityRule(Rule[BulletDensityRuleConfig]):

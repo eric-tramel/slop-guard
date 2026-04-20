@@ -20,7 +20,7 @@ Severity: Medium to high when multiple structural signals co-occur.
 
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument, context_around
 from slop_guard.models import RuleResult, Violation
@@ -54,14 +54,71 @@ def _triadic_advice(snippet: str) -> str:
 class StructuralPatternRuleConfig(RuleConfig):
     """Config for listicle-like structural pattern thresholds."""
 
-    bold_header_min: int
-    bold_header_penalty: int
-    bullet_run_min: int
-    bullet_run_penalty: int
-    triadic_record_cap: int
-    triadic_penalty: int
-    triadic_advice_min: int
-    context_window_chars: int
+    bold_header_min: int = field(
+        metadata={
+            "description": (
+                "Minimum number of **Bold.** header-style matches required in "
+                "the document before the bold-header listicle violation fires."
+            )
+        }
+    )
+    bold_header_penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once when the bold-header count reaches "
+                "bold_header_min."
+            )
+        }
+    )
+    bullet_run_min: int = field(
+        metadata={
+            "description": (
+                "Minimum length of a contiguous run of bullet lines that "
+                "triggers the excessive-bullets violation."
+            )
+        }
+    )
+    bullet_run_penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied for each contiguous bullet run that meets or "
+                "exceeds bullet_run_min."
+            )
+        }
+    )
+    triadic_record_cap: int = field(
+        metadata={
+            "description": (
+                "Maximum number of 'X, Y, and Z' triadic matches recorded as "
+                "individual violations in a single pass; further matches are "
+                "still counted but not reported individually."
+            )
+        }
+    )
+    triadic_penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied to each recorded triadic match up to "
+                "triadic_record_cap."
+            )
+        }
+    )
+    triadic_advice_min: int = field(
+        metadata={
+            "description": (
+                "Threshold on the total triadic-match count at or above which "
+                "a summary advice line about triadic cadence is emitted."
+            )
+        }
+    )
+    context_window_chars: int = field(
+        metadata={
+            "description": (
+                "Half-width (in characters) of the surrounding-text window "
+                "captured as context for each triadic violation."
+            )
+        }
+    )
 
 
 class StructuralPatternRule(Rule[StructuralPatternRuleConfig]):

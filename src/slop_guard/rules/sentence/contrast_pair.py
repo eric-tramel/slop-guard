@@ -21,7 +21,7 @@ Severity: Low per instance, medium when repeated frequently in one passage.
 
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, TypeAlias
 
 from slop_guard.document import AnalysisDocument, context_around
@@ -119,10 +119,38 @@ def _contrast_summary_advice(
 class ContrastPairRuleConfig(RuleConfig):
     """Config for contrast pair detection and recording limits."""
 
-    penalty: int
-    record_cap: int
-    advice_min: int
-    context_window_chars: int
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied per recorded contrast-pair match (for "
+                "example 'X, not Y' or 'not only X but Y')."
+            )
+        }
+    )
+    record_cap: int = field(
+        metadata={
+            "description": (
+                "Maximum number of contrast-pair matches recorded as "
+                "individual violations in a single pass."
+            )
+        }
+    )
+    advice_min: int = field(
+        metadata={
+            "description": (
+                "Threshold on the total contrast-pair match count at or "
+                "above which a summary advice line is emitted."
+            )
+        }
+    )
+    context_window_chars: int = field(
+        metadata={
+            "description": (
+                "Half-width (in characters) of the surrounding-text window "
+                "captured as context for each contrast-pair violation."
+            )
+        }
+    )
 
 
 class ContrastPairRule(Rule[ContrastPairRuleConfig]):

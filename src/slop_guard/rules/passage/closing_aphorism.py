@@ -22,7 +22,7 @@ Severity: Low; fires at most once per passage on the closing sentence only.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument
 from slop_guard.models import RuleResult, Violation
@@ -56,8 +56,22 @@ _MIN_PATTERN_MATCHES = 2
 class ClosingAphorismRuleConfig(RuleConfig):
     """Config for closing aphorism detection."""
 
-    min_sentences: int
-    penalty: int
+    min_sentences: int = field(
+        metadata={
+            "description": (
+                "Minimum total sentence count required before the closing "
+                "sentence is inspected; shorter passages are skipped."
+            )
+        }
+    )
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once when the closing sentence matches "
+                "enough generalizing/moralizing patterns."
+            )
+        }
+    )
 
 
 class ClosingAphorismRule(Rule[ClosingAphorismRuleConfig]):

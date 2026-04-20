@@ -19,7 +19,7 @@ Severity: Low to medium; stylistic alone, but meaningful when persistent.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument
 from slop_guard.models import RuleResult, Violation
@@ -36,9 +36,30 @@ _EM_DASH_RE = re.compile(r"\u2014| -- ")
 class EmDashDensityRuleConfig(RuleConfig):
     """Config for em dash density thresholding."""
 
-    words_basis: float
-    density_threshold: float
-    penalty: int
+    words_basis: float = field(
+        metadata={
+            "description": (
+                "Word count used as the denominator basis for computing "
+                "em-dash density (typically 150); density is reported as "
+                "em dashes per this many words."
+            )
+        }
+    )
+    density_threshold: float = field(
+        metadata={
+            "description": (
+                "Maximum allowed em dashes per words_basis words; a density "
+                "strictly greater than this threshold triggers the violation."
+            )
+        }
+    )
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once when em-dash density exceeds density_threshold."
+            )
+        }
+    )
 
 
 class EmDashDensityRule(Rule[EmDashDensityRuleConfig]):

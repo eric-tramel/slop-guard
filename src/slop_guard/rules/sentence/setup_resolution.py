@@ -19,7 +19,7 @@ Severity: Medium; repeated occurrences strongly suggest formulaic generation.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument, context_around
 from slop_guard.models import RuleResult, Violation
@@ -56,9 +56,31 @@ _SETUP_RESOLUTION_B_RE = re.compile(
 class SetupResolutionRuleConfig(RuleConfig):
     """Config for setup-resolution pattern detection."""
 
-    penalty: int
-    record_cap: int
-    context_window_chars: int
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied per recorded setup-resolution match "
+                "(for example \"This isn't X. It's Y.\")."
+            )
+        }
+    )
+    record_cap: int = field(
+        metadata={
+            "description": (
+                "Maximum number of setup-resolution matches recorded as "
+                "individual violations in a single pass; further matches "
+                "still contribute to the count but are not reported."
+            )
+        }
+    )
+    context_window_chars: int = field(
+        metadata={
+            "description": (
+                "Half-width (in characters) of the surrounding-text window "
+                "captured as context for each setup-resolution violation."
+            )
+        }
+    )
 
 
 class SetupResolutionRule(Rule[SetupResolutionRuleConfig]):

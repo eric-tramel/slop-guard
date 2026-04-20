@@ -20,7 +20,7 @@ Severity: Medium to high; often a strong signal of assistant-authored tone.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument, context_around
 from slop_guard.models import RuleResult, Violation
@@ -75,9 +75,31 @@ def _false_narrativity_advice(phrase: str) -> str:
 class ToneMarkerRuleConfig(RuleConfig):
     """Config for tone marker pattern matching."""
 
-    tone_penalty: int
-    sentence_opener_penalty: int
-    context_window_chars: int
+    tone_penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied per matched meta-communication or "
+                "false-narrativity tone-marker phrase (for example 'would "
+                "you like' or 'this is where things get interesting')."
+            )
+        }
+    )
+    sentence_opener_penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied per matched stylized sentence opener "
+                "(for example 'Certainly,' or 'Absolutely!')."
+            )
+        }
+    )
+    context_window_chars: int = field(
+        metadata={
+            "description": (
+                "Half-width (in characters) of the surrounding-text window "
+                "captured as context for each tone-marker violation."
+            )
+        }
+    )
 
 
 class ToneMarkerRule(Rule[ToneMarkerRuleConfig]):

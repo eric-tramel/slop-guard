@@ -20,7 +20,7 @@ content and should generally be fixed before release.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument, context_around
 from slop_guard.models import RuleResult, Violation
@@ -37,8 +37,22 @@ _PLACEHOLDER_RE = re.compile(
 class PlaceholderRuleConfig(RuleConfig):
     """Config for placeholder text detection."""
 
-    penalty: int
-    context_window_chars: int
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once per matched bracketed placeholder "
+                "(for example '[insert source]' or '[your email here]')."
+            )
+        }
+    )
+    context_window_chars: int = field(
+        metadata={
+            "description": (
+                "Half-width (in characters) of the surrounding-text window "
+                "captured as context for each placeholder violation."
+            )
+        }
+    )
 
 
 class PlaceholderRule(Rule[PlaceholderRuleConfig]):

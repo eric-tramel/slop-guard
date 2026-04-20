@@ -19,7 +19,7 @@ Severity: Low to medium; punctuation style signal that compounds with others.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument
 from slop_guard.models import RuleResult, Violation
@@ -38,9 +38,32 @@ _JSON_COLON_RE = re.compile(r': ["{\[\d]|: true|: false|: null')
 class ColonDensityRuleConfig(RuleConfig):
     """Config for elaboration-colon density checks."""
 
-    words_basis: float
-    density_threshold: float
-    penalty: int
+    words_basis: float = field(
+        metadata={
+            "description": (
+                "Word count used as the denominator basis for computing "
+                "elaboration-colon density (typically 150); density is "
+                "reported as colons per this many prose words."
+            )
+        }
+    )
+    density_threshold: float = field(
+        metadata={
+            "description": (
+                "Maximum allowed elaboration colons per words_basis prose "
+                "words; a density strictly greater than this threshold "
+                "triggers the violation."
+            )
+        }
+    )
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once when elaboration-colon density "
+                "exceeds density_threshold."
+            )
+        }
+    )
 
 
 class ColonDensityRule(Rule[ColonDensityRuleConfig]):

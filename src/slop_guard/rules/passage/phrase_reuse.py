@@ -19,7 +19,7 @@ Severity: Medium to high; repeated long phrases are strong formulaicity signals.
 """
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.config import Hyperparameters
 from slop_guard.document import AnalysisDocument
@@ -43,11 +43,45 @@ from slop_guard.rules.ngrams import (
 class PhraseReuseRuleConfig(RuleConfig):
     """Config for phrase-reuse detection and recording."""
 
-    penalty: int
-    record_cap: int
-    repeated_ngram_min_n: int
-    repeated_ngram_max_n: int
-    repeated_ngram_min_count: int
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied per recorded repeated n-gram phrase match."
+            )
+        }
+    )
+    record_cap: int = field(
+        metadata={
+            "description": (
+                "Maximum number of repeated-phrase findings recorded as "
+                "individual violations in a single pass."
+            )
+        }
+    )
+    repeated_ngram_min_n: int = field(
+        metadata={
+            "description": (
+                "Minimum n-gram length (in words) considered when scanning "
+                "for repeated phrases; shorter phrases are ignored."
+            )
+        }
+    )
+    repeated_ngram_max_n: int = field(
+        metadata={
+            "description": (
+                "Maximum n-gram length (in words) considered when scanning "
+                "for repeated phrases."
+            )
+        }
+    )
+    repeated_ngram_min_count: int = field(
+        metadata={
+            "description": (
+                "Minimum number of occurrences an n-gram must reach within "
+                "the document to qualify as a repeated-phrase violation."
+            )
+        }
+    )
 
 
 class PhraseReuseRule(Rule[PhraseReuseRuleConfig]):

@@ -19,7 +19,7 @@ Severity: High; disclosure phrases are strong and explicit AI-origin signals.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument, context_around
 from slop_guard.models import RuleResult, Violation
@@ -53,8 +53,22 @@ _AI_DISCLOSURE_COMPLEX_PATTERNS: tuple[re.Pattern[str], ...] = (
 class AIDisclosureRuleConfig(RuleConfig):
     """Config for AI self-disclosure pattern matching."""
 
-    penalty: int
-    context_window_chars: int
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once per matched AI self-disclosure phrase "
+                "(for example 'as an AI' or 'as of my knowledge cutoff')."
+            )
+        }
+    )
+    context_window_chars: int = field(
+        metadata={
+            "description": (
+                "Half-width (in characters) of the surrounding-text window "
+                "captured as context for each AI-disclosure violation."
+            )
+        }
+    )
 
 
 class AIDisclosureRule(Rule[AIDisclosureRuleConfig]):
