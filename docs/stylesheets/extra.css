@@ -1,0 +1,473 @@
+/* ---------- Slop-guard palette ---------- */
+
+:root {
+  --sg-paper:        #f6efe4;
+  --sg-paper-strong: #fffaf3;
+  --sg-paper-cool:   #eef5f1;
+  --sg-ink:          #1d271f;
+  --sg-muted:        #58645d;
+  --sg-line:         rgba(29, 39, 31, 0.12);
+
+  --sg-slop:         #c4573e;
+  --sg-slop-deep:    #8e2e1d;
+  --sg-slop-soft:    rgba(196, 87, 62, 0.14);
+  --sg-clean:        #0f706f;
+  --sg-clean-deep:   #0b5958;
+  --sg-clean-soft:   rgba(15, 112, 111, 0.14);
+  --sg-accent:       #d5a550;
+  --sg-accent-deep:  #8f6421;
+
+  /* Dark-mode variants, tuned to stay warm on a deep ink ground. */
+  --sg-paper-dark:        #f6efe4;
+  --sg-ink-dark:          #10171a;
+  --sg-ink-dark-raised:   #18211e;
+  --sg-ink-dark-lifted:   #1f2a26;
+  --sg-muted-dark:        rgba(246, 239, 228, 0.72);
+  --sg-line-dark:         rgba(246, 239, 228, 0.14);
+  --sg-slop-light:        #e48871;
+  --sg-clean-light:       #5fc7bd;
+  --sg-accent-light:      #e9ba6b;
+}
+
+/* ---------- Light scheme (default) ---------- */
+
+[data-md-color-scheme="default"] {
+  --md-default-bg-color:            var(--sg-paper);
+  --md-default-bg-color--light:     var(--sg-paper-strong);
+  --md-default-bg-color--lighter:   var(--sg-paper-strong);
+  --md-default-bg-color--lightest:  var(--sg-paper-strong);
+
+  --md-default-fg-color:            var(--sg-ink);
+  --md-default-fg-color--light:     var(--sg-muted);
+  --md-default-fg-color--lighter:   rgba(29, 39, 31, 0.46);
+  --md-default-fg-color--lightest:  rgba(29, 39, 31, 0.16);
+
+  --md-primary-fg-color:            var(--sg-clean);
+  --md-primary-fg-color--light:     #2a8a89;
+  --md-primary-fg-color--dark:      var(--sg-clean-deep);
+  --md-primary-bg-color:            var(--sg-paper-strong);
+  --md-primary-bg-color--light:     rgba(255, 250, 243, 0.78);
+
+  --md-accent-fg-color:             var(--sg-slop);
+  --md-accent-fg-color--transparent: var(--sg-slop-soft);
+  --md-accent-bg-color:             var(--sg-paper-strong);
+  --md-accent-bg-color--light:      rgba(255, 250, 243, 0.78);
+
+  --md-typeset-a-color:             var(--sg-clean);
+  --md-typeset-mark-color:          var(--sg-slop-soft);
+
+  --md-code-bg-color:               rgba(255, 250, 243, 0.92);
+  --md-code-fg-color:               var(--sg-ink);
+  --md-code-hl-color:               var(--sg-accent);
+
+  --md-footer-bg-color:             #16201b;
+  --md-footer-bg-color--dark:       #0f1714;
+}
+
+/* ---------- Dark scheme (slate) ---------- */
+
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color:            var(--sg-ink-dark);
+  --md-default-bg-color--light:     var(--sg-ink-dark-raised);
+  --md-default-bg-color--lighter:   var(--sg-ink-dark-lifted);
+  --md-default-bg-color--lightest:  #27322d;
+
+  --md-default-fg-color:            var(--sg-paper-dark);
+  --md-default-fg-color--light:     var(--sg-muted-dark);
+  --md-default-fg-color--lighter:   rgba(246, 239, 228, 0.52);
+  --md-default-fg-color--lightest:  rgba(246, 239, 228, 0.18);
+
+  --md-primary-fg-color:            var(--sg-clean-light);
+  --md-primary-fg-color--light:     #82dacf;
+  --md-primary-fg-color--dark:      #3ea79c;
+  --md-primary-bg-color:            var(--sg-ink-dark);
+  --md-primary-bg-color--light:     var(--sg-ink-dark-raised);
+
+  --md-accent-fg-color:             var(--sg-slop-light);
+  --md-accent-fg-color--transparent: rgba(228, 136, 113, 0.18);
+  --md-accent-bg-color:             var(--sg-ink-dark);
+  --md-accent-bg-color--light:      var(--sg-ink-dark-raised);
+
+  --md-typeset-a-color:             var(--sg-clean-light);
+  --md-typeset-mark-color:          rgba(228, 136, 113, 0.22);
+
+  --md-code-bg-color:               #0c1311;
+  --md-code-fg-color:               var(--sg-paper-dark);
+  --md-code-hl-color:               var(--sg-accent-light);
+
+  --md-footer-bg-color:             #0a1210;
+  --md-footer-bg-color--dark:       #060a08;
+}
+
+/* ---------- Rule page: header (eyebrow, title, source, lede) ----------
+
+   Intentionally uses em-relative sizing so the rule page inherits the
+   Material typographic scale from `.md-typeset` (same base as the nav,
+   breadcrumbs, and body prose elsewhere in the docs).
+*/
+
+.sg-rule-page__header {
+  margin: 0 0 1.35rem 0;
+}
+
+.sg-rule-page__eyebrow {
+  font-size: 0.7em;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 0.55rem;
+}
+
+[data-md-color-scheme="default"] .sg-rule-page__header--word      .sg-rule-page__eyebrow { color: var(--sg-muted); }
+[data-md-color-scheme="default"] .sg-rule-page__header--sentence  .sg-rule-page__eyebrow { color: var(--sg-slop); }
+[data-md-color-scheme="default"] .sg-rule-page__header--paragraph .sg-rule-page__eyebrow { color: var(--sg-accent-deep); }
+[data-md-color-scheme="default"] .sg-rule-page__header--passage   .sg-rule-page__eyebrow { color: var(--sg-clean); }
+
+[data-md-color-scheme="slate"] .sg-rule-page__header--word      .sg-rule-page__eyebrow { color: var(--sg-muted-dark); }
+[data-md-color-scheme="slate"] .sg-rule-page__header--sentence  .sg-rule-page__eyebrow { color: var(--sg-slop-light); }
+[data-md-color-scheme="slate"] .sg-rule-page__header--paragraph .sg-rule-page__eyebrow { color: var(--sg-accent-light); }
+[data-md-color-scheme="slate"] .sg-rule-page__header--passage   .sg-rule-page__eyebrow { color: var(--sg-clean-light); }
+
+.sg-rule-page__titlebar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.9rem;
+}
+
+.md-typeset .sg-rule-page .sg-rule-page__title {
+  margin: 0;
+  font-size: 1.75em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.md-typeset .sg-rule-page .sg-source-chip,
+.md-typeset .sg-rule-page .sg-source-chip:visited {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18em 0.6em;
+  font-size: 0.75em;
+  font-weight: 600;
+  border-radius: 999px;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  color: var(--md-default-fg-color--light);
+  text-decoration: none !important;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.md-typeset .sg-rule-page .sg-source-chip:hover {
+  color: var(--md-default-fg-color);
+  border-color: var(--md-primary-fg-color);
+}
+
+.sg-source-chip__icon { flex-shrink: 0; }
+
+.md-typeset .sg-rule-page .sg-rule-page__lede {
+  margin: 0.7rem 0 0 0;
+  font-size: 1em;
+  line-height: 1.55;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset .sg-rule-page .sg-rule-page__lede code {
+  background: var(--md-default-bg-color--light);
+  color: var(--md-default-fg-color);
+  font-size: 0.88em;
+  padding: 0.08em 0.35em;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 4px;
+}
+
+/* ---------- Rule page: three-column meta strip ---------- */
+
+.md-typeset .sg-rule-page .sg-rule-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0 0 1.8rem 0;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 12px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.sg-rule-meta__item {
+  padding: 0.65rem 0.85rem 0.7rem;
+  border-right: 1px solid var(--md-default-fg-color--lightest);
+  min-width: 0;
+}
+
+.sg-rule-meta__item:last-child { border-right: 0; }
+
+.md-typeset .sg-rule-page .sg-rule-meta__item dt {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.65em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset .sg-rule-page .sg-rule-meta__item dd {
+  margin: 0;
+  font-family: var(--md-code-font-family, ui-monospace, monospace);
+  font-size: 0.85em;
+  color: var(--md-default-fg-color);
+  word-break: break-all;
+}
+
+.md-typeset .sg-rule-page .sg-rule-meta__item dd code {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+@media (max-width: 640px) {
+  .md-typeset .sg-rule-page .sg-rule-meta {
+    grid-template-columns: 1fr;
+  }
+  .sg-rule-meta__item {
+    border-right: 0;
+    border-bottom: 1px solid var(--md-default-fg-color--lightest);
+  }
+  .sg-rule-meta__item:last-child { border-bottom: 0; }
+}
+
+/* ---------- Rule page: section headings act as quiet dividers ---------- */
+
+.md-typeset .sg-rule-page h2 {
+  margin: 1.4rem 0 0.7rem 0;
+  padding: 1.1rem 0 0 0;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+  font-size: 0.7em;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--md-default-fg-color--light);
+}
+
+/* ---------- Rule page: behavior table ---------- */
+
+.md-typeset .sg-rule-page .sg-behavior {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1rem 0;
+  font-size: 1em;
+  background: transparent;
+}
+
+.md-typeset .sg-rule-page .sg-behavior th,
+.md-typeset .sg-rule-page .sg-behavior td {
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+  vertical-align: top;
+  background: transparent;
+  line-height: 1.5;
+}
+
+.md-typeset .sg-rule-page .sg-behavior th {
+  font-size: 0.65em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--md-default-fg-color--light);
+  background: transparent;
+}
+
+.md-typeset .sg-rule-page .sg-behavior tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.sg-behavior__result { width: 6rem; }
+.sg-behavior__why    { color: var(--md-default-fg-color--light); }
+
+.sg-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sg-status__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.sg-status--flag { color: var(--sg-slop); }
+.sg-status--flag .sg-status__dot { background: var(--sg-slop); }
+.sg-status--pass { color: var(--sg-clean); }
+.sg-status--pass .sg-status__dot { background: var(--sg-clean); }
+
+[data-md-color-scheme="slate"] .sg-status--flag { color: var(--sg-slop-light); }
+[data-md-color-scheme="slate"] .sg-status--flag .sg-status__dot { background: var(--sg-slop-light); }
+[data-md-color-scheme="slate"] .sg-status--pass { color: var(--sg-clean-light); }
+[data-md-color-scheme="slate"] .sg-status--pass .sg-status__dot { background: var(--sg-clean-light); }
+
+.md-typeset .sg-rule-page .sg-behavior__input {
+  background: transparent;
+  padding: 0;
+  font-size: 0.9em;
+  color: var(--md-default-fg-color);
+  word-break: break-word;
+}
+
+/* ---------- Rule page: default configuration grid ---------- */
+
+.sg-defaults {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.55rem;
+  margin: 0 0 1.6rem 0;
+}
+
+.sg-defaults__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.8rem 0.65rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 8px;
+  background: transparent;
+}
+
+.sg-defaults__label {
+  font-size: 0.65em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--md-default-fg-color--light);
+}
+
+.sg-defaults__value {
+  font-family: var(--md-code-font-family, ui-monospace, monospace);
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--md-default-fg-color);
+}
+
+/* ---------- Rule page: contributors chips ---------- */
+
+.sg-contributors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1rem 0;
+}
+
+.md-typeset .sg-rule-page .sg-contrib,
+.md-typeset .sg-rule-page .sg-contrib:visited {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.3rem 0.75rem 0.3rem 0.3rem;
+  border-radius: 999px;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  text-decoration: none !important;
+  color: var(--md-default-fg-color);
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.md-typeset .sg-rule-page .sg-contrib:hover {
+  border-color: var(--md-primary-fg-color);
+  background: var(--md-default-bg-color--light);
+}
+
+.sg-contrib__avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--md-default-bg-color);
+  border: 1px solid var(--md-default-fg-color--lightest);
+  flex-shrink: 0;
+}
+
+.sg-contrib__name {
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+/* ---------- Rule-library index card grid ---------- */
+
+.sg-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.9rem;
+  margin: 0.6rem 0 1.4rem 0;
+}
+
+.sg-rule-card {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 14px;
+  background: var(--md-default-bg-color--light);
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+[data-md-color-scheme="default"] .sg-rule-card {
+  box-shadow: 0 1px 2px rgba(29, 39, 31, 0.04);
+}
+
+.sg-rule-card:hover {
+  border-color: var(--md-primary-fg-color);
+  transform: translateY(-2px);
+}
+
+[data-md-color-scheme="default"] .sg-rule-card:hover {
+  background: var(--sg-paper-strong);
+  box-shadow: 0 10px 24px rgba(78, 48, 29, 0.10);
+}
+
+[data-md-color-scheme="slate"] .sg-rule-card:hover {
+  background: var(--sg-ink-dark-lifted);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.md-typeset .sg-rule-card__link,
+.md-typeset .sg-rule-card__link:visited,
+.md-typeset .sg-rule-card__link:hover,
+.md-typeset .sg-rule-card__link *,
+.md-typeset .sg-rule-card__link:hover * {
+  text-decoration: none !important;
+  border-bottom: 0 !important;
+}
+
+.md-typeset .sg-rule-card__link {
+  display: block;
+  padding: 0.85rem 1rem;
+  color: inherit;
+}
+
+.sg-rule-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.35rem;
+}
+
+.sg-rule-card__title {
+  font-weight: 700;
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+  color: var(--md-primary-fg-color);
+}
+
+.sg-rule-card__summary {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  color: var(--md-default-fg-color--light);
+}

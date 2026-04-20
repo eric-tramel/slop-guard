@@ -5,7 +5,7 @@ UV_RUN ?= $(UV) run --group dev
 UV_DOCS_RUN ?= $(UV) run --group docs
 PACKAGE ?= slop_guard
 
-.PHONY: help sync fix format format-check lint typecheck test coverage check docs-serve docs-build docs-check build verify-wheel clean
+.PHONY: help sync fix format format-check lint typecheck test coverage check docs-rules docs-serve docs-build docs-check build verify-wheel clean
 
 help:
 	@printf "Available targets:\n"
@@ -18,6 +18,7 @@ help:
 	@printf "  make test          Run the pytest suite\n"
 	@printf "  make coverage      Run pytest with coverage enforcement\n"
 	@printf "  make check         Run formatting, lint, type, and coverage checks\n"
+	@printf "  make docs-rules    Regenerate the rule library page from the rule catalog\n"
 	@printf "  make docs-serve    Preview the Zensical docs locally\n"
 	@printf "  make docs-build    Build the Zensical docs site\n"
 	@printf "  make docs-check    Build docs and lint README/docs prose with slop-guard\n"
@@ -52,14 +53,17 @@ coverage:
 
 check: format-check lint typecheck coverage
 
-docs-serve:
+docs-rules:
+	$(UV_DOCS_RUN) python -m tools.docs_rules
+
+docs-serve: docs-rules
 	$(UV_DOCS_RUN) zensical serve
 
-docs-build:
+docs-build: docs-rules
 	$(UV_DOCS_RUN) python -m tools.docs_site build
 
 docs-check: docs-build
-	$(UV_DOCS_RUN) sg -t 60 README.md $$(find docs -type f -name '*.md' | sort)
+	$(UV_DOCS_RUN) sg -t 60 README.md $$(find docs -type f -name '*.md' -not -path 'docs/rules/*' | sort)
 
 build:
 	$(UV) build

@@ -13,14 +13,48 @@ nav = [
   { "Overview" = "index.md" },
   { "Get Started" = "get-started.md" },
   { "Agents" = "agents.md" },
+  { "Rules" = [
+    { "Overview" = "rules/index.md" },
+    { "Word rules" = [
+      { "Slop Word" = "rules/slop-word.md" },
+    ] },
+    { "Sentence rules" = [
+      { "Slop Phrase" = "rules/slop-phrase.md" },
+      { "Tone Marker" = "rules/tone-marker.md" },
+      { "Weasel Phrase" = "rules/weasel-phrase.md" },
+      { "AI Disclosure" = "rules/ai-disclosure.md" },
+      { "Placeholder" = "rules/placeholder.md" },
+      { "Contrast Pair" = "rules/contrast-pair.md" },
+      { "Intrasentence Keyword Bold" = "rules/intrasentence-keyword-bold.md" },
+      { "Setup Resolution" = "rules/setup-resolution.md" },
+      { "Pithy Fragment" = "rules/pithy-fragment.md" },
+    ] },
+    { "Paragraph rules" = [
+      { "Structural Pattern" = "rules/structural-pattern.md" },
+      { "Bullet Density" = "rules/bullet-density.md" },
+      { "Blockquote Density" = "rules/blockquote-density.md" },
+      { "Bold Term Bullet Run" = "rules/bold-term-bullet-run.md" },
+      { "Horizontal Rule Overuse" = "rules/horizontal-rule-overuse.md" },
+    ] },
+    { "Passage rules" = [
+      { "Rhythm" = "rules/rhythm.md" },
+      { "Em Dash Density" = "rules/em-dash-density.md" },
+      { "Colon Density" = "rules/colon-density.md" },
+      { "Phrase Reuse" = "rules/phrase-reuse.md" },
+      { "Copula Chain" = "rules/copula-chain.md" },
+      { "Extreme Sentence" = "rules/extreme-sentence.md" },
+      { "Closing Aphorism" = "rules/closing-aphorism.md" },
+      { "Paragraph Balance" = "rules/paragraph-balance.md" },
+      { "Paragraph CV" = "rules/paragraph-cv.md" },
+    ] },
+  ] },
 ]
+extra_css = ["stylesheets/extra.css"]
 
 [project.theme]
 logo = "images/icon_transparent_2.png"
 favicon = "images/icon_transparent_2.png"
 features = [
-  "content.action.edit",
-  "content.action.view",
   "content.code.copy",
   "navigation.footer",
   "navigation.path",
@@ -29,12 +63,16 @@ features = [
 [[project.theme.palette]]
 media = "(prefers-color-scheme: light)"
 scheme = "default"
+primary = "custom"
+accent = "custom"
 toggle.icon = "lucide/sun"
 toggle.name = "Switch to dark mode"
 
 [[project.theme.palette]]
 media = "(prefers-color-scheme: dark)"
 scheme = "slate"
+primary = "custom"
+accent = "custom"
 toggle.icon = "lucide/moon"
 toggle.name = "Switch to light mode"
 
