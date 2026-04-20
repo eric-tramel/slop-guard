@@ -315,9 +315,71 @@ def test_deploy_site_wraps_build_with_mike_deploy(
             True,
             "symlink",
             None,
-            {"branch": "gh-pages", "deploy_prefix": "docs"},
+            {"branch": "gh-pages", "allow_empty": True, "deploy_prefix": "docs"},
         )
     ]
+
+
+def test_deploy_site_allows_empty_commits_when_docs_unchanged(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Deployment should succeed when the built site matches the previous deploy.
+
+    Mike's deploy context manager raises ``GitEmptyCommit`` by default when the
+    rebuilt site is bit-identical to the last deploy — this happens on main
+    pushes that don't touch docs content. Passing ``allow_empty=True`` keeps
+    the workflow idempotent so code-only merges do not fail the Pages job.
+    """
+    config_path = tmp_path / "zensical.toml"
+    captured_kwargs: dict[str, object] = {}
+
+    @contextlib.contextmanager
+    def fake_deploy(*_args: object, **kwargs: object):
+        captured_kwargs.update(kwargs)
+        yield
+
+    fake_commands = types.SimpleNamespace(
+        AliasType=types.SimpleNamespace(symlink="symlink"),
+        deploy=fake_deploy,
+    )
+    fake_git_utils = types.SimpleNamespace(
+        update_from_upstream=lambda remote, branch: None,
+        push_branch=lambda remote, branch: None,
+    )
+    monkeypatch.setattr(
+        docs_site.importlib,
+        "import_module",
+        lambda name: {
+            "mike.commands": fake_commands,
+            "mike.git_utils": fake_git_utils,
+        }[name],
+    )
+    monkeypatch.setattr(docs_site, "resolve_config_file", lambda _: config_path)
+    monkeypatch.setattr(
+        docs_site,
+        "_load_docs_layout",
+        lambda _: (tmp_path / "docs", tmp_path / "site", {"site_dir": "site"}),
+    )
+    monkeypatch.setattr(
+        docs_site,
+        "build_site",
+        lambda config_file, docs_version: (tmp_path / "site" / "guide.md",),
+    )
+
+    docs_site.deploy_site(
+        None,
+        "dev",
+        (),
+        "dev (main)",
+        False,
+        "gh-pages",
+        "origin",
+        True,
+        "docs",
+    )
+
+    assert captured_kwargs["allow_empty"] is True
 
 
 def test_main_dispatches_build_command(monkeypatch: pytest.MonkeyPatch) -> None:
