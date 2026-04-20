@@ -184,6 +184,7 @@ def deploy_site(
         mike_commands.AliasType.symlink,
         None,
         branch=branch,
+        allow_empty=True,
         deploy_prefix=deploy_prefix,
     ):
         build_site(str(resolved_config), docs_version=version)
