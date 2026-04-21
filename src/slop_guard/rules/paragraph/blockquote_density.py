@@ -19,7 +19,7 @@ Severity: Medium; usually indicates a style issue rather than factual error.
 """
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument
 from slop_guard.models import RuleResult, Violation
@@ -38,10 +38,38 @@ from slop_guard.rules.fitting import (
 class BlockquoteDensityRuleConfig(RuleConfig):
     """Config for blockquote overuse detection."""
 
-    min_lines: int
-    free_lines: int
-    cap: int
-    penalty_step: int
+    min_lines: int = field(
+        metadata={
+            "description": (
+                "Minimum number of blockquote lines (outside code fences) that "
+                "must appear in the document before the rule fires at all."
+            )
+        }
+    )
+    free_lines: int = field(
+        metadata={
+            "description": (
+                "Number of blockquote lines excluded from the penalty budget; "
+                "only the count beyond this threshold contributes to the penalty."
+            )
+        }
+    )
+    cap: int = field(
+        metadata={
+            "description": (
+                "Maximum excess blockquote-line count used when scaling the "
+                "penalty, so a very long run cannot produce an unbounded score."
+            )
+        }
+    )
+    penalty_step: int = field(
+        metadata={
+            "description": (
+                "Penalty applied per unit of capped excess blockquote lines "
+                "(final penalty is penalty_step * min(excess, cap))."
+            )
+        }
+    )
 
 
 class BlockquoteDensityRule(Rule[BlockquoteDensityRuleConfig]):

@@ -19,7 +19,7 @@ Severity: Medium; each hit indicates weak attribution and rhetorical padding.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument, context_around
 from slop_guard.models import RuleResult, Violation
@@ -47,8 +47,22 @@ _WEASEL_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
 class WeaselPhraseRuleConfig(RuleConfig):
     """Config for weasel phrase detection."""
 
-    penalty: int
-    context_window_chars: int
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once per matched weasel phrase (for example "
+                "'many believe' or 'studies show')."
+            )
+        }
+    )
+    context_window_chars: int = field(
+        metadata={
+            "description": (
+                "Half-width (in characters) of the surrounding-text window "
+                "captured as context for each weasel-phrase violation."
+            )
+        }
+    )
 
 
 class WeaselPhraseRule(Rule[WeaselPhraseRuleConfig]):

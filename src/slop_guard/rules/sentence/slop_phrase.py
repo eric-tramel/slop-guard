@@ -19,7 +19,7 @@ Severity: Medium; each hit is a strong indicator of templated writing style.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument, context_around
 from slop_guard.models import RuleResult, Violation
@@ -200,8 +200,22 @@ def _slop_phrase_advice(phrase: str) -> str:
 class SlopPhraseRuleConfig(RuleConfig):
     """Config for phrase-level slop pattern matching."""
 
-    penalty: int
-    context_window_chars: int
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied per matched slop phrase or 'not just X, "
+                "but Y' transition template."
+            )
+        }
+    )
+    context_window_chars: int = field(
+        metadata={
+            "description": (
+                "Half-width (in characters) of the surrounding-text window "
+                "captured as context for each slop-phrase violation."
+            )
+        }
+    )
 
 
 class SlopPhraseRule(Rule[SlopPhraseRuleConfig]):

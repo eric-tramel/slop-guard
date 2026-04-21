@@ -16,7 +16,7 @@ Example Non-Violations:
 Severity: Medium; each hit adds structural evidence of generated text.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument
 from slop_guard.models import RuleResult, Violation
@@ -28,8 +28,22 @@ from slop_guard.rules.fitting import fit_penalty_contrastive
 class ExtremeSentenceRuleConfig(RuleConfig):
     """Config for extreme sentence length detection."""
 
-    min_words: int
-    penalty: int
+    min_words: int = field(
+        metadata={
+            "description": (
+                "Minimum sentence length (in words) that qualifies as a "
+                "run-on; any sentence with at least this many words emits "
+                "a violation."
+            )
+        }
+    )
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied per sentence that meets or exceeds min_words."
+            )
+        }
+    )
 
 
 class ExtremeSentenceRule(Rule[ExtremeSentenceRuleConfig]):

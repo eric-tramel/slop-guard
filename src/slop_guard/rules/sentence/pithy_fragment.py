@@ -20,7 +20,7 @@ Severity: Low to medium; mostly stylistic alone, stronger when clustered.
 
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument
 from slop_guard.models import RuleResult, Violation
@@ -39,9 +39,30 @@ _PITHY_PIVOT_RE = re.compile(r",\s+(?:but|yet|and|not|or)\b", re.IGNORECASE)
 class PithyFragmentRuleConfig(RuleConfig):
     """Config for pithy fragment thresholds."""
 
-    penalty: int
-    max_sentence_words: int
-    record_cap: int
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied per recorded pithy-fragment match "
+                "(for example 'Simple, but powerful.')."
+            )
+        }
+    )
+    max_sentence_words: int = field(
+        metadata={
+            "description": (
+                "Maximum sentence length (in words) eligible to match as a "
+                "pithy fragment; longer sentences are skipped."
+            )
+        }
+    )
+    record_cap: int = field(
+        metadata={
+            "description": (
+                "Maximum number of pithy-fragment matches recorded as "
+                "individual violations in a single pass."
+            )
+        }
+    )
 
 
 class PithyFragmentRule(Rule[PithyFragmentRuleConfig]):

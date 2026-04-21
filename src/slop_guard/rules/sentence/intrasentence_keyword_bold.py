@@ -25,7 +25,7 @@ Severity: Low per instance, medium when repeated frequently in one passage.
 import math
 import re
 from bisect import bisect_right
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TypeAlias
 
 from slop_guard.document import AnalysisDocument, context_around
@@ -182,11 +182,45 @@ def _collect_keyword_bold_matches(
 class IntrasentenceKeywordBoldRuleConfig(RuleConfig):
     """Config for the intra-sentence keyword bold detector."""
 
-    penalty: int
-    record_cap: int
-    advice_min: int
-    max_words: int
-    context_window_chars: int
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied per recorded mid-sentence keyword-bold span match."
+            )
+        }
+    )
+    record_cap: int = field(
+        metadata={
+            "description": (
+                "Maximum number of keyword-bold matches recorded as "
+                "individual violations in a single pass."
+            )
+        }
+    )
+    advice_min: int = field(
+        metadata={
+            "description": (
+                "Threshold on the total keyword-bold match count at or "
+                "above which a summary advice line is emitted."
+            )
+        }
+    )
+    max_words: int = field(
+        metadata={
+            "description": (
+                "Maximum span length (in words) eligible to match as an "
+                "intra-sentence keyword bold; longer bold spans are skipped."
+            )
+        }
+    )
+    context_window_chars: int = field(
+        metadata={
+            "description": (
+                "Half-width (in characters) of the surrounding-text window "
+                "captured as context for each keyword-bold violation."
+            )
+        }
+    )
 
 
 class IntrasentenceKeywordBoldRule(Rule[IntrasentenceKeywordBoldRuleConfig]):

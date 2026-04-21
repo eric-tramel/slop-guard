@@ -19,7 +19,7 @@ Severity: Medium to high when long runs appear in the same section.
 """
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument
 from slop_guard.models import RuleResult, Violation
@@ -36,8 +36,22 @@ from slop_guard.rules.fitting import (
 class BoldTermBulletRunRuleConfig(RuleConfig):
     """Config for bold-term bullet run thresholds."""
 
-    min_run_length: int
-    penalty: int
+    min_run_length: int = field(
+        metadata={
+            "description": (
+                "Minimum number of contiguous bullets that each start with a "
+                "bold term required to fire the run violation."
+            )
+        }
+    )
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied for each qualifying run that meets or "
+                "exceeds min_run_length."
+            )
+        }
+    )
 
 
 class BoldTermBulletRunRule(Rule[BoldTermBulletRunRuleConfig]):

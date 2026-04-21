@@ -21,7 +21,7 @@ language and accumulate penalty quickly.
 
 import re
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TypeAlias
 
 from slop_guard.document import AnalysisDocument, context_around
@@ -232,8 +232,21 @@ def _is_probable_proper_noun_match(text: str, match: re.Match[str]) -> bool:
 class SlopWordRuleConfig(RuleConfig):
     """Config for slop word matching behavior."""
 
-    penalty: int
-    context_window_chars: int
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once per matched slop-word occurrence in the document."
+            )
+        }
+    )
+    context_window_chars: int = field(
+        metadata={
+            "description": (
+                "Half-width (in characters) of the surrounding-text window "
+                "captured as context for each slop-word violation."
+            )
+        }
+    )
 
 
 class SlopWordRule(Rule[SlopWordRuleConfig]):

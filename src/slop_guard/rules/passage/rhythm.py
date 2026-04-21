@@ -19,7 +19,7 @@ Severity: Medium; a useful style signal that is stronger with other findings.
 """
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument
 from slop_guard.models import RuleResult, Violation
@@ -37,9 +37,31 @@ from slop_guard.rules.fitting import (
 class RhythmRuleConfig(RuleConfig):
     """Config for rhythm variance thresholding."""
 
-    min_sentences: int
-    cv_threshold: float
-    penalty: int
+    min_sentences: int = field(
+        metadata={
+            "description": (
+                "Minimum number of sentences required before the rhythm rule "
+                "attempts any variance analysis; shorter passages are "
+                "skipped entirely."
+            )
+        }
+    )
+    cv_threshold: float = field(
+        metadata={
+            "description": (
+                "Lower bound on the sentence-length coefficient of variation "
+                "(std/mean). A CV strictly below this value indicates overly "
+                "uniform cadence and triggers a violation."
+            )
+        }
+    )
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once when the passage falls below cv_threshold."
+            )
+        }
+    )
 
 
 class RhythmRule(Rule[RhythmRuleConfig]):

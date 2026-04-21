@@ -20,7 +20,7 @@ Severity: Low to medium; mostly a formatting signal unless heavily repeated.
 
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument
 from slop_guard.models import RuleResult, Violation
@@ -37,8 +37,22 @@ _HORIZONTAL_RULE_RE = re.compile(r"^\s*(?:---+|\*\*\*+|___+)\s*$", re.MULTILINE)
 class HorizontalRuleOveruseRuleConfig(RuleConfig):
     """Config for horizontal rule overuse thresholds."""
 
-    min_count: int
-    penalty: int
+    min_count: int = field(
+        metadata={
+            "description": (
+                "Minimum number of markdown horizontal-rule separators "
+                "(---, ***, ___) that must appear in the document before "
+                "the overuse violation fires."
+            )
+        }
+    )
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once when the horizontal-rule count reaches min_count."
+            )
+        }
+    )
 
 
 class HorizontalRuleOveruseRule(Rule[HorizontalRuleOveruseRuleConfig]):

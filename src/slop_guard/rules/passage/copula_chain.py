@@ -19,7 +19,7 @@ Severity: Medium; a single passage-level flag with concentrated penalty.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from slop_guard.document import AnalysisDocument
 from slop_guard.models import RuleResult, Violation
@@ -33,9 +33,30 @@ _COPULA_FIRST_WORDS_RE = re.compile(r"\b(is|are|was|were)\b", re.IGNORECASE)
 class CopulaChainRuleConfig(RuleConfig):
     """Config for copula-chain density detection."""
 
-    min_sentences: int
-    threshold: float
-    penalty: int
+    min_sentences: int = field(
+        metadata={
+            "description": (
+                "Minimum total sentence count required before copula density "
+                "is evaluated; shorter passages are skipped."
+            )
+        }
+    )
+    threshold: float = field(
+        metadata={
+            "description": (
+                "Minimum fraction of sentences that use a copula (is/are/"
+                "was/were) within the first six words needed to trigger "
+                "the violation (value between 0.0 and 1.0)."
+            )
+        }
+    )
+    penalty: int = field(
+        metadata={
+            "description": (
+                "Penalty applied once when copula density meets or exceeds threshold."
+            )
+        }
+    )
 
 
 class CopulaChainRule(Rule[CopulaChainRuleConfig]):
