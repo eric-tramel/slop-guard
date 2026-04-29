@@ -1,0 +1,20 @@
+{"text": "Silence does not \"settle\". Words do not \"hang in the air\". Knowledge does not \"sit in the room\". History does not \"press\". A truth does not \"land\".", "expected_matches": 5, "label": 0}
+{"text": "Silence doesn't \"settle\"; it waits for the reader to mistake vagueness for depth.", "expected_matches": 1, "label": 0}
+{"text": "Words do not hang in the air; they supposedly circle the room until someone confesses.", "expected_matches": 1, "label": 0}
+{"text": "Knowledge does not sit in the room. It watches from the corner like a verdict.", "expected_matches": 1, "label": 0}
+{"text": "History does not press. Memory does not hold. The paragraph calls that insight.", "expected_matches": 2, "label": 0}
+{"text": "A truth does not land because landing would make it too ordinary.", "expected_matches": 1, "label": 0}
+{"text": "Grief does not \"arrive\". Love does not \"breathe\". Both lines posture as revelation.", "expected_matches": 2, "label": 0}
+{"text": "Time never waits. Absence never sleeps. The cadence performs depth without adding a claim.", "expected_matches": 2, "label": 0}
+{"text": "Belonging cannot \"bloom\". Certainty cannot \"hold\". The negatives do the decoration.", "expected_matches": 2, "label": 0}
+{"text": "The old wound does not whisper; the sentence only borrows pressure from metaphor.", "expected_matches": 1, "label": 0}
+{"text": "Our shared silence will not \"open\" no matter how long the paragraph stares at it.", "expected_matches": 1, "label": 0}
+{"text": "Meaning would not \"carry\" us; it would stand nearby and refuse the obvious verb.", "expected_matches": 1, "label": 0}
+{"text": "The paint does not settle evenly in cold rooms, so the second coat needs more time.", "expected_matches": 0, "label": 1}
+{"text": "The invoice does not land until Friday because the vendor batch runs overnight.", "expected_matches": 0, "label": 1}
+{"text": "The team waited in silence while the room settled after the announcement.", "expected_matches": 0, "label": 1}
+{"text": "Use `Silence does not \"settle\".` as a bad example in the guide, then explain the rule plainly.", "expected_matches": 0, "label": 1}
+{"text": "```text\nWords do not \"hang in the air\".\n```\nOutside the code block, the document describes the fixture format.", "expected_matches": 0, "label": 1}
+{"text": "The words on the sign do not hang from wires; each letter is painted directly on metal.", "expected_matches": 0, "label": 1}
+{"text": "Truths don't \"land\" in this passage; they drift until the ending pretends to resolve them.", "expected_matches": 1, "label": 0}
+{"text": "Desire did not \"burn\". Fear did not \"move\". Doubt did not \"speak\".", "expected_matches": 3, "label": 0}

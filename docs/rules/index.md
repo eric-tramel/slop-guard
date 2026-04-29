@@ -8,7 +8,7 @@ description: Catalog of the rules that slop-guard runs on every check.
 
 `slop-guard` ships a pipeline of small, independently scored rules. Each rule targets one formulaic pattern, flags the exact matching spans, and contributes a penalty toward the final score.
 
-The default pipeline runs **24 rules** across four scopes. Open a card to read the full rule page, including example violations, default thresholds, and a link to the source file.
+The default pipeline runs **25 rules** across four scopes. Open a card to read the full rule page, including example violations, default thresholds, and a link to the source file.
 
 ## Word rules
 
@@ -62,6 +62,12 @@ One sentence at a time. Catches canned phrases, disclosures, tone markers, and t
   <a class="sg-rule-card__link" href="./contrast-pair/">
     <div class="sg-rule-card__head"><span class="sg-rule-card__title">Contrast Pair</span></div>
     <p class="sg-rule-card__summary">Detect repeated contrast constructions that stage a binary opposition.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./faux-deepness/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Faux Deepness</span></div>
+    <p class="sg-rule-card__summary">Detect faux-deep negations of ordinary metaphorical predicates.</p>
   </a>
 </div>
 <div class="sg-rule-card">

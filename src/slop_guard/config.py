@@ -11,7 +11,12 @@ class Hyperparameters:
     decay_lambda: float = 0.04
     claude_categories: frozenset[str] = field(
         default_factory=lambda: frozenset(
-            {"contrast_pairs", "pithy_fragment", "setup_resolution"}
+            {
+                "contrast_pairs",
+                "faux_deepness",
+                "pithy_fragment",
+                "setup_resolution",
+            }
         )
     )
 
@@ -45,6 +50,9 @@ class Hyperparameters:
     contrast_record_cap: int = 5
     contrast_penalty: int = -1
     contrast_advice_min: int = 2
+    faux_deepness_record_cap: int = 5
+    faux_deepness_penalty: int = -2
+    faux_deepness_advice_min: int = 2
     intrasentence_keyword_bold_penalty: int = -2
     intrasentence_keyword_bold_record_cap: int = 5
     intrasentence_keyword_bold_advice_min: int = 3

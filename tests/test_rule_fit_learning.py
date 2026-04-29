@@ -23,6 +23,7 @@ from slop_guard.rules.passage import (
 from slop_guard.rules.sentence import (
     AIDisclosureRule,
     ContrastPairRule,
+    FauxDeepnessRule,
     PithyFragmentRule,
     PlaceholderRule,
     SetupResolutionRule,
@@ -128,6 +129,14 @@ FIT_CASES: tuple[FitCase, ...] = (
         [
             "focus, not frenzy.",
             "clarity, not complexity.",
+        ],
+    ),
+    (
+        FauxDeepnessRule,
+        "penalty",
+        [
+            'Silence does not "settle". Words do not "hang in the air".',
+            'Memory does not "hold". Truth does not "land".',
         ],
     ),
     (

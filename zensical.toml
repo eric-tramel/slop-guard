@@ -25,6 +25,7 @@ nav = [
       { "AI Disclosure" = "rules/ai-disclosure.md" },
       { "Placeholder" = "rules/placeholder.md" },
       { "Contrast Pair" = "rules/contrast-pair.md" },
+      { "Faux Deepness" = "rules/faux-deepness.md" },
       { "Intrasentence Keyword Bold" = "rules/intrasentence-keyword-bold.md" },
       { "Setup Resolution" = "rules/setup-resolution.md" },
       { "Pithy Fragment" = "rules/pithy-fragment.md" },

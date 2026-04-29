@@ -2,6 +2,7 @@
 
 from .ai_disclosure import AIDisclosureRule, AIDisclosureRuleConfig
 from .contrast_pair import ContrastPairRule, ContrastPairRuleConfig
+from .faux_deepness import FauxDeepnessRule, FauxDeepnessRuleConfig
 from .intrasentence_keyword_bold import (
     IntrasentenceKeywordBoldRule,
     IntrasentenceKeywordBoldRuleConfig,
@@ -18,6 +19,8 @@ __all__ = [
     "AIDisclosureRuleConfig",
     "ContrastPairRule",
     "ContrastPairRuleConfig",
+    "FauxDeepnessRule",
+    "FauxDeepnessRuleConfig",
     "IntrasentenceKeywordBoldRule",
     "IntrasentenceKeywordBoldRuleConfig",
     "PithyFragmentRule",
