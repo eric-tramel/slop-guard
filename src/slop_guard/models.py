@@ -2,7 +2,7 @@
 
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Literal, TypeAlias
+from typing import Literal, NotRequired, TypeAlias
 
 from typing_extensions import TypedDict
 
@@ -11,7 +11,12 @@ BandLabel: TypeAlias = Literal["clean", "light", "moderate", "heavy", "saturated
 
 
 class ViolationPayload(TypedDict):
-    """Structured violation payload returned to CLI and MCP consumers."""
+    """Structured violation payload returned to CLI and MCP consumers.
+
+    The optional ``category`` field appears only when the active pipeline
+    includes rules tagged with a non-default category (i.e. when the
+    writing-quality preset is loaded alongside or instead of the default).
+    """
 
     type: Literal["Violation"]
     rule: str
@@ -20,10 +25,15 @@ class ViolationPayload(TypedDict):
     penalty: int
     start: int
     end: int
+    category: NotRequired[str]
 
 
 class AnalysisPayload(TypedDict):
-    """Structured analyzer result produced by the core analyzer."""
+    """Structured analyzer result produced by the core analyzer.
+
+    The optional ``category_counts`` field appears only when the active
+    pipeline includes rules tagged with a non-default category.
+    """
 
     score: int
     band: BandLabel
@@ -34,6 +44,7 @@ class AnalysisPayload(TypedDict):
     weighted_sum: float
     density: float
     advice: list[str]
+    category_counts: NotRequired[Counts]
 
 
 class SourceAnalysisPayload(AnalysisPayload):
@@ -52,6 +63,7 @@ class Violation:
     penalty: int
     start: int | None = None
     end: int | None = None
+    category: str = "ai_slop"
 
     def explicit_span(self) -> tuple[int, int] | None:
         """Return the exact rule-provided span when one exists."""
@@ -59,9 +71,19 @@ class Violation:
             return None
         return (self.start, self.end)
 
-    def to_payload(self, start: int, end: int) -> ViolationPayload:
-        """Serialize a typed violation for tool output."""
-        return {
+    def to_payload(
+        self, start: int, end: int, *, include_category: bool = False
+    ) -> ViolationPayload:
+        """Serialize a typed violation for tool output.
+
+        Args:
+            start: Resolved start offset in the original text.
+            end: Resolved end offset in the original text.
+            include_category: When True, also emit the rule's category in the
+                payload. Callers should set this only when the active pipeline
+                contains rules from more than the default category.
+        """
+        payload: ViolationPayload = {
             "type": "Violation",
             "rule": self.rule,
             "match": self.match,
@@ -70,6 +92,9 @@ class Violation:
             "start": start,
             "end": end,
         }
+        if include_category:
+            payload["category"] = self.category
+        return payload
 
 
 @dataclass

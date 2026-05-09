@@ -131,6 +131,8 @@ def serialize_violations(
     violations: Iterable[Violation],
     text: str,
     context_window_chars: int,
+    *,
+    include_category: bool = False,
 ) -> list[ViolationPayload]:
     """Serialize violations and attach resolved character offsets."""
     normalized_text = text.replace("\n", " ")
@@ -146,7 +148,9 @@ def serialize_violations(
             used_spans,
         )
         used_spans.add((start, end))
-        payloads.append(violation.to_payload(start, end))
+        payloads.append(
+            violation.to_payload(start, end, include_category=include_category)
+        )
 
     return payloads
 

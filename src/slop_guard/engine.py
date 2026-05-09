@@ -34,13 +34,17 @@ def analyze_document(
     """Run all configured rules and return score, diagnostics, and advice."""
     active_pipeline = _packaged_default_pipeline() if pipeline is None else pipeline
     count_keys = getattr(active_pipeline, "count_keys", None)
+    emits_categories = bool(getattr(active_pipeline, "emits_categories", False))
 
     if document.word_count < hyperparameters.short_text_word_count:
-        return short_text_result(
+        payload = short_text_result(
             document.word_count,
             initial_counts(count_keys),
             hyperparameters,
         )
+        if emits_categories:
+            payload["category_counts"] = {}
+        return payload
 
     state = active_pipeline.forward(document)
     total_penalty = sum(violation.penalty for violation in state.violations)
@@ -57,7 +61,7 @@ def analyze_document(
     score = score_from_density(density, hyperparameters)
     band = band_for_score(score, hyperparameters)
 
-    return {
+    payload: AnalysisPayload = {
         "score": score,
         "band": band,
         "word_count": document.word_count,
@@ -65,6 +69,7 @@ def analyze_document(
             state.violations,
             document.text,
             hyperparameters.context_window_chars,
+            include_category=emits_categories,
         ),
         "counts": state.counts,
         "total_penalty": total_penalty,
@@ -72,6 +77,14 @@ def analyze_document(
         "density": round(density, 2),
         "advice": deduplicate_advice(list(state.advice)),
     }
+    if emits_categories:
+        category_counts: dict[str, int] = {}
+        for violation in state.violations:
+            category_counts[violation.category] = (
+                category_counts.get(violation.category, 0) + 1
+            )
+        payload["category_counts"] = category_counts
+    return payload
 
 
 def analyze_text(

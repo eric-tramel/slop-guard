@@ -135,7 +135,7 @@ def _analyze_text(
 ) -> SourceAnalysisPayload:
     """Run analysis and attach the source label."""
     result = analyze_text(text, hyperparameters=hyperparameters, pipeline=pipeline)
-    return SourceAnalysisPayload(
+    payload = SourceAnalysisPayload(
         score=result["score"],
         band=result["band"],
         word_count=result["word_count"],
@@ -147,6 +147,9 @@ def _analyze_text(
         advice=result["advice"],
         source=source,
     )
+    if "category_counts" in result:
+        payload["category_counts"] = result["category_counts"]
+    return payload
 
 
 def _analyze_file(

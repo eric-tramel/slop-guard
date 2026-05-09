@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any, TypeAlias
 
 from slop_guard.rules.base import Rule
-from slop_guard.rules.catalog import DEFAULT_RULE_PATHS
+from slop_guard.rules.catalog import ALL_RULE_PATHS, DEFAULT_RULE_PATHS
 
 RulePath: TypeAlias = str
 ConfigMap: TypeAlias = dict[str, Any]
@@ -140,19 +140,24 @@ class RuleDoc:
 
 
 def _load_default_configs() -> dict[str, ConfigMap]:
-    """Return default config dicts keyed by the fully-qualified rule path."""
-    raw_text = (
-        files("slop_guard.rules")
-        .joinpath("assets/default.jsonl")
-        .read_text(encoding="utf-8")
-    )
+    """Return default config dicts keyed by the fully-qualified rule path.
+
+    Reads every packaged preset JSONL so each rule's seeded config can be
+    surfaced on its docs page, regardless of which preset registers it.
+    """
     configs: dict[str, ConfigMap] = {}
-    for line in raw_text.splitlines():
-        stripped = line.strip()
-        if not stripped:
-            continue
-        payload = json.loads(stripped)
-        configs[payload["rule_type"]] = dict(payload["config"])
+    for asset_name in ("default.jsonl", "writing_quality.jsonl"):
+        raw_text = (
+            files("slop_guard.rules")
+            .joinpath(f"assets/{asset_name}")
+            .read_text(encoding="utf-8")
+        )
+        for line in raw_text.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            payload = json.loads(stripped)
+            configs[payload["rule_type"]] = dict(payload["config"])
     return configs
 
 
@@ -547,6 +552,8 @@ def render_index_page(docs: list[RuleDoc]) -> str:
     """Render the rule library overview page with per-level card grids."""
     groups = _group_by_level(docs)
     total = len(docs)
+    default_count = sum(1 for doc in docs if doc.dotted_path in DEFAULT_RULE_PATHS)
+    optional_count = total - default_count
     header = [
         "---",
         "icon: lucide/list-checks",
@@ -560,7 +567,9 @@ def render_index_page(docs: list[RuleDoc]) -> str:
         "Each rule targets one formulaic pattern, flags the exact matching "
         "spans, and contributes a penalty toward the final score.",
         "",
-        f"The default pipeline runs **{total} rules** across four scopes. "
+        f"The library lists **{total} rules** across four scopes — "
+        f"**{default_count}** in the default `ai_slop` pipeline and "
+        f"**{optional_count}** in the opt-in `writing_quality` preset. "
         "Open a card to read the full rule page, including example "
         "violations, default thresholds, and a link to the source file.",
         "",
@@ -590,9 +599,14 @@ def _reset_output_dir(output_dir: Path) -> None:
 
 
 def build_rule_docs() -> list[RuleDoc]:
-    """Return parsed rule docs for every rule in the default catalog."""
+    """Return parsed rule docs for every rule in the catalog.
+
+    Includes both the default ``ai_slop`` preset and the opt-in
+    ``writing_quality`` preset so each registered rule gets a generated
+    page.
+    """
     defaults = _load_default_configs()
-    return [_load_rule_doc(path, defaults) for path in DEFAULT_RULE_PATHS]
+    return [_load_rule_doc(path, defaults) for path in ALL_RULE_PATHS]
 
 
 def nav_entries(docs: list[RuleDoc]) -> list[dict[str, Any]]:

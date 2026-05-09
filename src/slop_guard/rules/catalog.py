@@ -26,3 +26,22 @@ DEFAULT_RULE_PATHS: tuple[str, ...] = (
     "slop_guard.rules.passage.paragraph_rhythm.ParagraphBalanceRule",
     "slop_guard.rules.passage.paragraph_rhythm.ParagraphCVRule",
 )
+
+WRITING_QUALITY_RULE_PATHS: tuple[str, ...] = (
+    "slop_guard.rules.word.qualifier_word.QualifierWordRule",
+    "slop_guard.rules.word.pretentious_word.PretentiousWordRule",
+    "slop_guard.rules.word.ecstatic_adjective.EcstaticAdjectiveRule",
+    "slop_guard.rules.sentence.verbose_phrase.VerbosePhraseRule",
+    "slop_guard.rules.sentence.throat_clearing.ThroatClearingRule",
+    "slop_guard.rules.sentence.over_explanation.OverExplanationRule",
+    "slop_guard.rules.sentence.redundant_pair.RedundantPairRule",
+    "slop_guard.rules.sentence.cliche_phrase.ClichePhraseRule",
+    "slop_guard.rules.sentence.foreign_phrase.ForeignPhraseRule",
+    "slop_guard.rules.sentence.passive_voice.PassiveVoiceRule",
+    "slop_guard.rules.passage.long_sentence.LongSentenceRule",
+    "slop_guard.rules.passage.exclamation_density.ExclamationDensityRule",
+    "slop_guard.rules.passage.emoji_in_prose.EmojiInProseRule",
+    "slop_guard.rules.paragraph.narrative_heading.NarrativeHeadingRule",
+)
+
+ALL_RULE_PATHS: tuple[str, ...] = DEFAULT_RULE_PATHS + WRITING_QUALITY_RULE_PATHS

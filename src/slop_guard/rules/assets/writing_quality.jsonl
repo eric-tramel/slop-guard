@@ -1,0 +1,14 @@
+{"config": {"context_window_chars": 60, "penalty": -1}, "rule_type": "slop_guard.rules.word.qualifier_word.QualifierWordRule"}
+{"config": {"context_window_chars": 60, "penalty": -2}, "rule_type": "slop_guard.rules.word.pretentious_word.PretentiousWordRule"}
+{"config": {"context_window_chars": 60, "penalty": -1}, "rule_type": "slop_guard.rules.word.ecstatic_adjective.EcstaticAdjectiveRule"}
+{"config": {"context_window_chars": 60, "penalty": -2}, "rule_type": "slop_guard.rules.sentence.verbose_phrase.VerbosePhraseRule"}
+{"config": {"context_window_chars": 60, "penalty": -2}, "rule_type": "slop_guard.rules.sentence.throat_clearing.ThroatClearingRule"}
+{"config": {"context_window_chars": 60, "penalty": -2}, "rule_type": "slop_guard.rules.sentence.over_explanation.OverExplanationRule"}
+{"config": {"context_window_chars": 60, "penalty": -1}, "rule_type": "slop_guard.rules.sentence.redundant_pair.RedundantPairRule"}
+{"config": {"context_window_chars": 60, "penalty": -2}, "rule_type": "slop_guard.rules.sentence.cliche_phrase.ClichePhraseRule"}
+{"config": {"context_window_chars": 60, "penalty": -1}, "rule_type": "slop_guard.rules.sentence.foreign_phrase.ForeignPhraseRule"}
+{"config": {"context_window_chars": 60, "penalty": -2, "tier_two_min_hits": 3}, "rule_type": "slop_guard.rules.sentence.passive_voice.PassiveVoiceRule"}
+{"config": {"max_hits": 5, "min_words": 40, "penalty": -2}, "rule_type": "slop_guard.rules.passage.long_sentence.LongSentenceRule"}
+{"config": {"density_threshold": 1.0, "penalty": -3, "words_basis": 150.0}, "rule_type": "slop_guard.rules.passage.exclamation_density.ExclamationDensityRule"}
+{"config": {"context_window_chars": 60, "penalty": -3}, "rule_type": "slop_guard.rules.passage.emoji_in_prose.EmojiInProseRule"}
+{"config": {"context_window_chars": 60, "penalty": -4}, "rule_type": "slop_guard.rules.paragraph.narrative_heading.NarrativeHeadingRule"}

@@ -3,14 +3,14 @@
 import json
 import math
 from collections.abc import Iterable, Mapping
-from dataclasses import fields, is_dataclass
+from dataclasses import fields, is_dataclass, replace
 from importlib.resources import files
 from pathlib import Path
 from typing import Any, TypeAlias
 
 from slop_guard.config import DEFAULT_HYPERPARAMETERS
 from slop_guard.document import AnalysisDocument
-from slop_guard.models import AnalysisState
+from slop_guard.models import AnalysisState, RuleResult
 from slop_guard.scoring import compute_weighted_sum
 
 from .base import Label, Rule, RuleConfig
@@ -33,6 +33,22 @@ class Pipeline:
     def count_keys(self) -> tuple[str, ...]:
         """Return the ordered count keys used by this pipeline."""
         return tuple(dict.fromkeys(rule.count_key for rule in self.rules))
+
+    @property
+    def categories(self) -> tuple[str, ...]:
+        """Return the unique rule categories present in this pipeline."""
+        return tuple(dict.fromkeys(rule.category for rule in self.rules))
+
+    @property
+    def emits_categories(self) -> bool:
+        """Return whether the pipeline carries any non-default category.
+
+        Default-only pipelines (every rule tagged ``ai_slop``) suppress the
+        ``category`` field on violations and ``category_counts`` on results
+        so the JSON shape matches the pre-category release. Pipelines that
+        include any other category opt every consumer into the new fields.
+        """
+        return any(rule.category != "ai_slop" for rule in self.rules)
 
     @classmethod
     def from_jsonl(cls, path: str | Path | None = None) -> "Pipeline":
@@ -64,7 +80,18 @@ class Pipeline:
         """Apply all rules in order and merge their outputs."""
         state = AnalysisState.initial(self.count_keys)
         for rule in self.rules:
-            state = state.merge(rule.forward(document))
+            result = rule.forward(document)
+            if result.violations:
+                tagged = [
+                    replace(violation, category=rule.category)
+                    for violation in result.violations
+                ]
+                result = RuleResult(
+                    violations=tagged,
+                    advice=result.advice,
+                    count_deltas=result.count_deltas,
+                )
+            state = state.merge(result)
         return state
 
     def fit(

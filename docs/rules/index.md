@@ -8,7 +8,7 @@ description: Catalog of the rules that slop-guard runs on every check.
 
 `slop-guard` ships a pipeline of small, independently scored rules. Each rule targets one formulaic pattern, flags the exact matching spans, and contributes a penalty toward the final score.
 
-The default pipeline runs **24 rules** across four scopes. Open a card to read the full rule page, including example violations, default thresholds, and a link to the source file.
+The library lists **38 rules** across four scopes — **24** in the default `ai_slop` pipeline and **14** in the opt-in `writing_quality` preset. Open a card to read the full rule page, including example violations, default thresholds, and a link to the source file.
 
 ## Word rules
 
@@ -19,6 +19,24 @@ Single-token checks. These are the cheapest rules and fire on individual AI-asso
   <a class="sg-rule-card__link" href="./slop-word/">
     <div class="sg-rule-card__head"><span class="sg-rule-card__title">Slop Word</span></div>
     <p class="sg-rule-card__summary">Detect overused AI-associated slop words.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./qualifier-word/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Qualifier Word</span></div>
+    <p class="sg-rule-card__summary">Detect weakening qualifier words and phrases.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./pretentious-word/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Pretentious Word</span></div>
+    <p class="sg-rule-card__summary">Detect pretentious vocabulary with concrete plain-English replacements.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./ecstatic-adjective/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Ecstatic Adjective</span></div>
+    <p class="sg-rule-card__summary">Detect vague high-praise adjectives.</p>
   </a>
 </div>
 </div>
@@ -82,6 +100,48 @@ One sentence at a time. Catches canned phrases, disclosures, tone markers, and t
     <p class="sg-rule-card__summary">Detect short evaluative pivot fragments.</p>
   </a>
 </div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./verbose-phrase/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Verbose Phrase</span></div>
+    <p class="sg-rule-card__summary">Detect wordy phrases with shorter equivalents.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./throat-clearing/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Throat Clearing</span></div>
+    <p class="sg-rule-card__summary">Detect throat-clearing phrases that delay the actual point.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./over-explanation/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Over Explanation</span></div>
+    <p class="sg-rule-card__summary">Detect over-explanation phrases that announce the obvious.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./redundant-pair/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Redundant Pair</span></div>
+    <p class="sg-rule-card__summary">Detect redundant word pairs where one word implies the other.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./cliche-phrase/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Cliche Phrase</span></div>
+    <p class="sg-rule-card__summary">Detect worn metaphorical clichés.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./foreign-phrase/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Foreign Phrase</span></div>
+    <p class="sg-rule-card__summary">Detect foreign and Latin phrases with plain-English equivalents.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./passive-voice/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Passive Voice</span></div>
+    <p class="sg-rule-card__summary">Detect passive voice constructions with a two-tier confidence model.</p>
+  </a>
+</div>
 </div>
 
 ## Paragraph rules
@@ -117,6 +177,12 @@ Adjacent-line structure. Catches bullet runs, blockquotes, horizontal rules, and
   <a class="sg-rule-card__link" href="./horizontal-rule-overuse/">
     <div class="sg-rule-card__head"><span class="sg-rule-card__title">Horizontal Rule Overuse</span></div>
     <p class="sg-rule-card__summary">Detect overuse of horizontal rule separators.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./narrative-heading/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Narrative Heading</span></div>
+    <p class="sg-rule-card__summary">Detect narrative-poetic Markdown headings.</p>
   </a>
 </div>
 </div>
@@ -178,6 +244,24 @@ Whole-document signals. Catches rhythm, density, and repetition across the full 
   <a class="sg-rule-card__link" href="./paragraph-cv/">
     <div class="sg-rule-card__head"><span class="sg-rule-card__title">Paragraph CV</span></div>
     <p class="sg-rule-card__summary">Detect suspiciously uniform paragraph lengths.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./long-sentence/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Long Sentence</span></div>
+    <p class="sg-rule-card__summary">Detect moderately long sentences with a per-document cap.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./exclamation-density/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Exclamation Density</span></div>
+    <p class="sg-rule-card__summary">Detect excessive exclamation marks across a passage.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./emoji-in-prose/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Emoji In Prose</span></div>
+    <p class="sg-rule-card__summary">Detect emoji embedded in prose.</p>
   </a>
 </div>
 </div>

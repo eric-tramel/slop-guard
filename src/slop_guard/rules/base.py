@@ -48,6 +48,7 @@ class Rule(ABC, Generic[ConfigT]):
     name: str = "rule"
     count_key: str = "rule"
     level: RuleLevel = RuleLevel.PASSAGE
+    category: str = "ai_slop"
 
     def __init__(self, config: ConfigT) -> None:
         """Initialize a rule with explicit configuration."""

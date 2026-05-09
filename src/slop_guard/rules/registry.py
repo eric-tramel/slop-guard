@@ -4,7 +4,7 @@ from importlib import import_module
 from typing import Any, TypeAlias
 
 from .base import Rule
-from .catalog import DEFAULT_RULE_PATHS
+from .catalog import ALL_RULE_PATHS, DEFAULT_RULE_PATHS
 
 RuleType: TypeAlias = type[Rule[Any]]
 RuleList: TypeAlias = list[Rule[Any]]
@@ -37,7 +37,7 @@ def _register_rule_type(rule_type: RuleType) -> RuleType:
     return rule_type
 
 
-for _rule_path in DEFAULT_RULE_PATHS:
+for _rule_path in ALL_RULE_PATHS:
     _RULE_PATHS_BY_KEY[_rule_path] = _rule_path
     _RULE_PATHS_BY_KEY[_rule_path.rpartition(".")[2]] = _rule_path
 

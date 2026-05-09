@@ -39,6 +39,47 @@ Register the server with Claude Code by pointing `mcp add` at `uvx slop-guard`, 
 }
 ```
 
+## Choose a rule preset
+
+The MCP server reads the same `-c` flag from its launch arguments that the CLI does. The default rule set is the `ai_slop` preset; pass `-c` with the bundled `writing_quality.jsonl` to opt into the opinionated style checks. Configure two MCP entries when you want both presets available to the agent.
+
+Resolve the bundled writing-quality path and copy it somewhere stable:
+
+```bash
+python -c 'from importlib.resources import files; print(files("slop_guard.rules").joinpath("assets/writing_quality.jsonl").read_text())' > ~/.config/slop-guard/writing_quality.jsonl
+```
+
+Codex `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.slop-guard]
+command = "uvx"
+args = ["slop-guard"]
+
+[mcp_servers.slop-guard-writing-quality]
+command = "uvx"
+args = ["slop-guard", "-c", "/Users/you/.config/slop-guard/writing_quality.jsonl"]
+```
+
+Claude Code `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "slop-guard": {
+      "command": "uvx",
+      "args": ["slop-guard"]
+    },
+    "slop-guard-writing-quality": {
+      "command": "uvx",
+      "args": ["slop-guard", "-c", "/Users/you/.config/slop-guard/writing_quality.jsonl"]
+    }
+  }
+}
+```
+
+Each violation the MCP tool returns carries a `category` field (`"ai_slop"` or `"writing_quality"`) that matches the preset that registered the rule, and `category_counts` aggregates violations per category.
+
 ## Pin a release
 
 If an automation or team workflow needs a fixed package version, pin it in the command arguments:
