@@ -54,6 +54,7 @@ Low per instance, medium when repeated frequently in one passage.
 
 <div class="sg-contributors">
   <a class="sg-contrib" href="https://github.com/chris-alexiuk"><img class="sg-contrib__avatar" src="https://github.com/chris-alexiuk.png?size=72" alt="" loading="lazy" width="24" height="24" /><span class="sg-contrib__name">@chris-alexiuk</span></a>
+  <a class="sg-contrib" href="https://github.com/eric-tramel"><img class="sg-contrib__avatar" src="https://github.com/eric-tramel.png?size=72" alt="" loading="lazy" width="24" height="24" /><span class="sg-contrib__name">@eric-tramel</span></a>
 </div>
 
 </div>
