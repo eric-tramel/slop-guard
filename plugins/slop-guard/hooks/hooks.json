@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh \"$CLAUDE_PLUGIN_ROOT/scripts/launch.sh\" hook",
+            "timeout": 30,
+            "statusMessage": "Checking response with Slop-Guard"
+          }
+        ]
+      }
+    ]
+  }
+}

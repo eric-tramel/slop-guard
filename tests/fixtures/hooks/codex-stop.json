@@ -1,0 +1,11 @@
+{
+  "cwd": "/repo",
+  "hook_event_name": "Stop",
+  "last_assistant_message": "This is a crucial and groundbreaking paradigm that feels remarkably innovative and comprehensive overall.",
+  "model": "gpt-5.6-codex",
+  "permission_mode": "default",
+  "session_id": "session-123",
+  "stop_hook_active": false,
+  "transcript_path": null,
+  "turn_id": "turn-123"
+}
