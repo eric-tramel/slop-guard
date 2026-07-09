@@ -7,6 +7,11 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing v* release tag to redeploy
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -28,11 +33,32 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ inputs.release_tag && format('refs/tags/{0}', inputs.release_tag) || github.ref }}
 
       - name: Validate ref
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || '' }}
         run: |
           set -euo pipefail
-          if [[ "${GITHUB_REF_TYPE}" == "branch" && "${GITHUB_REF_NAME}" != "main" ]]; then
+          if [[ -n "${RELEASE_TAG}" ]]; then
+            if [[ "${GITHUB_REF_TYPE}" != "branch" || "${GITHUB_REF_NAME}" == "main" ]]; then
+              echo "Release redeploys must run from a non-main branch."
+              exit 1
+            fi
+            if [[ "${RELEASE_TAG}" != v* ]]; then
+              echo "Release redeploys require a v* tag."
+              exit 1
+            fi
+            if ! git rev-parse --verify --quiet "refs/tags/${RELEASE_TAG}^{commit}" >/dev/null; then
+              echo "Release tag ${RELEASE_TAG} does not exist."
+              exit 1
+            fi
+            tag_commit="$(git rev-parse "refs/tags/${RELEASE_TAG}^{commit}")"
+            if [[ "$(git rev-parse HEAD)" != "${tag_commit}" ]]; then
+              echo "Checked-out commit does not match ${RELEASE_TAG}."
+              exit 1
+            fi
+          elif [[ "${GITHUB_REF_TYPE}" == "branch" && "${GITHUB_REF_NAME}" != "main" ]]; then
             echo "Pages deployments only support main and v* tags."
             exit 1
           fi
@@ -53,6 +79,7 @@ jobs:
       - name: Prepare gh-pages branch
         run: |
           set -euo pipefail
+          source_commit="$(git rev-parse HEAD)"
 
           git fetch --force --tags origin
 
@@ -66,13 +93,15 @@ jobs:
           git clean -fdx
           git commit --allow-empty -m "Initialize gh-pages"
           git push origin HEAD:gh-pages
-          git switch --detach "${GITHUB_SHA}"
+          git switch --detach "${source_commit}"
           git fetch --force origin gh-pages:gh-pages
 
       - name: Install docs dependencies
         run: uv sync --group docs --locked
 
       - name: Update docs state
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || '' }}
         run: |
           set -euo pipefail
 
@@ -94,8 +123,9 @@ jobs:
             return 1
           }
 
-          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            release_version="${GITHUB_REF_NAME#v}"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" || -n "${RELEASE_TAG}" ]]; then
+            release_ref="${RELEASE_TAG:-${GITHUB_REF_NAME}}"
+            release_version="${release_ref#v}"
             uv run --group docs python -m tools.docs_site deploy \
               --branch gh-pages \
               --deploy-prefix docs \
