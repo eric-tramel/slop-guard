@@ -4,7 +4,7 @@
 
 A rule-based prose linter that scores text 0--100 for formulaic AI writing patterns. No LLM judge, no API calls. Purely programmatic.
 
-The default pipeline loads 23 configurable rules backed by 200+ literal and structural heuristics. It returns a numeric score, a band label, specific violations with surrounding context, and concrete advice for each hit.
+The default pipeline loads 24 configurable rules backed by 200+ literal and structural heuristics. It returns a numeric score, a band label, specific violations with surrounding context, and concrete advice for each hit.
 
 ## Add to Your Agent
 
@@ -48,7 +48,7 @@ command = "uvx"
 args = ["slop-guard"]
 ```
 
-If you want a fixed release, pin it in `args`, for example: `["slop-guard==0.4.1"]`.
+If you want a fixed release, pin it in `args`, for example: `["slop-guard==0.5.0"]`.
 
 ## CLI
 
@@ -198,7 +198,7 @@ uv tool install slop-guard
 Pin versions for reproducibility:
 
 ```bash
-uvx slop-guard==0.4.1
+uvx slop-guard==0.5.0
 ```
 
 Upgrade an installed tool:
@@ -236,7 +236,7 @@ make verify-wheel
 
 ## What it catches
 
-The default rules cover stock hype words and boilerplate phrases, assistant tone markers, unattributed weasel phrasing, AI self-disclosure, placeholder text, bullet/blockquote/horizontal-rule-heavy Markdown structures, sentence and paragraph rhythm, and em dash or colon overuse.
+The default rules cover stock hype words and boilerplate phrases, assistant tone markers, unattributed weasel phrasing, AI self-disclosure, placeholder text, bullet/blockquote/horizontal-rule-heavy Markdown structures, arbitrary mid-sentence keyword bold, sentence and paragraph rhythm, and em dash or colon overuse.
 
 They also flag contrast/setup-resolution tells, pithy fragments, repeated 4-8 word phrases, copula chains, extreme long sentences, aphoristic closers, and uneven paragraph cadence.
 

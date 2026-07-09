@@ -44,7 +44,7 @@ Register the server with Claude Code by pointing `mcp add` at `uvx slop-guard`, 
 If an automation or team workflow needs a fixed package version, pin it in the command arguments:
 
 ```bash
-uvx slop-guard==0.4.1
+uvx slop-guard==0.5.0
 ```
 
 Use the release selector in this documentation site when you want the matching docs for that pinned version.

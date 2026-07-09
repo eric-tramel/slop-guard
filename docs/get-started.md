@@ -26,7 +26,7 @@ sg README.md
 You can pin a specific release when reproducibility matters:
 
 ```bash
-uv tool install slop-guard==0.4.1
+uv tool install slop-guard==0.5.0
 ```
 
 ## Gate prose in CI
