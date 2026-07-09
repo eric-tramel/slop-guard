@@ -38,6 +38,7 @@ Issues = "https://github.com/eric-tramel/slop-guard/issues"
 slop-guard = "slop_guard.apps.mcp:main"
 sg = "slop_guard.apps.cli:main"
 sg-fit = "slop_guard.apps.fit:main"
+sg-hook = "slop_guard.apps.hook:main"
 
 [dependency-groups]
 dev = [

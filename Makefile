@@ -23,7 +23,7 @@ help:
 	@printf "  make docs-build    Build the Zensical docs site\n"
 	@printf "  make docs-check    Build docs and lint README/docs prose with slop-guard\n"
 	@printf "  make build         Build source and wheel distributions\n"
-	@printf "  make verify-wheel  Assert the built wheel ships slop_guard/py.typed\n"
+	@printf "  make verify-wheel  Verify wheel typing, scripts, and isolated installation\n"
 	@printf "  make clean         Remove local build and tool caches\n"
 
 sync:
@@ -69,7 +69,17 @@ build:
 	$(UV) build
 
 verify-wheel: build
-	$(UV_RUN) python -c 'from pathlib import Path; import zipfile; wheels = sorted(Path("dist").glob("*.whl")); assert wheels, "No wheel found in dist/"; wheel = wheels[-1]; names = set(zipfile.ZipFile(wheel).namelist()); target = "slop_guard/py.typed"; assert target in names, f"{target} missing from {wheel.name}"; print(f"verified {target} in {wheel.name}")'
+	@set -eu; \
+	python=$$($(UV_RUN) python -c 'import sys; print(sys.executable)'); \
+	wheel=$$("$$python" -c 'from pathlib import Path; wheels = tuple(Path("dist").glob("*.whl")); assert wheels, "No wheel found in dist/"; print(max(wheels, key=lambda path: (path.stat().st_mtime_ns, path.name)))'); \
+	"$$python" -c 'from configparser import ConfigParser; from pathlib import Path; import sys, zipfile; wheel = Path(sys.argv[1]); archive = zipfile.ZipFile(wheel); names = set(archive.namelist()); target = "slop_guard/py.typed"; assert target in names, f"{target} missing from {wheel.name}"; metadata = [name for name in names if name.endswith(".dist-info/entry_points.txt")]; assert len(metadata) == 1, f"expected one entry_points.txt in {wheel.name}, found {len(metadata)}"; parser = ConfigParser(interpolation=None); parser.optionxform = str; parser.read_string(archive.read(metadata[0]).decode("utf-8")); required = ("slop-guard", "sg", "sg-hook"); scripts = parser["console_scripts"] if parser.has_section("console_scripts") else {}; missing = [name for name in required if name not in scripts]; assert not missing, f"console scripts missing from {wheel.name}: {missing}"; archive.close(); print("verified {} and console scripts {} in {}".format(target, ", ".join(required), wheel.name))' "$$wheel"; \
+	tmp_root=$$("$$python" -c 'import tempfile; print(tempfile.mkdtemp(prefix="slop-guard-wheel-verify-"))'); \
+	cleanup() { "$$python" -c 'import shutil, sys; shutil.rmtree(sys.argv[1], ignore_errors=True)' "$$tmp_root"; }; \
+	trap cleanup 0 1 2 15; \
+	UV_TOOL_DIR="$$tmp_root/tools" UV_TOOL_BIN_DIR="$$tmp_root/bin" $(UV) tool install --force "$$wheel"; \
+	"$$tmp_root/bin/slop-guard" --version; \
+	"$$tmp_root/bin/sg" --help; \
+	"$$tmp_root/bin/sg-hook" --help
 
 clean:
 	rm -rf .coverage .pytest_cache .ruff_cache build dist htmlcov site

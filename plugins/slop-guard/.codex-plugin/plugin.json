@@ -1,0 +1,35 @@
+{
+  "name": "slop-guard",
+  "version": "0.1.0",
+  "description": "Expose Slop-Guard prose analysis tools and a trusted response check.",
+  "author": {
+    "name": "Eric Tramel"
+  },
+  "homepage": "https://eric-tramel.github.io/slop-guard/docs/",
+  "repository": "https://github.com/eric-tramel/slop-guard",
+  "license": "MIT",
+  "keywords": [
+    "lint",
+    "mcp",
+    "prose",
+    "writing"
+  ],
+  "mcpServers": {
+    "slop-guard": {
+      "command": "/bin/sh",
+      "args": [
+        "-eu",
+        "-c",
+        "die() { printf '%s\\n' \"slop-guard plugin: $1\" >&2; exit 1; }; canonicalize_file() { target=$1; links=0; while [ -L \"$target\" ]; do links=$((links + 1)); [ \"$links\" -le 40 ] || return 1; link=$(command -p readlink \"$target\" 2>/dev/null) || return 1; case \"$link\" in /*) target=$link ;; *) target=${target%/*}/$link ;; esac; done; parent=${target%/*}; name=${target##*/}; [ \"$parent\" != \"$target\" ] || parent=.; canonical_parent=$(CDPATH= cd -P \"$parent\" 2>/dev/null && pwd -P) || return 1; printf '%s/%s\\n' \"$canonical_parent\" \"$name\"; }; canonicalize_directory() { CDPATH= cd -P \"$1\" 2>/dev/null && pwd -P; }; is_in_git_worktree() { directory=${1%/*}; while :; do if [ -e \"$directory/.git\" ] || [ -L \"$directory/.git\" ]; then return 0; fi; [ \"$directory\" != / ] || return 1; directory=${directory%/*}; [ -n \"$directory\" ] || directory=/; done; }; trust_target() { target=$1; if is_in_git_worktree \"$target\"; then die 'refusing executable from a Git worktree'; fi; if [ -n \"${VIRTUAL_ENV-}\" ]; then environment_root=$(canonicalize_directory \"$VIRTUAL_ENV\") || die 'cannot verify active virtual environment'; [ \"$environment_root\" != / ] || die 'refusing executable from active virtual environment'; case \"$target\" in \"$environment_root\"|\"$environment_root\"/*) die 'refusing executable from active virtual environment' ;; esac; fi; }; search_path=${PATH-}; remaining=$search_path; slop_guard_bin=''; while :; do case \"$remaining\" in *:*) entry=${remaining%%:*}; remaining=${remaining#*:}; more=true ;; *) entry=$remaining; more=false ;; esac; case \"$entry\" in /*) candidate=$entry/slop-guard; if [ -f \"$candidate\" ] && [ -x \"$candidate\" ]; then slop_guard_bin=$(canonicalize_file \"$candidate\") || die 'cannot canonicalize installed slop-guard'; trust_target \"$slop_guard_bin\"; break; fi ;; *) [ -n \"$entry\" ] || entry=.; candidate=$entry/slop-guard; if [ -f \"$candidate\" ] && [ -x \"$candidate\" ]; then die 'refusing slop-guard from an empty or relative PATH entry'; fi ;; esac; [ \"$more\" = true ] || break; done; [ -n \"$slop_guard_bin\" ] || die 'installed slop-guard not found on absolute PATH entries'; [ -f \"$slop_guard_bin\" ] && [ -x \"$slop_guard_bin\" ] || die 'installed slop-guard is not executable'; unset PYTHONHOME PYTHONPATH; exec \"$slop_guard_bin\""
+      ]
+    }
+  },
+  "interface": {
+    "displayName": "Slop-Guard",
+    "shortDescription": "Rule-based prose checks for agent responses",
+    "longDescription": "Use Slop-Guard MCP tools to analyze prose and optionally report formulaic writing patterns when the main agent stops.",
+    "developerName": "Eric Tramel",
+    "category": "Developer Tools",
+    "websiteURL": "https://eric-tramel.github.io/slop-guard/docs/"
+  }
+}

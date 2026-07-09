@@ -1,0 +1,28 @@
+{
+  "name": "slop-guard",
+  "owner": {
+    "name": "Eric Tramel"
+  },
+  "description": "Slop-Guard integrations for agent clients.",
+  "plugins": [
+    {
+      "name": "slop-guard",
+      "displayName": "Slop-Guard",
+      "source": "./plugins/slop-guard",
+      "description": "Expose Slop-Guard prose analysis tools and optional response checks.",
+      "author": {
+        "name": "Eric Tramel"
+      },
+      "homepage": "https://eric-tramel.github.io/slop-guard/docs/",
+      "repository": "https://github.com/eric-tramel/slop-guard",
+      "license": "MIT",
+      "keywords": [
+        "lint",
+        "mcp",
+        "prose",
+        "writing"
+      ],
+      "category": "Code Quality"
+    }
+  ]
+}

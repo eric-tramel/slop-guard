@@ -1,0 +1,34 @@
+{
+  "name": "slop-guard",
+  "version": "0.1.0",
+  "displayName": "Slop-Guard",
+  "description": "Expose Slop-Guard prose analysis tools and optional response checks.",
+  "author": {
+    "name": "Eric Tramel"
+  },
+  "homepage": "https://eric-tramel.github.io/slop-guard/docs/",
+  "repository": "https://github.com/eric-tramel/slop-guard",
+  "license": "MIT",
+  "keywords": [
+    "lint",
+    "mcp",
+    "prose",
+    "writing"
+  ],
+  "mcpServers": {
+    "slop-guard": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/launch.sh",
+      "args": [
+        "mcp"
+      ]
+    }
+  },
+  "userConfig": {
+    "response_checks": {
+      "type": "boolean",
+      "title": "Check assistant responses",
+      "description": "Report Slop-Guard findings when Claude finishes responding.",
+      "default": false
+    }
+  }
+}

@@ -77,6 +77,7 @@ def _probe_module_import(module_name: str) -> dict[str, object]:
         "slop_guard",
         "slop_guard.engine",
         "slop_guard.rules.base",
+        "slop_guard.apps.hook",
     ),
 )
 def test_import_boundary_modules_do_not_load_mcp(module_name: str) -> None:

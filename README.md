@@ -8,47 +8,48 @@ The default pipeline loads 24 configurable rules backed by 200+ literal and stru
 
 ## Add to Your Agent
 
-Both clients use the same MCP command: `uvx slop-guard`.
-If you want a custom rule JSONL, append `-c /path/to/config.jsonl`.
+Before installing either plugin, install a Slop-Guard runtime that includes the response-hook entry point:
+
+```bash
+uv tool install 'slop-guard>=0.5.1'
+# Later:
+uv tool upgrade slop-guard
+```
+
+Each plugin exposes the `check_slop(text)` and `check_slop_file(file_path)` MCP tools.
 
 ### Claude Code
 
-Add from the command line:
+Add the repository marketplace and install the plugin with response checks disabled:
 
 ```bash
-claude mcp add slop-guard -- uvx slop-guard
+claude plugin marketplace add eric-tramel/slop-guard --sparse .claude-plugin plugins
+claude plugin install slop-guard@slop-guard --config response_checks=false
 ```
 
-Add to your `.mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "slop-guard": {
-      "command": "uvx",
-      "args": ["slop-guard"]
-    }
-  }
-}
-```
+The MCP tools are available immediately. To opt in to the response check at install time, use the second command with `response_checks=true` instead.
 
 ### Codex
 
-Add from the command line:
+Codex CLI 0.144.0 or newer is required for bundled response-hook support. Add only the marketplace catalog and plugin directory, then install:
 
 ```bash
+codex plugin marketplace add eric-tramel/slop-guard \
+  --sparse .agents/plugins \
+  --sparse plugins/slop-guard
+codex plugin add slop-guard@slop-guard
+```
+
+Open `/hooks` in Codex to review and trust the bundled hook. That trust action opts in to response checks; `/hooks` can also disable the hook later.
+
+Response checks inspect only the main agent's `Stop` event, not `SubagentStop`. They report findings after generation and never suppress or rewrite the answer, which may already be visible. The launcher requires POSIX `/bin/sh`; native Windows is not supported.
+
+For MCP tools without the plugin or response hook, including installations pinned to Slop-Guard 0.5.0, direct registration with `uvx` remains available:
+
+```bash
+claude mcp add slop-guard -- uvx slop-guard
 codex mcp add slop-guard -- uvx slop-guard
 ```
-
-Add to your `~/.codex/config.toml`:
-
-```toml
-[mcp_servers.slop-guard]
-command = "uvx"
-args = ["slop-guard"]
-```
-
-If you want a fixed release, pin it in `args`, for example: `["slop-guard==0.5.0"]`.
 
 ## CLI
 
@@ -181,7 +182,21 @@ If `label` is omitted in the target corpus, `sg-fit` treats it as `1` (positive/
 
 Requires [uv](https://docs.astral.sh/uv/).
 
-Run without installing (recommended for MCP setups):
+Install persistently (required by the Claude Code and Codex plugins):
+
+```bash
+uv tool install 'slop-guard>=0.5.1'
+```
+
+This provides the user-facing `slop-guard`, `sg`, and `sg-fit` commands.
+
+Upgrade the installed tool:
+
+```bash
+uv tool upgrade slop-guard
+```
+
+For one-off use or direct MCP registration without a plugin, run without installing:
 
 ```bash
 uvx slop-guard
@@ -189,22 +204,10 @@ uvx slop-guard
 uvx slop-guard -c /path/to/config.jsonl
 ```
 
-Install persistently (gives you `slop-guard`, `sg`, and `sg-fit`):
-
-```bash
-uv tool install slop-guard
-```
-
-Pin versions for reproducibility:
+Pin a direct invocation for reproducibility:
 
 ```bash
 uvx slop-guard==0.5.0
-```
-
-Upgrade an installed tool:
-
-```bash
-uv tool upgrade slop-guard
 ```
 
 ### From source

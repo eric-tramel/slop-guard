@@ -1,0 +1,20 @@
+{
+  "name": "slop-guard",
+  "interface": {
+    "displayName": "Slop-Guard"
+  },
+  "plugins": [
+    {
+      "name": "slop-guard",
+      "source": {
+        "source": "local",
+        "path": "./plugins/slop-guard"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
