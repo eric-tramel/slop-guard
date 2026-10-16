@@ -2,7 +2,7 @@
 
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-0f706f?style=flat-square&logo=githubpages&logoColor=white)](https://eric-tramel.github.io/slop-guard/docs/)
 
-A rule-based prose linter that scores text 0--100 for formulaic AI writing patterns. No LLM judge, no API calls. Purely programmatic.
+A rule-based prose linter that scores text 0--100 for formulaic AI writing patterns. The analyzer runs locally. For substantial passages, it also returns semantic review requirements for the invoking writing agent.
 
 The default pipeline loads 25 configurable rules backed by 200+ literal and structural heuristics. It returns a numeric score, a band label, specific violations with surrounding context, and concrete advice for each hit.
 
@@ -230,7 +230,7 @@ make verify-wheel
 
 ## MCP Tools
 
-`check_slop(text)`: Analyze a string. Returns JSON diagnostics only; it does not repeat the input text.
+`check_slop(text)`: Analyze a string. Returns JSON diagnostics with deterministic findings. For substantial prose, the response also includes the semantic criteria for the writing agent.
 
 `check_slop_file(file_path)`: Read a file from disk and analyze it. Same output, without repeating the file path in the payload.
 
@@ -238,7 +238,9 @@ make verify-wheel
 
 The default rules detect stock hype words, boilerplate phrases, assistant tone markers, unattributed weasel phrasing, AI self-disclosure, placeholder text, list-heavy Markdown, arbitrary mid-sentence keyword bold, sentence rhythm, paragraph rhythm, em dash overuse, and colon overuse.
 
-They also flag contrast/setup-resolution tells, pithy fragments, repeated 4-8 word phrases, copula chains, extreme long sentences, aphoristic closers, and uneven paragraph cadence. Once a passage contains 50 words, the substantial-prose rule checks strict vocabulary, announced structure, number-led slogans, decorative characters, question-word headings, restricted relative clauses, repeated conjunctions, and abstractions presented as agents.
+They also flag contrast/setup-resolution tells, pithy fragments, repeated 4-8 word phrases, copula chains, extreme long sentences, aphoristic closers, and uneven paragraph cadence. Once a passage contains 50 words, the substantial-prose rule checks strict vocabulary, announced structure, number-led slogans, decorative characters, question-word headings, restricted relative clauses, repeated conjunctions, and abstractions presented as agents. It also returns a semantic rubric for context, voice, natural syntax, rhetorical restraint, and rewrite quality.
+
+The numeric score covers deterministic findings. Writing agents complete the semantic rubric before claiming that substantial prose follows the complete guide.
 
 Texts under 10 words are skipped and return a clean `100`.
 
@@ -264,6 +266,7 @@ score          0-100 integer
 band           "clean" / "light" / "moderate" / "heavy" / "saturated"
 word_count     integer
 violations     array of {type, rule, match, context, penalty, start, end}
+review_requirements array of {type, rule, reason, criteria}
 counts         per-category violation counts
 total_penalty  sum of all penalty values
 weighted_sum   after concentration multiplier

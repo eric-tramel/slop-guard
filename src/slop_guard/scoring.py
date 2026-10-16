@@ -162,6 +162,7 @@ def short_text_result(
         "band": "clean",
         "word_count": word_count_value,
         "violations": [],
+        "review_requirements": [],
         "counts": counts,
         "total_penalty": 0,
         "weighted_sum": 0.0,

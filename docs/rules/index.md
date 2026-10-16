@@ -1,7 +1,7 @@
 ---
 icon: lucide/list-checks
 title: Rule library
-description: Catalog of the rules that slop-guard runs on every check.
+description: Catalog of rules evaluated during each slop-guard check.
 ---
 
 # Rule library

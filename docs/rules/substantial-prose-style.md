@@ -41,7 +41,7 @@ Medium per finding. The rule applies only to substantial prose, but repeated fin
 
 ## Coverage
 
-Semantic judgments such as whether prose shows enough context still require author review. This rule reports only observable patterns and does not claim to prove every sentence follows the complete guide.
+The rule reports observable patterns, then returns a structured semantic-review requirement. A writing agent judges context and voice. The agent also reviews natural syntax and rewrite quality before claiming that the passage follows the complete guide.
 
 ## Default configuration
 
@@ -50,6 +50,12 @@ Semantic judgments such as whether prose shows enough context still require auth
   <div class="sg-defaults__item"><span class="sg-defaults__label">min_words</span><span class="sg-defaults__value">50</span></div>
   <div class="sg-defaults__item"><span class="sg-defaults__label">penalty</span><span class="sg-defaults__value">-3</span></div>
   <div class="sg-defaults__item"><span class="sg-defaults__label">record_cap</span><span class="sg-defaults__value">20</span></div>
+</div>
+
+## Contributors
+
+<div class="sg-contributors">
+  <a class="sg-contrib" href="https://github.com/samhavens"><img class="sg-contrib__avatar" src="https://github.com/samhavens.png?size=72" alt="" loading="lazy" width="24" height="24" /><span class="sg-contrib__name">@samhavens</span></a>
 </div>
 
 </div>

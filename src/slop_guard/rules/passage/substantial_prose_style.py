@@ -19,9 +19,10 @@ Example Non-Violations:
     - "The reviewer records the corrected total beside the affected row."
       Describes the current process without editorial framing.
 
-Coverage: Semantic judgments such as whether prose shows enough context still
-    require author review. This rule reports only observable patterns and does
-    not claim to prove every sentence follows the complete guide.
+Coverage: The rule reports observable patterns, then returns a structured
+    semantic-review requirement. A writing agent judges context and voice. The
+    agent also reviews natural syntax and rewrite quality before claiming that
+    the passage follows the complete guide.
 
 Severity: Medium per finding. The rule applies only to substantial prose, but
     repeated findings lower the score quickly after that threshold.
@@ -30,12 +31,16 @@ Severity: Medium per finding. The rule applies only to substantial prose, but
 from __future__ import annotations
 
 import re
-import unicodedata
 from dataclasses import dataclass, field
 from enum import StrEnum
 
 from slop_guard.document import AnalysisDocument, context_around
-from slop_guard.models import RuleResult, Violation
+from slop_guard.models import (
+    ReviewCriterion,
+    ReviewRequirement,
+    RuleResult,
+    Violation,
+)
 from slop_guard.rules.base import Label, Rule, RuleConfig, RuleLevel
 from slop_guard.rules.fitting import fit_penalty_contrastive
 
@@ -77,8 +82,6 @@ _SIGNPOST_PHRASES: tuple[str, ...] = (
     "short version:",
     "here's the thing",
     "here is the thing",
-    "to summarize",
-    "bring up",
 )
 _SIGNPOST_RE = re.compile(
     "|".join(
@@ -91,6 +94,9 @@ _SIGNPOST_RE = re.compile(
     ),
     re.IGNORECASE,
 )
+_OPENING_SIGNPOST_RE = re.compile(
+    r"(?im)(?:^\s*|(?<=[.!?])\s+)(?P<claim>to summarize\b)"
+)
 
 _QUESTION_HEADING_RE = re.compile(
     r"(?m)^\s{0,3}#{1,6}\s+(?:what|why|how|when|where|who|which)\b[^\n]*",
@@ -98,11 +104,12 @@ _QUESTION_HEADING_RE = re.compile(
 )
 _COUNT_WORD = r"(?:one|two|three|four|five|six|seven|eight|nine|ten|\d+)"
 _COUNTING_CLAIM_RE = re.compile(
-    rf"(?im)(?:^\s*|(?<=[.!?])\s+)(?P<claim>{_COUNT_WORD}\s+[^\n.!?]{{1,120}}"
-    rf"(?:[:,]|\b{_COUNT_WORD}\b)[^\n.!?]*[.!?]?)"
+    rf"(?im)(?:^\s*|(?<=[.!?])\s+)(?P<claim>{_COUNT_WORD}\s+"
+    rf"[^\n.!?]{{1,80}}?(?::[^\n.!?]*|,\s+(?:and\s+)?{_COUNT_WORD}\b"
+    rf"[^\n.!?]*)[.!?]?)"
 )
 _ABSTRACT_AGENT_RE = re.compile(
-    r"\b(?:(?:the|this|that|a|an)\s+)?"
+    r"\b(?:the|this|that|a|an)\s+"
     r"(?:architecture|argument|body|check|code|column|contract|database|design|"
     r"deployment|feature|implementation|interface|lock|method|model|parser|patch|"
     r"pipeline|process|prose|release|rule|schema|server|story|system|text|tool|"
@@ -146,6 +153,102 @@ _QUESTION_WORD_RE = re.compile(
     r"(?:what|who|which)\b",
     re.IGNORECASE,
 )
+_HTML_CODE_RE = re.compile(r"<code\b[^>]*>.*?</code>", re.IGNORECASE | re.DOTALL)
+_DECORATIVE_CODEPOINT_RANGES: tuple[tuple[int, int], ...] = (
+    (0x2600, 0x27BF),
+    (0x1F000, 0x1FAFF),
+)
+
+_SEMANTIC_REVIEW_CRITERIA: tuple[ReviewCriterion, ...] = (
+    ReviewCriterion(
+        key="process_orientation",
+        instruction=(
+            "Describe operations on data and decisions in their working context. "
+            "Use declarative definitions only for brief introductions."
+        ),
+    ),
+    ReviewCriterion(
+        key="concrete_agents",
+        instruction=(
+            "Make people or concrete services perform actions. Remove intention, "
+            "knowledge, judgment, or agency assigned to abstractions."
+        ),
+    ),
+    ReviewCriterion(
+        key="context_and_deixis",
+        instruction=(
+            "Supply nearby scope and clear referents. Include evidence where the "
+            "claim needs support, so the passage shows the relevant context."
+        ),
+    ),
+    ReviewCriterion(
+        key="deliberative_voice",
+        instruction=(
+            "Explain choices in a deliberative voice. Describe the related "
+            "operations and consequences in their local scope."
+        ),
+    ),
+    ReviewCriterion(
+        key="plain_english",
+        instruction=(
+            "Use idiomatic American English with natural subject-verb-object order. "
+            "Reject periodic, garden-path, fragmentary, or mechanically balanced "
+            "sentences."
+        ),
+    ),
+    ReviewCriterion(
+        key="current_context",
+        instruction=(
+            "Keep comments and durable documentation in the present tense. Remove "
+            "first-person narration and copied user wording. Remove missing "
+            "conversation context, change-history framing, suspicious denials, and "
+            "editorial spin."
+        ),
+    ),
+    ReviewCriterion(
+        key="sentence_relationships",
+        instruction=(
+            "Use hypotaxis and typographic structure to clarify relationships. Prefer "
+            "asyndeton where conjunctions add no meaning. Reject loose clause chains, "
+            "restricted relatives, default triads, and synonym cycling."
+        ),
+    ),
+    ReviewCriterion(
+        key="rhetorical_restraint",
+        instruction=(
+            "Reject overconfident identity claims, universals, negative "
+            "counterfactuals, metaphorical engineering language, and rhetoric that "
+            "announces or dramatizes the answer."
+        ),
+    ),
+    ReviewCriterion(
+        key="contextual_vocabulary",
+        instruction=(
+            "Replace metaphorical engineering uses of artifact, bring up, buy, "
+            "contract, earn, flight, hug, land, mint, name, noun, own, pin, reach, "
+            "seam, see, shape, ship, sit, smoke, speak, sugar, surface, touch, triage, "
+            "verb, want, weld, and wire with literal descriptions."
+        ),
+    ),
+    ReviewCriterion(
+        key="rewrite_method",
+        instruction=(
+            "When a passage fails, rewrite it from the intended meaning. Build a new "
+            "passage instead of rearranging the same sentence pattern."
+        ),
+    ),
+)
+
+
+def _mask_html_code(text: str) -> str:
+    """Mask generated HTML code elements while preserving source offsets."""
+
+    def mask(match: re.Match[str]) -> str:
+        return "".join(
+            character if character.isspace() else " " for character in match[0]
+        )
+
+    return _HTML_CODE_RE.sub(mask, text)
 
 
 class FindingKind(StrEnum):
@@ -244,7 +347,11 @@ def _character_findings(text: str) -> list[_Finding]:
     """Return findings for prohibited dashes and decorative symbols."""
     findings: list[_Finding] = []
     for index, character in enumerate(text):
-        if character in {"\u2013", "\u2014"} or unicodedata.category(character) == "So":
+        codepoint = ord(character)
+        is_decorative = any(
+            start <= codepoint <= end for start, end in _DECORATIVE_CODEPOINT_RANGES
+        )
+        if character in {"\u2013", "\u2014"} or is_decorative:
             findings.append(
                 _Finding(
                     start=index,
@@ -309,10 +416,16 @@ def _semicolon_findings(text: str) -> list[_Finding]:
 
 def _collect_findings(document: AnalysisDocument) -> list[_Finding]:
     """Collect deterministic style-guide findings from prose-only text."""
-    text = document.text_with_markdown_code_masked
+    text = _mask_html_code(document.text_with_markdown_code_masked)
     findings = [
         *_regex_findings(text, _PROHIBITED_TERM_RE, FindingKind.PROHIBITED_TERM),
         *_regex_findings(text, _SIGNPOST_RE, FindingKind.SIGNPOST),
+        *_regex_findings(
+            text,
+            _OPENING_SIGNPOST_RE,
+            FindingKind.SIGNPOST,
+            group="claim",
+        ),
         *_regex_findings(text, _QUESTION_HEADING_RE, FindingKind.QUESTION_HEADING),
         *_regex_findings(
             text,
@@ -451,6 +564,17 @@ class SubstantialProseStyleRule(Rule[SubstantialProseStyleRuleConfig]):
             violations=violations,
             advice=advice,
             count_deltas={self.count_key: len(findings)} if findings else {},
+            review_requirements=[
+                ReviewRequirement(
+                    rule=self.name,
+                    reason=(
+                        "The deterministic pass covers observable patterns. A writing "
+                        "agent judges each semantic criterion before claiming "
+                        "conformance."
+                    ),
+                    criteria=_SEMANTIC_REVIEW_CRITERIA,
+                )
+            ],
         )
 
     def _fit(

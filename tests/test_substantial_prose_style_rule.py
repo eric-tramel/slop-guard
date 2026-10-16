@@ -42,11 +42,32 @@ def test_clean_substantial_passage_has_no_style_guide_findings() -> None:
     assert _matches(_CLEAN_PASSAGE) == []
 
 
+def test_clean_substantial_passage_still_requires_semantic_review() -> None:
+    """A deterministic pass should preserve the unresolved semantic checks."""
+    result = _rule().forward(AnalysisDocument.from_text(_CLEAN_PASSAGE))
+
+    assert result.violations == []
+    assert len(result.review_requirements) == 1
+    requirement = result.review_requirements[0]
+    assert requirement.rule == "substantial_prose_style"
+    assert {criterion.key for criterion in requirement.criteria} >= {
+        "process_orientation",
+        "context_and_deixis",
+        "contextual_vocabulary",
+        "plain_english",
+        "current_context",
+        "rewrite_method",
+    }
+
+
 def test_rule_skips_prose_below_the_substantial_word_threshold() -> None:
     """Short snippets should remain outside the substantial-writing check."""
     text = "Straight answer: the artifact ships tomorrow."
 
-    assert _matches(text) == []
+    result = _rule().forward(AnalysisDocument.from_text(text))
+
+    assert result.violations == []
+    assert result.review_requirements == []
 
 
 @pytest.mark.parametrize(
@@ -303,6 +324,44 @@ def test_rule_allows_an_ordinary_numbered_fact() -> None:
     assert _matches(text) == []
 
 
+def test_rule_allows_two_counts_in_an_ordinary_quantitative_fact() -> None:
+    """Multiple quantities should remain distinct from a count-led slogan."""
+    text = "Two reviewers compare three reports. " + _CLEAN_PASSAGE
+
+    assert _matches(text) == []
+
+
+def test_rule_allows_generated_metadata_labels() -> None:
+    """A field label should not look like an abstraction performing an action."""
+    text = "Rule name\n\nsubstantial_prose_style\n\n" + _CLEAN_PASSAGE
+
+    assert _matches(text) == []
+
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        "The tool uses the totals to summarize the report.",
+        "The operators bring up the service before checking the report.",
+    ],
+)
+def test_rule_leaves_context_sensitive_phrases_for_semantic_review(
+    sentence: str,
+) -> None:
+    """Operational phrases should not receive an unconditional substring match."""
+    text = f"{sentence} {_CLEAN_PASSAGE}"
+
+    assert _matches(text) == []
+
+
+@pytest.mark.parametrize("symbol", ["\N{DEGREE SIGN}", "\N{COPYRIGHT SIGN}"])
+def test_rule_allows_semantic_unicode_symbols(symbol: str) -> None:
+    """Technical and legal symbols should remain available in ordinary prose."""
+    text = f"The reviewer records 200 {symbol}C in the report. {_CLEAN_PASSAGE}"
+
+    assert _matches(text) == []
+
+
 def test_rule_counts_all_findings_beyond_the_record_cap() -> None:
     """Output bounds should not hide the total number of style findings."""
     text = "Honest, genuine, fair, and golden. " + _CLEAN_PASSAGE
@@ -333,6 +392,17 @@ def test_rule_ignores_style_examples_inside_markdown_code() -> None:
     assert _matches(text) == []
 
 
+def test_rule_ignores_style_examples_inside_generated_html_code() -> None:
+    """Generated rule examples should remain outside prose analysis."""
+    text = (
+        '<code class="sg-behavior__input">'
+        '"Straight answer: the workflow knows which record belongs here."'
+        "</code>\n\n" + _CLEAN_PASSAGE
+    )
+
+    assert _matches(text) == []
+
+
 def test_default_slop_guard_check_runs_the_substantial_style_rule() -> None:
     """The packaged default pipeline should enforce the new style checks."""
     result = analyze_text(
@@ -345,3 +415,4 @@ def test_default_slop_guard_check_runs_the_substantial_style_rule() -> None:
         violation["rule"] == "substantial_prose_style"
         for violation in result["violations"]
     )
+    assert result["review_requirements"][0]["rule"] == "substantial_prose_style"

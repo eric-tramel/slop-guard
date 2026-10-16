@@ -92,6 +92,8 @@ def _format_score_line(
     wc = result["word_count"]
     sym = _BAND_SYMBOLS.get(band, "?")
     line = f"{label}: {score}/100 [{band}] ({wc} words) {sym}"
+    if result["review_requirements"]:
+        line += " [semantic review required]"
     if show_counts:
         active = {k: v for k, v in result["counts"].items() if v}
         if active:
@@ -122,6 +124,20 @@ def _print_advice(
         print(f"  - {item}", file=file)
 
 
+def _print_review_requirements(
+    result: AnalysisPayload | SourceAnalysisPayload,
+    file: TextIO = sys.stdout,
+) -> None:
+    """Print semantic criteria that remain after deterministic linting."""
+    for requirement in result["review_requirements"]:
+        print(f"  {requirement['rule']}: {requirement['reason']}", file=file)
+        for criterion in requirement["criteria"]:
+            print(
+                f"    - {criterion['key']}: {criterion['instruction']}",
+                file=file,
+            )
+
+
 # ---------------------------------------------------------------------------
 # Core analysis dispatch
 # ---------------------------------------------------------------------------
@@ -140,6 +156,7 @@ def _analyze_text(
         band=result["band"],
         word_count=result["word_count"],
         violations=result["violations"],
+        review_requirements=result["review_requirements"],
         counts=result["counts"],
         total_penalty=result["total_penalty"],
         weighted_sum=result["weighted_sum"],
@@ -368,6 +385,8 @@ def _emit_result(
             _print_violations(result)
         if result["advice"]:
             _print_advice(result)
+        if result["review_requirements"]:
+            _print_review_requirements(result)
 
 
 def cli_main(argv: list[str] | None = None) -> int:

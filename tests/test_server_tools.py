@@ -23,8 +23,32 @@ def test_check_slop_tool_returns_structured_output(mcp_tool, run_mcp_tool) -> No
     assert structured["word_count"] == 2
     assert "result" not in structured
     assert "score" in tool.output_schema["properties"]
+    assert "review_requirements" in tool.output_schema["properties"]
     assert "source" not in structured
     assert "source" not in tool.output_schema["properties"]
+
+
+def test_check_slop_tool_returns_semantic_review_rubric(run_mcp_tool) -> None:
+    """Substantial prose should carry the review work the linter cannot perform."""
+    text = (
+        "The operator opens the report after the import finishes. She compares each "
+        "row with its source record and notes missing values. The reviewer checks the "
+        "totals, asks the author about unclear entries, and records the answer beside "
+        "the affected row. The author updates the report after that review, then sends "
+        "it back for a final accuracy check."
+    )
+
+    _content, structured = run_mcp_tool("check_slop", {"text": text})
+
+    assert structured["score"] == 100
+    assert structured["review_requirements"]
+    requirement = structured["review_requirements"][0]
+    assert requirement["type"] == "ReviewRequirement"
+    assert requirement["rule"] == "substantial_prose_style"
+    assert any(
+        criterion["key"] == "process_orientation"
+        for criterion in requirement["criteria"]
+    )
 
 
 def test_check_slop_tool_includes_violation_offsets(run_mcp_tool) -> None:

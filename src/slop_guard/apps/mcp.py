@@ -22,9 +22,9 @@ ACTIVE_PIPELINE = DEFAULT_PIPELINE
 def check_slop(text: str) -> AnalysisPayload:
     """Analyze text for AI slop patterns.
 
-    Returns a JSON object with a score (0-100), band label, list of specific
-    violations with context and character offsets, and actionable advice for
-    each issue found.
+    Returns a JSON object containing the score and band label. The response also
+    contains violations with character offsets, semantic review requirements,
+    and advice.
     """
     return analyze_text(
         text,
@@ -60,9 +60,9 @@ def check_slop_file(file_path: str) -> AnalysisPayload:
     """Analyze a file for AI slop patterns.
 
     Reads the file at the given path and runs the same analysis as check_slop.
-    Returns a JSON object with a score (0-100), band label, list of specific
-    violations with context and character offsets, and actionable advice for
-    each issue found.
+    Returns a JSON object containing the score and band label. The response also
+    contains violations with character offsets, semantic review requirements,
+    and advice.
     """
     text = _read_analysis_file(file_path)
     return analyze_text(

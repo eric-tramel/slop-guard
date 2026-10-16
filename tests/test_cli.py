@@ -29,6 +29,7 @@ def _fake_result(source: str, score: int = 75) -> dict[str, object]:
         "band": "light",
         "word_count": 4,
         "violations": [],
+        "review_requirements": [],
         "advice": [],
         "counts": {},
     }
@@ -97,6 +98,26 @@ def test_accepts_inline_text_input(capsys: pytest.CaptureFixture[str]) -> None:
     assert captured.err == ""
     assert captured.out.startswith("<text:1>: ")
     assert "/100 [" in captured.out
+
+
+def test_substantial_text_summary_marks_semantic_review_required(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A clean deterministic score should still expose pending semantic work."""
+    text = (
+        "The operator opens the report after the import finishes. She compares each "
+        "row with its source record and notes missing values. The reviewer checks the "
+        "totals, asks the author about unclear entries, and records the answer beside "
+        "the affected row. The author updates the report after that review, then sends "
+        "it back for a final accuracy check."
+    )
+
+    exit_code = cli.cli_main([text])
+    captured = capsys.readouterr()
+
+    assert exit_code == cli.EXIT_OK
+    assert "100/100 [clean]" in captured.out
+    assert "[semantic review required]" in captured.out
 
 
 def test_long_inline_text_falls_back_from_path_oserror(

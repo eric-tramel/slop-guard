@@ -41,7 +41,7 @@ Low per instance, medium when repeated frequently in one passage.
 
 ## Notes
 
-Detection is purely pattern-based — legitimate contrasts may still be flagged when density exceeds the configured threshold. Adjust `advice_min` to tune when summary advice appears.
+Detection uses fixed patterns. Legitimate contrasts may receive a finding when density exceeds the configured threshold. Adjust `advice_min` to tune when summary advice appears.
 
 ## Default configuration
 

@@ -66,6 +66,9 @@ def analyze_document(
             document.text,
             hyperparameters.context_window_chars,
         ),
+        "review_requirements": [
+            requirement.to_payload() for requirement in state.review_requirements
+        ],
         "counts": state.counts,
         "total_penalty": total_penalty,
         "weighted_sum": round(weighted_sum, 2),
