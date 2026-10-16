@@ -13,6 +13,10 @@ from .paragraph_rhythm import (
 )
 from .phrase_reuse import PhraseReuseRule, PhraseReuseRuleConfig
 from .rhythm import RhythmRule, RhythmRuleConfig
+from .substantial_prose_style import (
+    SubstantialProseStyleRule,
+    SubstantialProseStyleRuleConfig,
+)
 
 __all__ = [
     "ClosingAphorismRule",
@@ -33,4 +37,6 @@ __all__ = [
     "PhraseReuseRuleConfig",
     "RhythmRule",
     "RhythmRuleConfig",
+    "SubstantialProseStyleRule",
+    "SubstantialProseStyleRuleConfig",
 ]

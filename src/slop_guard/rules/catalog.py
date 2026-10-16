@@ -25,4 +25,5 @@ DEFAULT_RULE_PATHS: tuple[str, ...] = (
     "slop_guard.rules.passage.closing_aphorism.ClosingAphorismRule",
     "slop_guard.rules.passage.paragraph_rhythm.ParagraphBalanceRule",
     "slop_guard.rules.passage.paragraph_rhythm.ParagraphCVRule",
+    "slop_guard.rules.passage.substantial_prose_style.SubstantialProseStyleRule",
 )

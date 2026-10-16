@@ -22,3 +22,4 @@
 {"config": {"min_sentences": 4, "penalty": -4}, "rule_type": "slop_guard.rules.passage.closing_aphorism.ClosingAphorismRule"}
 {"config": {"min_body_paragraphs": 3, "balance_threshold": 0.7, "penalty": -6}, "rule_type": "slop_guard.rules.passage.paragraph_rhythm.ParagraphBalanceRule"}
 {"config": {"min_paragraphs": 5, "cv_threshold": 0.45, "penalty": -1}, "rule_type": "slop_guard.rules.passage.paragraph_rhythm.ParagraphCVRule"}
+{"config": {"context_window_chars": 60, "min_words": 50, "penalty": -3, "record_cap": 20}, "rule_type": "slop_guard.rules.passage.substantial_prose_style.SubstantialProseStyleRule"}

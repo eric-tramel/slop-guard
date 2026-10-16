@@ -4,7 +4,7 @@
 
 A rule-based prose linter that scores text 0--100 for formulaic AI writing patterns. No LLM judge, no API calls. Purely programmatic.
 
-The default pipeline loads 24 configurable rules backed by 200+ literal and structural heuristics. It returns a numeric score, a band label, specific violations with surrounding context, and concrete advice for each hit.
+The default pipeline loads 25 configurable rules backed by 200+ literal and structural heuristics. It returns a numeric score, a band label, specific violations with surrounding context, and concrete advice for each hit.
 
 ## Add to Your Agent
 
@@ -234,11 +234,11 @@ make verify-wheel
 
 `check_slop_file(file_path)`: Read a file from disk and analyze it. Same output, without repeating the file path in the payload.
 
-## What it catches
+## Detection coverage
 
-The default rules cover stock hype words and boilerplate phrases, assistant tone markers, unattributed weasel phrasing, AI self-disclosure, placeholder text, bullet/blockquote/horizontal-rule-heavy Markdown structures, arbitrary mid-sentence keyword bold, sentence and paragraph rhythm, and em dash or colon overuse.
+The default rules detect stock hype words, boilerplate phrases, assistant tone markers, unattributed weasel phrasing, AI self-disclosure, placeholder text, list-heavy Markdown, arbitrary mid-sentence keyword bold, sentence rhythm, paragraph rhythm, em dash overuse, and colon overuse.
 
-They also flag contrast/setup-resolution tells, pithy fragments, repeated 4-8 word phrases, copula chains, extreme long sentences, aphoristic closers, and uneven paragraph cadence.
+They also flag contrast/setup-resolution tells, pithy fragments, repeated 4-8 word phrases, copula chains, extreme long sentences, aphoristic closers, and uneven paragraph cadence. Once a passage contains 50 words, the substantial-prose rule checks strict vocabulary, announced structure, number-led slogans, decorative characters, question-word headings, restricted relative clauses, repeated conjunctions, and abstractions presented as agents.
 
 Texts under 10 words are skipped and return a clean `100`.
 
