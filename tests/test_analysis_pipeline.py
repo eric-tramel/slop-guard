@@ -19,6 +19,7 @@ def test_analyze_runs_instantiated_rule_pipeline() -> None:
         "band",
         "word_count",
         "violations",
+        "review_requirements",
         "counts",
         "total_penalty",
         "weighted_sum",
@@ -181,6 +182,7 @@ def test_analyze_short_text_uses_clean_short_circuit() -> None:
     result = analyze_text("too short", hyperparameters=DEFAULT_HYPERPARAMETERS)
     assert result["score"] == DEFAULT_HYPERPARAMETERS.score_max
     assert result["violations"] == []
+    assert result["review_requirements"] == []
     assert result["advice"] == []
 
 

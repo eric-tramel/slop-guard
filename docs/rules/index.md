@@ -1,14 +1,14 @@
 ---
 icon: lucide/list-checks
 title: Rule library
-description: Catalog of the rules that slop-guard runs on every check.
+description: Catalog of rules evaluated during each slop-guard check.
 ---
 
 # Rule library
 
 `slop-guard` ships a pipeline of small, independently scored rules. Each rule targets one formulaic pattern, flags the exact matching spans, and contributes a penalty toward the final score.
 
-The default pipeline runs **24 rules** across four scopes. Open a card to read the full rule page, including example violations, default thresholds, and a link to the source file.
+The default pipeline runs **25 rules** across four scopes. Open a card to read the full rule page, including example violations, default thresholds, and a link to the source file.
 
 ## Word rules
 
@@ -178,6 +178,12 @@ Whole-document signals. Catches rhythm, density, and repetition across the full 
   <a class="sg-rule-card__link" href="./paragraph-cv/">
     <div class="sg-rule-card__head"><span class="sg-rule-card__title">Paragraph CV</span></div>
     <p class="sg-rule-card__summary">Detect suspiciously uniform paragraph lengths.</p>
+  </a>
+</div>
+<div class="sg-rule-card">
+  <a class="sg-rule-card__link" href="./substantial-prose-style/">
+    <div class="sg-rule-card__head"><span class="sg-rule-card__title">Substantial Prose Style</span></div>
+    <p class="sg-rule-card__summary">Check substantial prose for concrete style-guide violations.</p>
   </a>
 </div>
 </div>

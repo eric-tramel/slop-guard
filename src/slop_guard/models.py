@@ -22,6 +22,22 @@ class ViolationPayload(TypedDict):
     end: int
 
 
+class ReviewCriterionPayload(TypedDict):
+    """One semantic criterion that a writing agent must judge."""
+
+    key: str
+    instruction: str
+
+
+class ReviewRequirementPayload(TypedDict):
+    """Semantic review work that deterministic rules cannot resolve."""
+
+    type: Literal["ReviewRequirement"]
+    rule: str
+    reason: str
+    criteria: list[ReviewCriterionPayload]
+
+
 class AnalysisPayload(TypedDict):
     """Structured analyzer result produced by the core analyzer."""
 
@@ -29,6 +45,7 @@ class AnalysisPayload(TypedDict):
     band: BandLabel
     word_count: int
     violations: list[ViolationPayload]
+    review_requirements: list[ReviewRequirementPayload]
     counts: Counts
     total_penalty: int
     weighted_sum: float
@@ -72,6 +89,36 @@ class Violation:
         }
 
 
+@dataclass(frozen=True)
+class ReviewCriterion:
+    """One semantic question supplied to a writing agent."""
+
+    key: str
+    instruction: str
+
+    def to_payload(self) -> ReviewCriterionPayload:
+        """Serialize this criterion for CLI and MCP consumers."""
+        return {"key": self.key, "instruction": self.instruction}
+
+
+@dataclass(frozen=True)
+class ReviewRequirement:
+    """A semantic review that must follow the deterministic lint pass."""
+
+    rule: str
+    reason: str
+    criteria: tuple[ReviewCriterion, ...]
+
+    def to_payload(self) -> ReviewRequirementPayload:
+        """Serialize this review requirement for CLI and MCP consumers."""
+        return {
+            "type": "ReviewRequirement",
+            "rule": self.rule,
+            "reason": self.reason,
+            "criteria": [criterion.to_payload() for criterion in self.criteria],
+        }
+
+
 @dataclass
 class RuleResult:
     """Output payload emitted by a single rule invocation."""
@@ -79,6 +126,7 @@ class RuleResult:
     violations: list[Violation] = field(default_factory=list)
     advice: list[str] = field(default_factory=list)
     count_deltas: Counts = field(default_factory=dict)
+    review_requirements: list[ReviewRequirement] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -88,13 +136,19 @@ class AnalysisState:
     violations: tuple[Violation, ...]
     advice: tuple[str, ...]
     counts: Counts
+    review_requirements: tuple[ReviewRequirement, ...]
 
     @classmethod
     def initial(cls, count_keys: Iterable[str] | None = None) -> "AnalysisState":
         """Construct an empty state with canonical counts initialized to zero."""
         from .scoring import initial_counts
 
-        return cls(violations=(), advice=(), counts=initial_counts(count_keys))
+        return cls(
+            violations=(),
+            advice=(),
+            counts=initial_counts(count_keys),
+            review_requirements=(),
+        )
 
     def merge(self, result: RuleResult) -> "AnalysisState":
         """Merge one rule result into a new state instance."""
@@ -107,4 +161,7 @@ class AnalysisState:
             violations=self.violations + tuple(result.violations),
             advice=self.advice + tuple(result.advice),
             counts=merged_counts,
+            review_requirements=(
+                self.review_requirements + tuple(result.review_requirements)
+            ),
         )
